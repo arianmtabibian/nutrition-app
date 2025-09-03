@@ -93,7 +93,7 @@ const SocialProfile: React.FC = () => {
         return;
       }
       
-      const response = await fetch(`http://localhost:5000/api/social/profile/${user.id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/profile/${user.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -146,7 +146,7 @@ const SocialProfile: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token || !user?.id) return;
 
-      const response = await fetch(`http://localhost:5000/api/profile`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -170,7 +170,7 @@ const SocialProfile: React.FC = () => {
 
   const loadPosts = async (retryCount = 0) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/social/posts/${user?.id}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts/${user?.id}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -195,7 +195,7 @@ const SocialProfile: React.FC = () => {
 
   const handleLike = async (postId: number) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/social/posts/${postId}/like`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts/${postId}/like`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -221,7 +221,7 @@ const SocialProfile: React.FC = () => {
 
   const handleCreatePost = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/social/posts', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
