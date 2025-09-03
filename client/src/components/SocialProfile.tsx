@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Heart, MessageCircle, Share, MoreHorizontal, Camera, Edit3, Settings, Grid, Bookmark, UserPlus, UserCheck, UserCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { diaryAPI } from '../services/api';
 
 interface Post {
   id: number;
@@ -68,28 +69,61 @@ const SocialProfile: React.FC = () => {
     bio: ''
   });
 
-  // Calculate streak function
-  const calculateStreak = () => {
-    // This is a placeholder - you'll need to implement actual streak calculation
-    // based on your meal logging data from the backend
-    // For now, returning a mock streak for demonstration
-    // In production, this should call an API endpoint that calculates the actual streak
-    // based on consecutive days where the user met their calorie or protein goals
-    
-    // Mock data - replace with actual API call
-    const mockStreak = Math.floor(Math.random() * 21); // Random number 0-20 for demo
-    
-    // You can implement the real streak calculation like this:
-    // const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/diary/streak`, {
-    //   headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-    // });
-    // const data = await response.json();
-    // return data.streak || 0;
-    
-    return mockStreak;
+  // State for streak calculation
+  const [streak, setStreak] = useState(0);
+  const [streakLoading, setStreakLoading] = useState(true);
+
+  // Calculate streak from diary data
+  const calculateStreak = async () => {
+    try {
+      setStreakLoading(true);
+      
+      // Get the current month's data to calculate streak
+      const currentDate = new Date();
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      
+      const response = await diaryAPI.getMonth(year, month);
+      const monthData = response.data;
+      
+      if (!monthData || !monthData.days) {
+        setStreak(0);
+        return;
+      }
+
+      // Sort days by date (newest first) and calculate consecutive days where goals were met
+      const sortedDays = monthData.days
+        .filter((day: any) => day.has_data) // Only count days with meal data
+        .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      let currentStreak = 0;
+      
+      // Calculate streak from the most recent day backwards
+      for (const day of sortedDays) {
+        // Check if either calorie goal OR protein goal was met
+        // For calories: under or at goal (calories_met = true)
+        // For protein: at or above goal (protein_met = true)
+        if (day.calories_met || day.protein_met) {
+          currentStreak++;
+        } else {
+          break; // Streak ends when a day doesn't meet either goal
+        }
+      }
+      
+      setStreak(currentStreak);
+    } catch (error) {
+      console.error('Failed to calculate streak:', error);
+      setStreak(0);
+    } finally {
+      setStreakLoading(false);
+    }
   };
 
-  const streak = calculateStreak();
+  useEffect(() => {
+    if (profileData) {
+      calculateStreak();
+    }
+  }, [profileData]);
 
   useEffect(() => {
     if (user) {
@@ -116,7 +150,7 @@ const SocialProfile: React.FC = () => {
         return;
       }
       
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/profile/${user.id}`, {
+             const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/profile/${user.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -369,7 +403,9 @@ const SocialProfile: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <span className="text-orange-500">🔥</span>
                 <span className="font-semibold text-gray-800">Daily Streak:</span>
-                {streak > 0 ? (
+                {streakLoading ? (
+                  <span className="text-lg text-orange-500">Loading...</span>
+                ) : streak > 0 ? (
                   <span className="text-2xl font-bold text-orange-500">{streak} days</span>
                 ) : (
                   <span className="text-lg text-orange-500">Start your goal today!</span>
@@ -377,8 +413,8 @@ const SocialProfile: React.FC = () => {
               </div>
               <div className="text-right">
                 <p className="text-xs text-gray-600">
-                  {streak > 0 
-                    ? `${streak} day${streak === 1 ? '' : 's'} in a row!` 
+                  {streakLoading ? 'Calculating...' : streak > 0 
+                    ? `Hit your goal for ${streak} day${streak === 1 ? '' : 's'} in a row!` 
                     : 'Build a streak!'
                   }
                 </p>
