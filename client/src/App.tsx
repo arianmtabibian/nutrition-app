@@ -45,9 +45,9 @@ function AppRoutes() {
         </PublicRoute>
       } />
       <Route path="/onboarding" element={
-        <PublicRoute>
+        <ProtectedRoute>
           <Onboarding />
-        </PublicRoute>
+        </ProtectedRoute>
       } />
       <Route path="/dashboard/*" element={
         <ProtectedRoute>

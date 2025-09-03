@@ -44,27 +44,18 @@ const Dashboard: React.FC = () => {
 
   const currentTab = getCurrentTab();
 
-  // Check if user has completed profile setup - onboarding is mandatory
+  // Check if user has any profile at all - if not, redirect to onboarding
   useEffect(() => {
-    const checkProfileCompletion = async () => {
+    const checkProfileExists = async () => {
       try {
         const response = await profileAPI.get();
-        const profile = response.data.profile;
-        
-        // Check if user has completed ALL required onboarding fields
-        if (!profile || 
-            !profile.weight || 
-            !profile.height || 
-            !profile.age || 
-            !profile.activity_level || 
-            !profile.gender ||
-            !profile.daily_calories ||
-            !profile.daily_protein) {
-          // Profile incomplete, redirect to onboarding - no skipping allowed
+        if (!response.data.profile) {
+          // No profile exists, redirect to onboarding
           navigate('/onboarding');
           return;
         }
         
+        // User has a profile, they can access the dashboard
         setCheckingProfile(false);
       } catch (error) {
         // Profile doesn't exist or error occurred, redirect to onboarding
@@ -73,7 +64,7 @@ const Dashboard: React.FC = () => {
     };
     
     if (user) {
-      checkProfileCompletion();
+      checkProfileExists();
     }
   }, [user, navigate]);
 
