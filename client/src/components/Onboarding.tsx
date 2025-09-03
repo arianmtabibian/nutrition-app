@@ -404,8 +404,7 @@ const Onboarding: React.FC = () => {
               </div>
             ) : (
               <div className="text-center space-y-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="text-gray-600">Calculating your personalized nutrition plan...</p>
+                <p className="text-gray-600">Click the button below to calculate your personalized nutrition plan</p>
                 <button
                   onClick={calculateNutritionPlan}
                   className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -507,19 +506,25 @@ const Onboarding: React.FC = () => {
   };
 
   const canProceed = () => {
-    switch (currentStep) {
-      case 0: return true; // Welcome step - always allow proceeding
-      case 1: return profileData.goal;
-      case 2: return profileData.weight > 0;
-      case 3: return profileData.target_weight > 0;
-      case 4: return profileData.timeline && profileData.timeline.trim().length > 0;
-      case 5: return profileData.height > 0;
-      case 6: return profileData.age > 0;
-      case 7: return profileData.activity_level;
-      case 8: return profileData.gender;
-      case 9: return profileData.calculated_deficit !== undefined; // AI calculation step
-      default: return false; // Can't proceed on unknown steps
-    }
+    const result = (() => {
+      switch (currentStep) {
+        case 0: return true; // Welcome step - always allow proceeding
+        case 1: return profileData.goal;
+        case 2: return profileData.weight > 0;
+        case 3: return profileData.target_weight > 0;
+        case 4: return profileData.timeline && profileData.timeline.trim().length > 0;
+        case 5: return profileData.height > 0;
+        case 6: return profileData.age > 0;
+        case 7: return profileData.activity_level;
+        case 8: return profileData.gender;
+        case 9: return profileData.calculated_deficit !== undefined; // AI calculation step
+        case 10: return true; // Final step - always allow proceeding
+        default: return false; // Can't proceed on unknown steps
+      }
+    })();
+    
+    console.log(`Step ${currentStep}: canProceed = ${result}`);
+    return result;
   };
 
   if (loading) {
@@ -600,7 +605,7 @@ const Onboarding: React.FC = () => {
             disabled={!canProceed()}
             className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
-            <span>{currentStep === steps.length - 1 ? 'Get Started' : 'Next'}</span>
+            <span>{currentStep === 10 ? 'Get Started' : 'Next'}</span>
             <ArrowRight className="w-5 h-5" />
           </button>
         </div>
