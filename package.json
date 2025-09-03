@@ -11,6 +11,7 @@
     "build:vercel": "node vercel-build.js",
     "deploy": "node deploy-vercel.js",
     "install-all": "npm install && cd client && npm install",
+    "install:vercel": "npm install && cd client && npm install",
     "start": "node server/index.js"
   },
   "keywords": ["nutrition", "tracking", "calories", "protein", "ai"],

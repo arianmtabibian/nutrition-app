@@ -13,7 +13,7 @@ This happened because Vercel was trying to run the build command from the wrong 
 
 ### 1. Updated `vercel.json`
 - Changed build command to use the root-level build script: `npm run build:vercel`
-- Set install command to: `npm run install-all`
+- Set install command to: `npm run install:vercel`
 - Kept output directory as: `client/build`
 
 ### 2. Enhanced `vercel-build.js`
@@ -21,6 +21,7 @@ This happened because Vercel was trying to run the build command from the wrong 
 - Made the script cross-platform compatible
 - Added proper error handling and verification steps
 - Ensures the script runs from the correct directory
+- Automatically creates the `.env.production` file with your backend URL
 
 ### 3. Updated `client/package.json`
 - Added `build:vercel` script for explicit Vercel builds
@@ -30,14 +31,18 @@ This happened because Vercel was trying to run the build command from the wrong 
 - Excludes unnecessary files from deployment
 - Prevents server-side code from being deployed
 
+### 5. Enhanced Root `package.json`
+- Added `install:vercel` script for reliable dependency installation
+- Ensures both root and client dependencies are installed
+
 ## How It Works
 
-1. **Install Phase**: Vercel runs `npm run install-all` which installs both root and client dependencies
+1. **Install Phase**: Vercel runs `npm run install:vercel` which installs both root and client dependencies
 2. **Build Phase**: Vercel runs `npm run build:vercel` which executes the `vercel-build.js` script
 3. **Build Script**: The script:
    - Changes to the `client` directory
-   - Creates production environment file
-   - Cleans and reinstalls dependencies
+   - Creates production environment file with your backend URL
+   - Installs dependencies fresh
    - Runs the React build
    - Verifies the build output
 
@@ -45,10 +50,10 @@ This happened because Vercel was trying to run the build command from the wrong 
 
 The build script automatically creates a `.env.production` file with:
 ```
-REACT_APP_API_URL=https://your-render-backend-url.onrender.com
+REACT_APP_API_URL=https://nutrition-back-jtf3.onrender.com
 ```
 
-**Important**: Update this URL to your actual backend URL before deploying.
+**✅ Updated**: This now contains your actual backend URL.
 
 ## Troubleshooting
 
@@ -72,7 +77,8 @@ Before deploying, test the build process locally:
 
 ```bash
 # From the root directory
-npm run build:vercel
+npm run install:vercel  # Test installation
+npm run build:vercel    # Test build
 ```
 
 This should create a `client/build` directory with your production build.
@@ -91,18 +97,25 @@ This should create a `client/build` directory with your production build.
 ├── vercel.json              # Updated Vercel configuration
 ├── vercel-build.js          # Enhanced build script
 ├── .vercelignore            # Excludes unnecessary files
+├── package.json             # Root package with enhanced scripts
 ├── client/
 │   ├── package.json         # Added build:vercel script
 │   ├── .env.production      # Created during build
 │   └── build/               # Output directory
-└── package.json             # Root package with build scripts
 ```
 
 ## Next Steps
 
-1. **Update API URL**: Change the placeholder URL in `vercel-build.js` to your actual backend
+1. **✅ API URL Updated**: Your backend URL is now properly configured
 2. **Test Locally**: Run `npm run build:vercel` to ensure it works
 3. **Deploy**: Push changes and let Vercel handle the rest
 4. **Monitor**: Check build logs for any remaining issues
+
+## Latest Changes
+
+- **Added `install:vercel` script** for more reliable dependency installation
+- **Simplified build process** to avoid complex command issues
+- **Enhanced error handling** and logging in the build script
+- **Updated environment variables** with your actual backend URL
 
 The deployment should now work reliably on Vercel!

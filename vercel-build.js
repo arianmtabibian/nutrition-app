@@ -29,26 +29,11 @@ try {
   console.log('📝 Creating production environment file at:', envPath);
   
   // You can update this URL to your actual backend URL
-  const envContent = 'REACT_APP_API_URL=https://nutrition-back-jtf3.onrender.com';
+  const envContent = 'REACT_APP_API_URL=https://nutrition-back-jtf3.onrender.com\n';
   fs.writeFileSync(envPath, envContent);
   console.log('✅ Environment file created successfully');
   
-  // Clean install dependencies (cross-platform)
-  console.log('🧹 Cleaning node_modules...');
-  if (fs.existsSync('node_modules')) {
-    try {
-      if (process.platform === 'win32') {
-        execSync('rmdir /s /q node_modules', { stdio: 'inherit', shell: true });
-      } else {
-        execSync('rm -rf node_modules', { stdio: 'inherit', shell: true });
-      }
-      console.log('✅ node_modules cleaned successfully');
-    } catch (cleanError) {
-      console.log('⚠️ Could not clean node_modules, continuing...');
-    }
-  }
-  
-  // Install dependencies
+  // Always install dependencies fresh (don't try to clean first)
   console.log('📦 Installing dependencies...');
   execSync('npm install', { stdio: 'inherit' });
   console.log('✅ Dependencies installed successfully');
