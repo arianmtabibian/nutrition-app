@@ -34,6 +34,116 @@ const Onboarding: React.FC = () => {
   const [timeRemaining, setTimeRemaining] = useState(120);
   const [loading, setLoading] = useState(true);
 
+  // AI-powered nutrition plan calculation
+  const calculateNutritionPlan = async () => {
+    try {
+      // Parse timeline input using AI-like logic
+      const timeline = profileData.timeline?.toLowerCase() || '';
+      let days = 0;
+      
+      // Extract number and unit from timeline
+      const numberMatch = timeline.match(/(\d+)/);
+      const unitMatch = timeline.match(/(week|month|day|wk|mo|d)s?/i);
+      
+      if (numberMatch && unitMatch) {
+        const number = parseInt(numberMatch[1]);
+        const unit = unitMatch[1].toLowerCase();
+        
+        switch (unit) {
+          case 'week':
+          case 'wk':
+            days = number * 7;
+            break;
+          case 'month':
+          case 'mo':
+            days = number * 30;
+            break;
+          case 'day':
+          case 'd':
+            days = number;
+            break;
+          default:
+            days = number * 7; // Default to weeks
+        }
+      } else {
+        // Fallback: assume weeks if format unclear
+        days = 56; // 8 weeks default
+      }
+      
+      // Calculate weight difference
+      const weightDifference = profileData.target_weight - profileData.weight;
+      const isWeightLoss = weightDifference < 0;
+      
+      // Calculate daily calorie adjustment
+      // 1 pound = 3500 calories
+      const totalCalorieAdjustment = Math.abs(weightDifference) * 3500;
+      const dailyCalorieAdjustment = Math.round(totalCalorieAdjustment / days);
+      
+      // Calculate maintenance calories using Harris-Benedict equation
+      let bmr = 0;
+      if (profileData.gender === 'male') {
+        bmr = 88.362 + (13.397 * profileData.weight * 0.453592) + (4.799 * profileData.height * 2.54) - (5.677 * profileData.age);
+      } else {
+        bmr = 447.593 + (9.247 * profileData.weight * 0.453592) + (3.098 * profileData.height * 2.54) - (4.330 * profileData.age);
+      }
+      
+      // Apply activity multiplier
+      const activityMultipliers = {
+        sedentary: 1.2,
+        light: 1.375,
+        moderate: 1.55,
+        active: 1.725,
+        very_active: 1.9
+      };
+      
+      const maintenanceCalories = Math.round(bmr * activityMultipliers[profileData.activity_level as keyof typeof activityMultipliers]);
+      
+      // Calculate target calories
+      let targetCalories = maintenanceCalories;
+      if (isWeightLoss) {
+        targetCalories = maintenanceCalories - dailyCalorieAdjustment;
+      } else {
+        targetCalories = maintenanceCalories + dailyCalorieAdjustment;
+      }
+      
+      // AI recommendation for extreme deficits
+      let aiRecommendation = '';
+      if (isWeightLoss && dailyCalorieAdjustment > 1000) {
+        aiRecommendation = `⚠️ Warning: A ${dailyCalorieAdjustment} calorie daily deficit is quite aggressive and may not be sustainable. Consider extending your timeline to ${Math.ceil(days * 1.5)} days for a healthier ${Math.round(dailyCalorieAdjustment * 0.67)} calorie daily deficit.`;
+      }
+      
+      // Calculate protein needs (1.6-2.2g per kg for weight loss, 1.6-2.4g per kg for weight gain)
+      const weightInKg = profileData.weight * 0.453592;
+      let proteinMultiplier = 1.8; // Default
+      if (isWeightLoss) {
+        proteinMultiplier = 2.0; // Higher protein for weight loss
+      } else if (!isWeightLoss) {
+        proteinMultiplier = 2.2; // Higher protein for muscle gain
+      }
+      const targetProtein = Math.round(weightInKg * proteinMultiplier);
+      
+      // Update profile data with calculations
+      setProfileData(prev => ({
+        ...prev,
+        daily_calories: targetCalories,
+        daily_protein: targetProtein,
+        calculated_deficit: isWeightLoss ? -dailyCalorieAdjustment : dailyCalorieAdjustment,
+        ai_recommendation: aiRecommendation
+      }));
+      
+    } catch (error) {
+      console.error('Error calculating nutrition plan:', error);
+      // Fallback to basic calculation
+      setProfileData(prev => ({
+        ...prev,
+        daily_calories: 2000,
+        daily_protein: 150,
+        calculated_deficit: 0,
+        ai_recommendation: 'Unable to calculate personalized plan. Using default values.'
+      }));
+    }
+  };
+
   const steps = [
     {
       title: "Welcome to NutriTrack!",
@@ -342,116 +452,6 @@ const Onboarding: React.FC = () => {
       )
     }
   ];
-
-  // AI-powered nutrition plan calculation
-  const calculateNutritionPlan = async () => {
-    try {
-      // Parse timeline input using AI-like logic
-      const timeline = profileData.timeline?.toLowerCase() || '';
-      let days = 0;
-      
-      // Extract number and unit from timeline
-      const numberMatch = timeline.match(/(\d+)/);
-      const unitMatch = timeline.match(/(week|month|day|wk|mo|d)s?/i);
-      
-      if (numberMatch && unitMatch) {
-        const number = parseInt(numberMatch[1]);
-        const unit = unitMatch[1].toLowerCase();
-        
-        switch (unit) {
-          case 'week':
-          case 'wk':
-            days = number * 7;
-            break;
-          case 'month':
-          case 'mo':
-            days = number * 30;
-            break;
-          case 'day':
-          case 'd':
-            days = number;
-            break;
-          default:
-            days = number * 7; // Default to weeks
-        }
-      } else {
-        // Fallback: assume weeks if format unclear
-        days = 56; // 8 weeks default
-      }
-      
-      // Calculate weight difference
-      const weightDifference = profileData.target_weight - profileData.weight;
-      const isWeightLoss = weightDifference < 0;
-      
-      // Calculate daily calorie adjustment
-      // 1 pound = 3500 calories
-      const totalCalorieAdjustment = Math.abs(weightDifference) * 3500;
-      const dailyCalorieAdjustment = Math.round(totalCalorieAdjustment / days);
-      
-      // Calculate maintenance calories using Harris-Benedict equation
-      let bmr = 0;
-      if (profileData.gender === 'male') {
-        bmr = 88.362 + (13.397 * profileData.weight * 0.453592) + (4.799 * profileData.height * 2.54) - (5.677 * profileData.age);
-      } else {
-        bmr = 447.593 + (9.247 * profileData.weight * 0.453592) + (3.098 * profileData.height * 2.54) - (4.330 * profileData.age);
-      }
-      
-      // Apply activity multiplier
-      const activityMultipliers = {
-        sedentary: 1.2,
-        light: 1.375,
-        moderate: 1.55,
-        active: 1.725,
-        very_active: 1.9
-      };
-      
-      const maintenanceCalories = Math.round(bmr * activityMultipliers[profileData.activity_level as keyof typeof activityMultipliers]);
-      
-      // Calculate target calories
-      let targetCalories = maintenanceCalories;
-      if (isWeightLoss) {
-        targetCalories = maintenanceCalories - dailyCalorieAdjustment;
-      } else {
-        targetCalories = maintenanceCalories + dailyCalorieAdjustment;
-      }
-      
-      // AI recommendation for extreme deficits
-      let aiRecommendation = '';
-      if (isWeightLoss && dailyCalorieAdjustment > 1000) {
-        aiRecommendation = `⚠️ Warning: A ${dailyCalorieAdjustment} calorie daily deficit is quite aggressive and may not be sustainable. Consider extending your timeline to ${Math.ceil(days * 1.5)} days for a healthier ${Math.round(dailyCalorieAdjustment * 0.67)} calorie daily deficit.`;
-      }
-      
-      // Calculate protein needs (1.6-2.2g per kg for weight loss, 1.6-2.4g per kg for weight gain)
-      const weightInKg = profileData.weight * 0.453592;
-      let proteinMultiplier = 1.8; // Default
-      if (isWeightLoss) {
-        proteinMultiplier = 2.0; // Higher protein for weight loss
-      } else if (!isWeightLoss) {
-        proteinMultiplier = 2.2; // Higher protein for muscle gain
-      }
-      const targetProtein = Math.round(weightInKg * proteinMultiplier);
-      
-      // Update profile data with calculations
-      setProfileData(prev => ({
-        ...prev,
-        daily_calories: targetCalories,
-        daily_protein: targetProtein,
-        calculated_deficit: isWeightLoss ? -dailyCalorieAdjustment : dailyCalorieAdjustment,
-        ai_recommendation: aiRecommendation
-      }));
-      
-    } catch (error) {
-      console.error('Error calculating nutrition plan:', error);
-      // Fallback to basic calculation
-      setProfileData(prev => ({
-        ...prev,
-        daily_calories: 2000,
-        daily_protein: 150,
-        calculated_deficit: 0,
-        ai_recommendation: 'Unable to calculate personalized plan. Using default values.'
-      }));
-    }
-  };
 
   // Check if user already has a complete profile
   useEffect(() => {
