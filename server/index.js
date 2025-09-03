@@ -24,36 +24,13 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS configuration - must come before helmet
+// CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.CORS_ORIGIN || 'https://your-frontend-domain.vercel.app']
-    : true, // Allow all origins in development
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+    ? ['https://yourdomain.com'] 
+    : ['http://localhost:3000'],
+  credentials: true
 }));
-
-// Handle preflight requests
-app.options('*', cors());
-
-// Add CORS headers manually for additional safety
-app.use((req, res, next) => {
-  const allowedOrigin = process.env.NODE_ENV === 'production'
-    ? (process.env.CORS_ORIGIN || 'https://your-frontend-domain.vercel.app')
-    : 'http://localhost:3000';
-    
-  res.header('Access-Control-Allow-Origin', allowedOrigin);
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
-});
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -66,9 +43,24 @@ app.use('/api/meals', mealRoutes);
 app.use('/api/diary', diaryRoutes);
 app.use('/api/social', socialRoutes);
 
+// Root endpoint for testing
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Nutrition App Backend is running!',
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    port: process.env.PORT || 5000
+  });
 });
 
 // Error handling middleware
