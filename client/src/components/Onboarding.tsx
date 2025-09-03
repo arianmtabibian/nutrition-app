@@ -508,6 +508,7 @@ const Onboarding: React.FC = () => {
 
   const canProceed = () => {
     switch (currentStep) {
+      case 0: return true; // Welcome step - always allow proceeding
       case 1: return profileData.goal;
       case 2: return profileData.weight > 0;
       case 3: return profileData.target_weight > 0;
