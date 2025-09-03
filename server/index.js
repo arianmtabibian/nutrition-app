@@ -27,18 +27,36 @@ app.use(limiter);
 // CORS configuration
 const allowedOrigins = process.env.NODE_ENV === 'production' 
   ? [
-      'https://nutrition-qqgz75v5n-arian-tabibians-projects.vercel.app',
+      // Allow any Vercel domain
+      /^https:\/\/.*\.vercel\.app$/,
+      // Allow any Vercel domain with your project name
+      /^https:\/\/nutrition-.*-arian-tabibians-projects\.vercel\.app$/,
       process.env.CORS_ORIGIN,
       'https://yourdomain.com' // keep this as backup
     ].filter(Boolean) // remove any undefined values
   : ['http://localhost:3000'];
+
+console.log('Allowed CORS origins:', allowedOrigins);
 
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    console.log('CORS request from origin:', origin);
+    
+    // Check if origin matches any allowed pattern
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') {
+        return allowed === origin;
+      } else if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return false;
+    });
+    
+    if (isAllowed) {
+      console.log('CORS allowed for origin:', origin);
       callback(null, true);
     } else {
       console.log('CORS blocked origin:', origin);
