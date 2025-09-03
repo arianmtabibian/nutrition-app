@@ -42,9 +42,10 @@ router.post('/register', async (req, res) => {
           }
           
           const userId = this.lastID;
+          const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-key-for-development';
           const token = jwt.sign(
             { userId, email, first_name, last_name, username },
-            process.env.JWT_SECRET,
+            jwtSecret,
             { expiresIn: '7d' }
           );
           
@@ -134,9 +135,10 @@ router.post('/login', (req, res) => {
         console.log('Login successful for user:', email);
 
         // Generate JWT token
+        const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-key-for-development';
         const token = jwt.sign(
           { userId: row.id, email: row.email, first_name: row.first_name, last_name: row.last_name, username: row.username },
-          process.env.JWT_SECRET,
+          jwtSecret,
           { expiresIn: '7d' }
         );
         

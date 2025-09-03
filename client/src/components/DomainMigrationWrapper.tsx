@@ -11,20 +11,24 @@ const DomainMigrationWrapper: React.FC<DomainMigrationWrapperProps> = ({ childre
   const [migrationError, setMigrationError] = useState<string | null>(null);
 
   useEffect(() => {
-    const performMigration = async () => {
-      try {
-        console.log('🔄 Domain migration starting...');
-        const result = await migrateUserData();
-        console.log('✅ Domain migration completed:', result);
-        setMigrationComplete(true);
-      } catch (error) {
-        console.error('❌ Domain migration failed:', error);
-        setMigrationError('Domain migration failed, but continuing...');
-        setMigrationComplete(true);
-      }
-    };
-
-    performMigration();
+    // Temporarily disable domain migration to fix login issues
+    console.log('🔄 Domain migration temporarily disabled for debugging');
+    setMigrationComplete(true);
+    
+    // TODO: Re-enable after fixing the core issue
+    // const performMigration = async () => {
+    //   try {
+    //     console.log('🔄 Domain migration starting...');
+    //     const result = await migrateUserData();
+    //     console.log('✅ Domain migration completed:', result);
+    //     setMigrationComplete(true);
+    //   } catch (error) {
+    //     console.error('❌ Domain migration failed:', error);
+    //     setMigrationError('Domain migration failed, but continuing...');
+    //     setMigrationComplete(true);
+    //   }
+    // };
+    // performMigration();
   }, []);
 
   if (!migrationComplete) {
