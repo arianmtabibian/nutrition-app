@@ -1,7 +1,12 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-const dbPath = process.env.DB_PATH || path.join(__dirname, '..', 'nutrition.db');
+// Use /tmp directory for production (Render) or local path for development
+const dbPath = process.env.NODE_ENV === 'production' 
+  ? '/tmp/nutrition.db'
+  : (process.env.DB_PATH || path.join(__dirname, '..', 'nutrition.db'));
+
+console.log('Database path:', dbPath);
 const db = new sqlite3.Database(dbPath);
 
 function initializeDatabase() {
@@ -150,7 +155,6 @@ function initializeDatabase() {
         if (err) {
           reject(err);
         } else {
-          console.log('Database tables created successfully');
           resolve();
         }
       });

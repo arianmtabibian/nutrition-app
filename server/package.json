@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "build": "chmod +x render-deploy.sh && ./render-deploy.sh",
+    "postinstall": "npm rebuild sqlite3"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -23,5 +25,10 @@
   },
   "engines": {
     "node": ">=16.0.0"
-  }
+  },
+  "os": [
+    "linux",
+    "darwin",
+    "win32"
+  ]
 }
