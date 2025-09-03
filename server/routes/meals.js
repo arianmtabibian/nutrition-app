@@ -3,6 +3,73 @@ const { authenticateToken } = require('../middleware/auth');
 const { getDatabase } = require('../database/init');
 const { analyzeMeal } = require('../services/nutritionService');
 
+// Function to update daily nutrition for a specific date
+const updateDailyNutrition = (db, userId, date) => {
+  return new Promise((resolve, reject) => {
+    // Get user's daily goals from profile
+    db.get('SELECT daily_calories, daily_protein FROM user_profiles WHERE user_id = ?', [userId], (err, profile) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      
+      if (!profile) {
+        reject(new Error('User profile not found'));
+        return;
+      }
+      
+      // Get all meals for the date
+      db.all('SELECT * FROM meals WHERE user_id = ? AND meal_date = ?', [userId, date], (err, meals) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        
+        // Calculate totals
+        const totals = meals.reduce((acc, meal) => {
+          acc.calories += meal.calories || 0;
+          acc.protein += meal.protein || 0;
+          acc.carbs += meal.carbs || 0;
+          acc.fat += meal.fat || 0;
+          acc.fiber += meal.fiber || 0;
+          acc.sugar += meal.sugar || 0;
+          acc.sodium += meal.sodium || 0;
+          return acc;
+        }, {
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fat: 0,
+          fiber: 0,
+          sugar: 0,
+          sodium: 0
+        });
+        
+        // Determine if goals are met
+        const calories_met = totals.calories <= profile.daily_calories;
+        const protein_met = totals.protein >= profile.daily_protein;
+        
+        // Insert or update daily nutrition
+        db.run(`
+          INSERT OR REPLACE INTO daily_nutrition 
+          (user_id, date, total_calories, total_protein, total_carbs, total_fat, total_fiber, total_sugar, total_sodium, calories_goal, protein_goal, calories_met, protein_met)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          userId, date, totals.calories, totals.protein, totals.carbs, totals.fat, 
+          totals.fiber, totals.sugar, totals.sodium, profile.daily_calories, profile.daily_protein,
+          calories_met, protein_met
+        ], function(err) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+    });
+  });
+};
+
 const router = express.Router();
 
 // Add a new meal
@@ -92,28 +159,53 @@ router.post('/', authenticateToken, async (req, res) => {
       nutritionInfo.fiber,
       nutritionInfo.sugar,
       nutritionInfo.sodium
-    ], function(err) {
+    ], async function(err) {
       if (err) {
         return res.status(500).json({ error: 'Failed to save meal' });
       }
       
-      res.status(201).json({
-        message: 'Meal added successfully',
-        meal: {
-          id: this.lastID,
-          meal_date,
-          meal_type,
-          description,
-          calories: nutritionInfo.calories,
-          protein: nutritionInfo.protein,
-          carbs: nutritionInfo.carbs,
-          fat: nutritionInfo.fat,
-          fiber: nutritionInfo.fiber,
-          sugar: nutritionInfo.sugar,
-          sodium: nutritionInfo.sodium,
-          notes: nutritionInfo.notes
-        }
-      });
+      try {
+        // Update daily nutrition for this date
+        await updateDailyNutrition(db, req.user.userId, meal_date);
+        
+        res.status(201).json({
+          message: 'Meal added successfully',
+          meal: {
+            id: this.lastID,
+            meal_date,
+            meal_type,
+            description,
+            calories: nutritionInfo.calories,
+            protein: nutritionInfo.protein,
+            carbs: nutritionInfo.carbs,
+            fat: nutritionInfo.fat,
+            fiber: nutritionInfo.fiber,
+            sugar: nutritionInfo.sugar,
+            sodium: nutritionInfo.sodium,
+            notes: nutritionInfo.notes
+          }
+        });
+      } catch (updateError) {
+        console.error('Failed to update daily nutrition:', updateError);
+        // Still return success for the meal, but log the error
+        res.status(201).json({
+          message: 'Meal added successfully (daily nutrition update failed)',
+          meal: {
+            id: this.lastID,
+            meal_date,
+            meal_type,
+            description,
+            calories: nutritionInfo.calories,
+            protein: nutritionInfo.protein,
+            carbs: nutritionInfo.carbs,
+            fat: nutritionInfo.fat,
+            fiber: nutritionInfo.fiber,
+            sugar: nutritionInfo.sugar,
+            sodium: nutritionInfo.sodium,
+            notes: nutritionInfo.notes
+          }
+        });
+      }
     });
   } catch (error) {
     console.error('Add meal error:', error);
@@ -224,22 +316,37 @@ router.put('/:id', authenticateToken, (req, res) => {
       UPDATE meals 
       SET ${updates.join(', ')}
       WHERE id = ? AND user_id = ?
-    `, values, function(err) {
+    `, values, async function(err) {
       if (err) {
         return res.status(500).json({ error: 'Failed to update meal' });
       }
       
-      // Get the updated meal
-      db.get('SELECT * FROM meals WHERE id = ? AND user_id = ?', [id, req.user.userId], (err, updatedMeal) => {
-        if (err) {
-          return res.status(500).json({ error: 'Database error' });
-        }
-        
-        res.json({
-          message: 'Meal updated successfully',
-          meal: updatedMeal
+      try {
+        // Get the updated meal to get the meal_date
+        db.get('SELECT * FROM meals WHERE id = ? AND user_id = ?', [id, req.user.userId], async (err, updatedMeal) => {
+          if (err) {
+            return res.status(500).json({ error: 'Database error' });
+          }
+          
+          try {
+            // Update daily nutrition for this date
+            await updateDailyNutrition(db, req.user.userId, updatedMeal.meal_date);
+            
+            res.json({
+              message: 'Meal updated successfully',
+              meal: updatedMeal
+            });
+          } catch (updateError) {
+            console.error('Failed to update daily nutrition:', updateError);
+            res.json({
+              message: 'Meal updated successfully (daily nutrition update failed)',
+              meal: updatedMeal
+            });
+          }
         });
-      });
+      } catch (error) {
+        res.status(500).json({ error: 'Failed to process meal update' });
+      }
     });
   });
 });
@@ -249,13 +356,74 @@ router.delete('/:id', authenticateToken, (req, res) => {
   const { id } = req.params;
   const db = getDatabase();
   
-  db.run('DELETE FROM meals WHERE id = ? AND user_id = ?', [id, req.user.userId], function(err) {
+  // First get the meal to get the meal_date before deleting
+  db.get('SELECT meal_date FROM meals WHERE id = ? AND user_id = ?', [id, req.user.userId], (err, meal) => {
     if (err) {
-      return res.status(500).json({ error: 'Failed to delete meal' });
+      return res.status(500).json({ error: 'Database error' });
     }
     
-    res.json({ message: 'Meal deleted successfully' });
+    if (!meal) {
+      return res.status(404).json({ error: 'Meal not found' });
+    }
+    
+    const mealDate = meal.meal_date;
+    
+    // Delete the meal
+    db.run('DELETE FROM meals WHERE id = ? AND user_id = ?', [id, req.user.userId], async function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Failed to delete meal' });
+      }
+      
+      try {
+        // Update daily nutrition for this date
+        await updateDailyNutrition(db, req.user.userId, mealDate);
+        
+        res.json({ message: 'Meal deleted successfully' });
+      } catch (updateError) {
+        console.error('Failed to update daily nutrition:', updateError);
+        res.json({ message: 'Meal deleted successfully (daily nutrition update failed)' });
+      }
+    });
   });
+});
+
+// Route to recalculate daily nutrition for a date range (useful for existing data)
+router.post('/recalculate-daily-nutrition', authenticateToken, async (req, res) => {
+  const { startDate, endDate } = req.body;
+  const db = getDatabase();
+  
+  if (!startDate || !endDate) {
+    return res.status(400).json({ error: 'Start date and end date are required' });
+  }
+  
+  try {
+    // Get all dates in the range
+    const dates = [];
+    const currentDate = new Date(startDate);
+    const end = new Date(endDate);
+    
+    while (currentDate <= end) {
+      dates.push(currentDate.toISOString().split('T')[0]);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    // Update daily nutrition for each date
+    for (const date of dates) {
+      try {
+        await updateDailyNutrition(db, req.user.userId, date);
+      } catch (error) {
+        console.error(`Failed to update daily nutrition for ${date}:`, error);
+      }
+    }
+    
+    res.json({ 
+      message: 'Daily nutrition recalculated successfully',
+      datesProcessed: dates.length
+    });
+  } catch (error) {
+    console.error('Failed to recalculate daily nutrition:', error);
+    res.status(500).json({ error: 'Failed to recalculate daily nutrition' });
+  }
 });
 
 module.exports = router;

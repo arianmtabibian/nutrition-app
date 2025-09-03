@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Heart, MessageCircle, Share, MoreHorizontal, Camera, Edit3, Settings, Grid, Bookmark, UserPlus, UserCheck, UserCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { diaryAPI } from '../services/api';
+import { diaryAPI, mealsAPI } from '../services/api';
 
 interface Post {
   id: number;
@@ -78,11 +78,22 @@ const SocialProfile: React.FC = () => {
     try {
       setStreakLoading(true);
       
-      // Get the current month's data to calculate streak
+      // First, try to recalculate daily nutrition for the current month to ensure data is up to date
       const currentDate = new Date();
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1;
+      const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+      const lastDay = new Date(year, month, 0).getDate();
+      const endDate = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
       
+      try {
+        await mealsAPI.recalculateDailyNutrition(startDate, endDate);
+        console.log('Daily nutrition recalculated for streak calculation');
+      } catch (recalcError) {
+        console.log('Could not recalculate daily nutrition, continuing with existing data');
+      }
+      
+      // Get the current month's data to calculate streak
       const response = await diaryAPI.getMonth(year, month);
       const monthData = response.data;
       

@@ -56,6 +56,8 @@ export const mealsAPI = {
     api.get(`/api/meals/range/${startDate}/${endDate}`),
   update: (id: number, data: any) => api.put(`/api/meals/${id}`, data),
   delete: (id: number) => api.delete(`/api/meals/${id}`),
+  recalculateDailyNutrition: (startDate: string, endDate: string) => 
+    api.post('/api/meals/recalculate-daily-nutrition', { startDate, endDate }),
 };
 
 export const diaryAPI = {
