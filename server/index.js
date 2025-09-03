@@ -25,10 +25,26 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // CORS configuration
+const allowedOrigins = process.env.NODE_ENV === 'production' 
+  ? [
+      'https://nutrition-qqgz75v5n-arian-tabibians-projects.vercel.app',
+      process.env.CORS_ORIGIN,
+      'https://yourdomain.com' // keep this as backup
+    ].filter(Boolean) // remove any undefined values
+  : ['http://localhost:3000'];
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://yourdomain.com'] 
-    : ['http://localhost:3000'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
@@ -43,24 +59,9 @@ app.use('/api/meals', mealRoutes);
 app.use('/api/diary', diaryRoutes);
 app.use('/api/social', socialRoutes);
 
-// Root endpoint for testing
-app.get('/', (req, res) => {
-  res.json({ 
-    message: 'Nutrition App Backend is running!',
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
-
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    port: process.env.PORT || 5000
-  });
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
 // Error handling middleware
