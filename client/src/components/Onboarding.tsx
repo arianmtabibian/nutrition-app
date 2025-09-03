@@ -13,6 +13,9 @@ interface ProfileData {
   activity_level: string;
   gender: string;
   goal?: string;
+  timeline?: string;
+  calculated_deficit?: number;
+  ai_recommendation?: string;
 }
 
 const Onboarding: React.FC = () => {
@@ -119,6 +122,27 @@ const Onboarding: React.FC = () => {
       )
     },
     {
+      title: "Timeline",
+      subtitle: "How quickly do you want to reach your goal?",
+      icon: Calendar,
+      content: (
+        <div className="space-y-4">
+          <div className="text-center">
+            <input
+              type="text"
+              value={profileData.timeline || ''}
+              onChange={(e) => setProfileData(prev => ({ ...prev, timeline: e.target.value }))}
+              className="text-2xl font-medium text-center w-48 border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"
+              placeholder="e.g., 8 weeks, 3 months, 60 days"
+            />
+            <div className="text-gray-500 text-sm mt-2">
+              Enter any format: weeks, months, days
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
       title: "Height",
       subtitle: "How tall are you?",
       icon: Ruler,
@@ -215,6 +239,76 @@ const Onboarding: React.FC = () => {
       )
     },
     {
+      title: "AI Calculation",
+      subtitle: "Calculating your personalized nutrition plan",
+      icon: Target,
+      content: (
+        <div className="space-y-4">
+          <div className="text-center">
+            {profileData.calculated_deficit !== undefined ? (
+              <div className="space-y-4">
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <h3 className="font-semibold text-blue-900 mb-2">Your Personalized Plan</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Current Weight:</span>
+                      <span className="font-medium">{profileData.weight} lbs</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Target Weight:</span>
+                      <span className="font-medium">{profileData.target_weight} lbs</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Timeline:</span>
+                      <span className="font-medium">{profileData.timeline}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Daily Calorie Adjustment:</span>
+                      <span className={`font-medium ${profileData.calculated_deficit > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        {profileData.calculated_deficit > 0 ? '+' : ''}{profileData.calculated_deficit} cal
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                {profileData.ai_recommendation && (
+                  <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                    <h4 className="font-semibold text-orange-900 mb-2">⚠️ AI Recommendation</h4>
+                    <p className="text-sm text-orange-800">{profileData.ai_recommendation}</p>
+                  </div>
+                )}
+                
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 mb-2">Daily Targets</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Daily Calories:</span>
+                      <span className="font-semibold">{profileData.daily_calories} cal</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Daily Protein:</span>
+                      <span className="font-semibold">{profileData.daily_protein}g</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center space-y-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="text-gray-600">Calculating your personalized nutrition plan...</p>
+                <button
+                  onClick={calculateNutritionPlan}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Calculate Plan
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )
+    },
+    {
       title: "All Set!",
       subtitle: "Your profile is ready to go",
       icon: CheckCircle,
@@ -235,11 +329,129 @@ const Onboarding: React.FC = () => {
               <span>Daily Protein:</span>
               <span className="font-semibold">{profileData.daily_protein}g</span>
             </div>
+            {profileData.calculated_deficit !== undefined && (
+              <div className="flex justify-between">
+                <span>Daily Adjustment:</span>
+                <span className={`font-semibold ${profileData.calculated_deficit > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  {profileData.calculated_deficit > 0 ? '+' : ''}{profileData.calculated_deficit} cal
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )
     }
   ];
+
+  // AI-powered nutrition plan calculation
+  const calculateNutritionPlan = async () => {
+    try {
+      // Parse timeline input using AI-like logic
+      const timeline = profileData.timeline?.toLowerCase() || '';
+      let days = 0;
+      
+      // Extract number and unit from timeline
+      const numberMatch = timeline.match(/(\d+)/);
+      const unitMatch = timeline.match(/(week|month|day|wk|mo|d)s?/i);
+      
+      if (numberMatch && unitMatch) {
+        const number = parseInt(numberMatch[1]);
+        const unit = unitMatch[1].toLowerCase();
+        
+        switch (unit) {
+          case 'week':
+          case 'wk':
+            days = number * 7;
+            break;
+          case 'month':
+          case 'mo':
+            days = number * 30;
+            break;
+          case 'day':
+          case 'd':
+            days = number;
+            break;
+          default:
+            days = number * 7; // Default to weeks
+        }
+      } else {
+        // Fallback: assume weeks if format unclear
+        days = 56; // 8 weeks default
+      }
+      
+      // Calculate weight difference
+      const weightDifference = profileData.target_weight - profileData.weight;
+      const isWeightLoss = weightDifference < 0;
+      
+      // Calculate daily calorie adjustment
+      // 1 pound = 3500 calories
+      const totalCalorieAdjustment = Math.abs(weightDifference) * 3500;
+      const dailyCalorieAdjustment = Math.round(totalCalorieAdjustment / days);
+      
+      // Calculate maintenance calories using Harris-Benedict equation
+      let bmr = 0;
+      if (profileData.gender === 'male') {
+        bmr = 88.362 + (13.397 * profileData.weight * 0.453592) + (4.799 * profileData.height * 2.54) - (5.677 * profileData.age);
+      } else {
+        bmr = 447.593 + (9.247 * profileData.weight * 0.453592) + (3.098 * profileData.height * 2.54) - (4.330 * profileData.age);
+      }
+      
+      // Apply activity multiplier
+      const activityMultipliers = {
+        sedentary: 1.2,
+        light: 1.375,
+        moderate: 1.55,
+        active: 1.725,
+        very_active: 1.9
+      };
+      
+      const maintenanceCalories = Math.round(bmr * activityMultipliers[profileData.activity_level as keyof typeof activityMultipliers]);
+      
+      // Calculate target calories
+      let targetCalories = maintenanceCalories;
+      if (isWeightLoss) {
+        targetCalories = maintenanceCalories - dailyCalorieAdjustment;
+      } else {
+        targetCalories = maintenanceCalories + dailyCalorieAdjustment;
+      }
+      
+      // AI recommendation for extreme deficits
+      let aiRecommendation = '';
+      if (isWeightLoss && dailyCalorieAdjustment > 1000) {
+        aiRecommendation = `⚠️ Warning: A ${dailyCalorieAdjustment} calorie daily deficit is quite aggressive and may not be sustainable. Consider extending your timeline to ${Math.ceil(days * 1.5)} days for a healthier ${Math.round(dailyCalorieAdjustment * 0.67)} calorie daily deficit.`;
+      }
+      
+      // Calculate protein needs (1.6-2.2g per kg for weight loss, 1.6-2.4g per kg for weight gain)
+      const weightInKg = profileData.weight * 0.453592;
+      let proteinMultiplier = 1.8; // Default
+      if (isWeightLoss) {
+        proteinMultiplier = 2.0; // Higher protein for weight loss
+      } else if (!isWeightLoss) {
+        proteinMultiplier = 2.2; // Higher protein for muscle gain
+      }
+      const targetProtein = Math.round(weightInKg * proteinMultiplier);
+      
+      // Update profile data with calculations
+      setProfileData(prev => ({
+        ...prev,
+        daily_calories: targetCalories,
+        daily_protein: targetProtein,
+        calculated_deficit: isWeightLoss ? -dailyCalorieAdjustment : dailyCalorieAdjustment,
+        ai_recommendation: aiRecommendation
+      }));
+      
+    } catch (error) {
+      console.error('Error calculating nutrition plan:', error);
+      // Fallback to basic calculation
+      setProfileData(prev => ({
+        ...prev,
+        daily_calories: 2000,
+        daily_protein: 150,
+        calculated_deficit: 0,
+        ai_recommendation: 'Unable to calculate personalized plan. Using default values.'
+      }));
+    }
+  };
 
   // Check if user already has a complete profile
   useEffect(() => {
@@ -304,10 +516,12 @@ const Onboarding: React.FC = () => {
       case 1: return profileData.goal;
       case 2: return profileData.weight > 0;
       case 3: return profileData.target_weight > 0;
-      case 4: return profileData.height > 0;
-      case 5: return profileData.age > 0;
-      case 6: return profileData.activity_level;
-      case 7: return profileData.gender;
+      case 4: return profileData.timeline && profileData.timeline.trim().length > 0;
+      case 5: return profileData.height > 0;
+      case 6: return profileData.age > 0;
+      case 7: return profileData.activity_level;
+      case 8: return profileData.gender;
+      case 9: return profileData.calculated_deficit !== undefined; // AI calculation step
       default: return true;
     }
   };

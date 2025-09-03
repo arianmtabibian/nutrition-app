@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { migrateUserData, setUserData, clearUserData } from '../utils/domainMigration';
 import { api } from '../services/api';
 
 interface User {
@@ -37,30 +38,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already logged in
-    const token = localStorage.getItem('token');
-    if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      // Verify token and get user info from the auth verify endpoint
-      api.get('/api/auth/verify')
-        .then(response => {
-          console.log('Verify response in AuthContext:', response.data);
-          if (response.data.user) {
-            setUser(response.data.user);
-          }
-        })
-        .catch((error) => {
-          console.error('Error verifying user:', error);
-          // Token is invalid, remove it
-          localStorage.removeItem('token');
-          delete api.defaults.headers.common['Authorization'];
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
-      setLoading(false);
-    }
+    // Run domain migration first
+    const runMigration = async () => {
+      await migrateUserData();
+      
+      // After migration, check if user is already logged in
+      const token = localStorage.getItem('token');
+      if (token) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        // Verify token and get user info from the auth verify endpoint
+        api.get('/api/auth/verify')
+          .then(response => {
+            console.log('Verify response in AuthContext:', response.data);
+            if (response.data.user) {
+              setUser(response.data.user);
+            }
+          })
+          .catch((error) => {
+            console.error('Error verifying user:', error);
+            // Token is invalid, remove it
+            localStorage.removeItem('token');
+            delete api.defaults.headers.common['Authorization'];
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+      } else {
+        setLoading(false);
+      }
+    };
+    
+    runMigration();
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -68,7 +76,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await api.post('/api/auth/login', { email, password });
       const { token, user: userData } = response.data;
       
-      localStorage.setItem('token', token);
+      // Use the utility function to store user data with domain tracking
+      setUserData(token, userData);
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       setUser({
@@ -88,7 +97,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await api.post('/api/auth/register', { email, password, first_name, last_name, username });
       const { token, user: userData } = response.data;
       
-      localStorage.setItem('token', token);
+      // Use the utility function to store user data with domain tracking
+      setUserData(token, userData);
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       setUser({
@@ -104,7 +114,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    // Use the utility function to clear user data but keep domain tracking
+    clearUserData();
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
   };
