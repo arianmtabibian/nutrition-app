@@ -68,6 +68,29 @@ const SocialProfile: React.FC = () => {
     bio: ''
   });
 
+  // Calculate streak function
+  const calculateStreak = () => {
+    // This is a placeholder - you'll need to implement actual streak calculation
+    // based on your meal logging data from the backend
+    // For now, returning a mock streak for demonstration
+    // In production, this should call an API endpoint that calculates the actual streak
+    // based on consecutive days where the user met their calorie or protein goals
+    
+    // Mock data - replace with actual API call
+    const mockStreak = Math.floor(Math.random() * 21); // Random number 0-20 for demo
+    
+    // You can implement the real streak calculation like this:
+    // const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/diary/streak`, {
+    //   headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    // });
+    // const data = await response.json();
+    // return data.streak || 0;
+    
+    return mockStreak;
+  };
+
+  const streak = calculateStreak();
+
   useEffect(() => {
     if (user) {
       loadProfile();
@@ -339,6 +362,31 @@ const SocialProfile: React.FC = () => {
               {!profileData.profile.bio && (
                 <p className="text-gray-500 mt-1 italic">No bio yet</p>
               )}
+            </div>
+
+            {/* Streak Counter */}
+            <div className="bg-orange-100 rounded-lg p-4 mb-4 border border-orange-200">
+              <h3 className="font-semibold text-gray-800 mb-2 flex items-center">
+                <span className="text-orange-500 mr-2">🔥</span>
+                Daily Streak
+              </h3>
+              {streak > 0 ? (
+                <div className="flex items-center space-x-2">
+                  <span className="text-4xl font-bold text-orange-500">{streak}</span>
+                  <span className="text-gray-600 text-lg">days</span>
+                </div>
+              ) : (
+                <div className="text-center py-2">
+                  <span className="text-2xl font-bold text-orange-500">0</span>
+                  <p className="text-sm text-gray-600 mt-1">Start your goal today and build a streak!</p>
+                </div>
+              )}
+              <p className="text-sm text-gray-600 mt-2">
+                {streak > 0 
+                  ? `You've hit your calorie or protein goal ${streak} day${streak === 1 ? '' : 's'} in a row!` 
+                  : 'Track your meals daily to start building your streak!'
+                }
+              </p>
             </div>
 
             {/* Nutrition Profile Summary */}
