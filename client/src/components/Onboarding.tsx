@@ -1,0 +1,407 @@
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, ArrowLeft, Target, User, Activity, Scale, Ruler, Calendar, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { profileAPI } from '../services/api';
+
+interface ProfileData {
+  daily_calories: number;
+  daily_protein: number;
+  weight: number;
+  target_weight: number;
+  height: number;
+  age: number;
+  activity_level: string;
+  gender: string;
+  goal?: string;
+}
+
+const Onboarding: React.FC = () => {
+  const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState(0);
+  const [profileData, setProfileData] = useState<ProfileData>({
+    daily_calories: 2000,
+    daily_protein: 150,
+    weight: 0,
+    target_weight: 0,
+    height: 0,
+    age: 0,
+    activity_level: 'moderate',
+    gender: 'male'
+  });
+  const [timeRemaining, setTimeRemaining] = useState(120);
+  const [loading, setLoading] = useState(true);
+
+  const steps = [
+    {
+      title: "Welcome to NutriTrack!",
+      subtitle: "Let's set up your profile in just 2 minutes",
+      icon: Target,
+      content: (
+        <div className="text-center space-y-4">
+          <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto">
+            <Target className="w-10 h-10 text-white" />
+          </div>
+          <p className="text-gray-600 text-lg">
+            We'll ask you a few quick questions to personalize your nutrition experience.
+          </p>
+        </div>
+      )
+    },
+    {
+      title: "What's your goal?",
+      subtitle: "This helps us calculate your daily targets",
+      icon: Target,
+      content: (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-3">
+            {[
+              { value: 'lose', label: 'Lose Weight', description: 'Create a calorie deficit' },
+              { value: 'maintain', label: 'Maintain Weight', description: 'Stay at current weight' },
+              { value: 'gain', label: 'Gain Weight', description: 'Build muscle and weight' }
+            ].map((goal) => (
+              <button
+                key={goal.value}
+                onClick={() => setProfileData(prev => ({ ...prev, goal: goal.value }))}
+                className={`p-4 border-2 rounded-xl text-left transition-all duration-200 ${
+                  profileData.goal === goal.value
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="font-medium text-gray-900">{goal.label}</div>
+                <div className="text-sm text-gray-600">{goal.description}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "Current Weight",
+      subtitle: "Enter your current weight in pounds",
+      icon: Scale,
+      content: (
+        <div className="space-y-4">
+          <div className="text-center">
+            <input
+              type="number"
+              value={profileData.weight || ''}
+              onChange={(e) => setProfileData(prev => ({ ...prev, weight: parseFloat(e.target.value) || 0 }))}
+              className="text-4xl font-bold text-center w-32 border-none outline-none bg-transparent"
+              placeholder="150"
+              min="66"
+              max="660"
+            />
+            <div className="text-gray-500 text-lg">pounds</div>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "Target Weight",
+      subtitle: "What's your goal weight?",
+      icon: Target,
+      content: (
+        <div className="space-y-4">
+          <div className="text-center">
+            <input
+              type="number"
+              value={profileData.target_weight || ''}
+              onChange={(e) => setProfileData(prev => ({ ...prev, target_weight: parseFloat(e.target.value) || 0 }))}
+              className="text-4xl font-bold text-center w-32 border-none outline-none bg-transparent"
+              placeholder="140"
+              min="66"
+              max="660"
+            />
+            <div className="text-gray-500 text-lg">pounds</div>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "Height",
+      subtitle: "How tall are you?",
+      icon: Ruler,
+      content: (
+        <div className="space-y-4">
+          <div className="text-center">
+            <input
+              type="number"
+              value={profileData.height || ''}
+              onChange={(e) => setProfileData(prev => ({ ...prev, height: parseFloat(e.target.value) || 0 }))}
+              className="text-4xl font-bold text-center w-32 border-none outline-none bg-transparent"
+              placeholder="69"
+              min="48"
+              max="96"
+            />
+            <div className="text-gray-500 text-lg">inches</div>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "Age",
+      subtitle: "Your age helps calculate your metabolism",
+      icon: Calendar,
+      content: (
+        <div className="space-y-4">
+          <div className="text-center">
+            <input
+              type="number"
+              value={profileData.age || ''}
+              onChange={(e) => setProfileData(prev => ({ ...prev, age: parseInt(e.target.value) || 0 }))}
+              className="text-4xl font-bold text-center w-32 border-none outline-none bg-transparent"
+              placeholder="30"
+              min="16"
+              max="100"
+            />
+            <div className="text-gray-500 text-lg">years old</div>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "Activity Level",
+      subtitle: "How active are you on a typical week?",
+      icon: Activity,
+      content: (
+        <div className="space-y-3">
+          {[
+            { value: 'sedentary', label: 'Sedentary', description: 'Little or no exercise' },
+            { value: 'light', label: 'Lightly Active', description: 'Light exercise 1-3 days/week' },
+            { value: 'moderate', label: 'Moderately Active', description: 'Moderate exercise 3-5 days/week' },
+            { value: 'active', label: 'Very Active', description: 'Hard exercise 6-7 days/week' },
+            { value: 'very_active', label: 'Extremely Active', description: 'Very hard exercise, physical job' }
+          ].map((level) => (
+            <button
+              key={level.value}
+              onClick={() => setProfileData(prev => ({ ...prev, activity_level: level.value }))}
+              className={`w-full p-4 border-2 rounded-xl text-left transition-all duration-200 ${
+                profileData.activity_level === level.value
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="font-medium text-gray-900">{level.label}</div>
+              <div className="text-sm text-gray-600">{level.description}</div>
+            </button>
+          ))}
+        </div>
+      )
+    },
+    {
+      title: "Gender",
+      subtitle: "This helps with accurate calorie calculations",
+      icon: User,
+      content: (
+        <div className="space-y-3">
+          {[
+            { value: 'male', label: 'Male' },
+            { value: 'female', label: 'Female' }
+          ].map((gender) => (
+            <button
+              key={gender.value}
+              onClick={() => setProfileData(prev => ({ ...prev, gender: gender.value }))}
+              className={`w-full p-6 border-2 rounded-xl text-center transition-all duration-200 ${
+                profileData.gender === gender.value
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="text-xl font-medium text-gray-900">{gender.label}</div>
+            </button>
+          ))}
+        </div>
+      )
+    },
+    {
+      title: "All Set!",
+      subtitle: "Your profile is ready to go",
+      icon: CheckCircle,
+      content: (
+        <div className="text-center space-y-4">
+          <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto">
+            <CheckCircle className="w-10 h-10 text-white" />
+          </div>
+          <p className="text-gray-600 text-lg">
+            We've calculated your daily targets based on your profile. You can always adjust these later!
+          </p>
+          <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+            <div className="flex justify-between">
+              <span>Daily Calories:</span>
+              <span className="font-semibold">{profileData.daily_calories} cal</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Daily Protein:</span>
+              <span className="font-semibold">{profileData.daily_protein}g</span>
+            </div>
+          </div>
+        </div>
+      )
+    }
+  ];
+
+  // Check if user already has a complete profile
+  useEffect(() => {
+    const checkProfile = async () => {
+      try {
+        const response = await profileAPI.get();
+        if (response.data.profile && 
+            response.data.profile.weight && 
+            response.data.profile.height && 
+            response.data.profile.age && 
+            response.data.profile.activity_level && 
+            response.data.profile.gender) {
+          // User already has a complete profile, redirect to dashboard
+          navigate('/dashboard');
+          return;
+        }
+        setLoading(false);
+      } catch (error) {
+        // Profile doesn't exist or error occurred, continue with onboarding
+        setLoading(false);
+      }
+    };
+    
+    checkProfile();
+  }, [navigate]);
+
+  useEffect(() => {
+    if (timeRemaining > 0 && currentStep < steps.length - 1) {
+      const timer = setTimeout(() => setTimeRemaining(timeRemaining - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [timeRemaining, currentStep, steps.length]);
+
+  const progress = ((currentStep + 1) / steps.length) * 100;
+  const currentStepData = steps[currentStep];
+
+  const handleNext = async () => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      try {
+        // Update profile with collected data
+        await profileAPI.update(profileData);
+        // Redirect to dashboard
+        navigate('/dashboard');
+      } catch (error) {
+        console.error('Failed to update profile:', error);
+        // Still redirect to dashboard
+        navigate('/dashboard');
+      }
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const canProceed = () => {
+    switch (currentStep) {
+      case 1: return profileData.goal;
+      case 2: return profileData.weight > 0;
+      case 3: return profileData.target_weight > 0;
+      case 4: return profileData.height > 0;
+      case 5: return profileData.age > 0;
+      case 6: return profileData.activity_level;
+      case 7: return profileData.gender;
+      default: return true;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
+              <Target className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              NutriTrack
+            </h1>
+          </div>
+          
+          {/* Progress Bar */}
+          <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+            <div 
+              className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+          
+          {/* Progress Info */}
+          <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
+            <span>Step {currentStep + 1} of {steps.length}</span>
+            <span>{Math.round(progress)}% Complete</span>
+          </div>
+          
+          {/* Time Remaining */}
+          <div className="text-sm text-gray-500">
+            ⏱️ {timeRemaining >= 60 ? `${Math.floor(timeRemaining / 60)}m ${timeRemaining % 60}s` : `${timeRemaining}s`} remaining
+          </div>
+        </div>
+
+        {/* Step Content */}
+        <div className="bg-white rounded-3xl shadow-2xl p-8 mb-8">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <currentStepData.icon className="w-8 h-8 text-blue-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">{currentStepData.title}</h2>
+            <p className="text-gray-600">{currentStepData.subtitle}</p>
+          </div>
+          
+          <div className="min-h-[200px] flex items-center justify-center">
+            {currentStepData.content}
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handleBack}
+            disabled={currentStep === 0}
+            className="flex items-center space-x-2 px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back</span>
+          </button>
+          
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="px-6 py-3 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+          >
+            Skip for now
+          </button>
+          
+          <button
+            onClick={handleNext}
+            disabled={!canProceed()}
+            className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          >
+            <span>{currentStep === steps.length - 1 ? 'Get Started' : 'Next'}</span>
+            <ArrowRight className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Onboarding;
