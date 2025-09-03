@@ -365,28 +365,24 @@ const SocialProfile: React.FC = () => {
             </div>
 
             {/* Streak Counter */}
-            <div className="bg-orange-100 rounded-lg p-4 mb-4 border border-orange-200">
-              <h3 className="font-semibold text-gray-800 mb-2 flex items-center">
-                <span className="text-orange-500 mr-2">🔥</span>
-                Daily Streak
-              </h3>
-              {streak > 0 ? (
-                <div className="flex items-center space-x-2">
-                  <span className="text-4xl font-bold text-orange-500">{streak}</span>
-                  <span className="text-gray-600 text-lg">days</span>
-                </div>
-              ) : (
-                <div className="text-center py-2">
-                  <span className="text-2xl font-bold text-orange-500">0</span>
-                  <p className="text-sm text-gray-600 mt-1">Start your goal today and build a streak!</p>
-                </div>
-              )}
-              <p className="text-sm text-gray-600 mt-2">
-                {streak > 0 
-                  ? `You've hit your calorie or protein goal ${streak} day${streak === 1 ? '' : 's'} in a row!` 
-                  : 'Track your meals daily to start building your streak!'
-                }
-              </p>
+            <div className="bg-orange-100 rounded-lg px-4 py-2 mb-4 border border-orange-200 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="text-orange-500">🔥</span>
+                <span className="font-semibold text-gray-800">Daily Streak:</span>
+                {streak > 0 ? (
+                  <span className="text-2xl font-bold text-orange-500">{streak} days</span>
+                ) : (
+                  <span className="text-lg text-orange-500">Start your goal today!</span>
+                )}
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-600">
+                  {streak > 0 
+                    ? `${streak} day${streak === 1 ? '' : 's'} in a row!` 
+                    : 'Build a streak!'
+                  }
+                </p>
+              </div>
             </div>
 
             {/* Nutrition Profile Summary */}
