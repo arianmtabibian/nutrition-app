@@ -19,3 +19,4 @@ mkdir -p /tmp
 echo "✅ Deployment preparation complete!"
 echo "Starting server..."
 npm start
+

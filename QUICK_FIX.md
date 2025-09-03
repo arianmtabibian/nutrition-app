@@ -55,3 +55,4 @@ https://your-backend.onrender.com/api/health
 1. **Server not fully started** - wait a few more minutes
 2. **Port mismatch** - check logs for actual port
 3. **Route not registered** - verify server startup logs
+

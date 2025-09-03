@@ -51,3 +51,4 @@ echo 3. Follow the detailed guide in DEPLOYMENT_GUIDE.md
 echo.
 echo Your app will be live on the internet! 🌍
 pause
+
