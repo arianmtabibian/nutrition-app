@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { migrateUserData, setUserData, clearUserData } from '../utils/domainMigration';
+import { setUserData, clearUserData } from '../utils/domainMigration';
 import { api } from '../services/api';
 
 interface User {
@@ -38,37 +38,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Run domain migration first
-    const runMigration = async () => {
-      await migrateUserData();
-      
-      // After migration, check if user is already logged in
-      const token = localStorage.getItem('token');
-      if (token) {
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        // Verify token and get user info from the auth verify endpoint
-        api.get('/api/auth/verify')
-          .then(response => {
-            console.log('Verify response in AuthContext:', response.data);
-            if (response.data.user) {
-              setUser(response.data.user);
-            }
-          })
-          .catch((error) => {
-            console.error('Error verifying user:', error);
-            // Token is invalid, remove it
-            localStorage.removeItem('token');
-            delete api.defaults.headers.common['Authorization'];
-          })
-          .finally(() => {
-            setLoading(false);
-          });
-      } else {
-        setLoading(false);
-      }
-    };
+    // Check if user is already logged in
+    const token = localStorage.getItem('token');
+    console.log('Token check:', token ? 'exists' : 'not found');
     
-    runMigration();
+    if (token) {
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      // Verify token and get user info from the auth verify endpoint
+      api.get('/api/auth/verify')
+        .then(response => {
+          console.log('Verify response in AuthContext:', response.data);
+          if (response.data.user) {
+            setUser(response.data.user);
+            console.log('User logged in successfully');
+          }
+        })
+        .catch((error) => {
+          console.error('Error verifying user:', error);
+          // Token is invalid, remove it
+          localStorage.removeItem('token');
+          delete api.defaults.headers.common['Authorization'];
+          console.log('Token cleared due to verification failure');
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      console.log('No token found, user not logged in');
+      setLoading(false);
+    }
   }, []);
 
   const login = async (email: string, password: string) => {
