@@ -157,6 +157,9 @@ const Onboarding: React.FC = () => {
           <p className="text-gray-600 text-lg">
             We'll ask you a few quick questions to personalize your nutrition experience.
           </p>
+          <p className="text-sm text-blue-600 font-medium">
+            ⚠️ This is a one-time setup - you won't be able to access this again after completion.
+          </p>
         </div>
       )
     },
@@ -453,21 +456,23 @@ const Onboarding: React.FC = () => {
     }
   ];
 
-  // Check if user already has a complete profile
+  // Check if user already has a complete profile - onboarding is one-time only
   useEffect(() => {
     const checkProfile = async () => {
       try {
         const response = await profileAPI.get();
-        if (response.data.profile && 
-            response.data.profile.weight && 
-            response.data.profile.height && 
-            response.data.profile.age && 
-            response.data.profile.activity_level && 
-            response.data.profile.gender) {
-          // User already has a complete profile, redirect to dashboard
+        const profile = response.data.profile;
+        
+        // If user has completed ALL onboarding fields, they've already done onboarding
+        // Onboarding is one-time only - redirect them to dashboard
+        if (profile && 
+            profile.weight && profile.height && profile.age && profile.activity_level && 
+            profile.gender && profile.daily_calories && profile.daily_protein) {
+          // User has already completed onboarding, redirect to dashboard
           navigate('/dashboard');
           return;
         }
+        
         setLoading(false);
       } catch (error) {
         // Profile doesn't exist or error occurred, continue with onboarding
@@ -522,7 +527,7 @@ const Onboarding: React.FC = () => {
       case 7: return profileData.activity_level;
       case 8: return profileData.gender;
       case 9: return profileData.calculated_deficit !== undefined; // AI calculation step
-      default: return true;
+      default: return false; // Can't proceed on unknown steps
     }
   };
 

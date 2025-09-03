@@ -9,6 +9,7 @@ import Feed from './Feed';
 import Diary from './Diary';
 import Inputs from './Inputs';
 import Groups from './Groups';
+
 import LoadingSpinner from './ui/LoadingSpinner';
 
 const Dashboard: React.FC = () => {
@@ -43,21 +44,27 @@ const Dashboard: React.FC = () => {
 
   const currentTab = getCurrentTab();
 
-  // Check if user has completed profile setup
+  // Check if user has completed profile setup - onboarding is mandatory
   useEffect(() => {
     const checkProfileCompletion = async () => {
       try {
         const response = await profileAPI.get();
-        if (!response.data.profile || 
-            !response.data.profile.weight || 
-            !response.data.profile.height || 
-            !response.data.profile.age || 
-            !response.data.profile.activity_level || 
-            !response.data.profile.gender) {
-          // Profile incomplete, redirect to onboarding
+        const profile = response.data.profile;
+        
+        // Check if user has completed ALL required onboarding fields
+        if (!profile || 
+            !profile.weight || 
+            !profile.height || 
+            !profile.age || 
+            !profile.activity_level || 
+            !profile.gender ||
+            !profile.daily_calories ||
+            !profile.daily_protein) {
+          // Profile incomplete, redirect to onboarding - no skipping allowed
           navigate('/onboarding');
           return;
         }
+        
         setCheckingProfile(false);
       } catch (error) {
         // Profile doesn't exist or error occurred, redirect to onboarding
@@ -104,6 +111,7 @@ const Dashboard: React.FC = () => {
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Server connected"></div>
                 <span className="text-xs text-gray-500">Connected</span>
               </div>
+
               <button
                 onClick={() => navigate('/dashboard/inputs')}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2"
@@ -161,6 +169,7 @@ const Dashboard: React.FC = () => {
           <Route path="/groups" element={<Groups />} />
           <Route path="/profile" element={<SocialProfile />} />
           <Route path="/inputs" element={<Inputs />} />
+
         </Routes>
       </main>
     </div>

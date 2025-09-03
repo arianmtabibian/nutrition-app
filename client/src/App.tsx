@@ -44,7 +44,11 @@ function AppRoutes() {
           <EnhancedRegister />
         </PublicRoute>
       } />
-      <Route path="/onboarding" element={<Onboarding />} />
+      <Route path="/onboarding" element={
+        <PublicRoute>
+          <Onboarding />
+        </PublicRoute>
+      } />
       <Route path="/dashboard/*" element={
         <ProtectedRoute>
           <Dashboard />
