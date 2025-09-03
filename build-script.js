@@ -3,19 +3,16 @@ const path = require('path');
 const fs = require('fs');
 
 console.log('🚀 Starting build process...');
+console.log('📁 Current directory:', process.cwd());
 
 try {
-  // Change to client directory
-  process.chdir(path.join(__dirname, 'client'));
-  console.log('📁 Changed to client directory:', process.cwd());
-  
-  // Install dependencies
+  // Install client dependencies from root
   console.log('📦 Installing client dependencies...');
-  execSync('npm install', { stdio: 'inherit' });
+  execSync('cd client && npm install', { stdio: 'inherit', shell: true });
   
-  // Build the React app
+  // Build the React app from root
   console.log('🔨 Building React app...');
-  execSync('npm run build', { stdio: 'inherit' });
+  execSync('cd client && npm run build', { stdio: 'inherit', shell: true });
   
   // Copy build output to root
   console.log('📋 Copying build output to root...');
@@ -26,7 +23,8 @@ try {
     fs.rmSync(rootBuildPath, { recursive: true, force: true });
   }
   
-  execSync(`cp -r "${buildPath}" "${rootBuildPath}"`, { stdio: 'inherit' });
+  // Use shell command for copying
+  execSync(`cp -r "${buildPath}" "${rootBuildPath}"`, { stdio: 'inherit', shell: true });
   
   console.log('✅ Build completed successfully!');
   console.log('📁 Build output copied to:', rootBuildPath);
