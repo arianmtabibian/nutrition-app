@@ -634,6 +634,7 @@ const Onboarding: React.FC = () => {
         </div>
       </div>
     </div>
+  </div>
   );
 };
 
