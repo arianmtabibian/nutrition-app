@@ -8,6 +8,7 @@ interface User {
   first_name: string;
   last_name: string;
   username: string;
+  profile_picture?: string;
 }
 
 interface AuthContextType {
@@ -90,7 +91,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email: userData.email,
         first_name: userData.first_name,
         last_name: userData.last_name,
-        username: userData.username
+        username: userData.username,
+        profile_picture: userData.profile_picture
       });
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Login failed');
@@ -111,7 +113,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email: userData.email,
         first_name: userData.first_name,
         last_name: userData.last_name,
-        username: userData.username
+        username: userData.username,
+        profile_picture: userData.profile_picture
       });
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Registration failed');
