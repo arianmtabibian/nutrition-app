@@ -264,12 +264,14 @@ const Feed: React.FC = () => {
     window.addEventListener('mealDataChanged', handleMealUpdate);
     window.addEventListener('mealDeleted', handleMealUpdate);
     window.addEventListener('mealUpdated', handleMealUpdate);
+    window.addEventListener('sidebarRefresh', handleMealUpdate);
     
     return () => {
       window.removeEventListener('mealAdded', handleMealUpdate);
       window.removeEventListener('mealDataChanged', handleMealUpdate);
       window.removeEventListener('mealDeleted', handleMealUpdate);
       window.removeEventListener('mealUpdated', handleMealUpdate);
+      window.removeEventListener('sidebarRefresh', handleMealUpdate);
     };
   }, [loadSidebarData]);
 

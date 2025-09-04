@@ -156,6 +156,29 @@ const Dashboard: React.FC = () => {
     };
   }, [showProfileDropdown]);
 
+  // Listen for meal updates to refresh sidebar data globally
+  useEffect(() => {
+    const handleMealUpdate = (event: any) => {
+      console.log('Dashboard: Meal update event received:', event.type);
+      // Force refresh of any sidebar data if needed
+      // This ensures sidebar updates across all tabs
+      window.dispatchEvent(new CustomEvent('sidebarRefresh'));
+    };
+
+    // Listen to various meal-related events
+    window.addEventListener('mealAdded', handleMealUpdate);
+    window.addEventListener('mealDataChanged', handleMealUpdate);
+    window.addEventListener('mealDeleted', handleMealUpdate);
+    window.addEventListener('mealUpdated', handleMealUpdate);
+    
+    return () => {
+      window.removeEventListener('mealAdded', handleMealUpdate);
+      window.removeEventListener('mealDataChanged', handleMealUpdate);
+      window.removeEventListener('mealDeleted', handleMealUpdate);
+      window.removeEventListener('mealUpdated', handleMealUpdate);
+    };
+  }, []);
+
   if (checkingProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 flex items-center justify-center">
@@ -197,7 +220,13 @@ const Dashboard: React.FC = () => {
               </div>
 
               <button
-                onClick={() => navigate('/dashboard/inputs')}
+                onClick={() => {
+                  navigate('/dashboard/inputs');
+                  // Trigger sidebar refresh when going to add meal
+                  setTimeout(() => {
+                    window.dispatchEvent(new CustomEvent('sidebarRefresh'));
+                  }, 100);
+                }}
                 className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
               >
                 <Plus className="h-4 w-4" />
@@ -234,7 +263,7 @@ const Dashboard: React.FC = () => {
 
                 {/* Dropdown Menu */}
                 {showProfileDropdown && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-[9999]">
                     <button
                       onClick={() => {
                         setShowProfileDropdown(false);
