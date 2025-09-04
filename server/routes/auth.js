@@ -10,8 +10,12 @@ const router = express.Router();
 router.post('/register', async (req, res) => {
   try {
     const { email, password, first_name, last_name, username } = req.body;
+    
+    console.log('Registration attempt for email:', email);
+    console.log('Registration data:', { email, first_name, last_name, username });
 
     if (!email || !password || !first_name || !last_name || !username) {
+      console.log('Registration failed: Missing required fields');
       return res.status(400).json({ error: 'All fields are required' });
     }
 
@@ -24,10 +28,12 @@ router.post('/register', async (req, res) => {
     // Check if user already exists (email or username)
     db.get('SELECT id FROM users WHERE email = ? OR username = ?', [email, username], async (err, row) => {
       if (err) {
+        console.log('Database error during user check:', err);
         return res.status(500).json({ error: 'Database error' });
       }
       
       if (row) {
+        console.log('User already exists:', row);
         return res.status(409).json({ error: 'User already exists' });
       }
 
@@ -38,10 +44,12 @@ router.post('/register', async (req, res) => {
       db.run('INSERT INTO users (email, password_hash, first_name, last_name, username) VALUES (?, ?, ?, ?, ?)', 
         [email, passwordHash, first_name, last_name, username], function(err) {
           if (err) {
+            console.log('Failed to create user:', err);
             return res.status(500).json({ error: 'Failed to create user' });
           }
           
           const userId = this.lastID;
+          console.log('User created successfully with ID:', userId);
           const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-key-for-development';
           const token = jwt.sign(
             { userId, email, first_name, last_name, username },

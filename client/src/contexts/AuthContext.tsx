@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { api } from '../services/api';
+import { storeAuthData, getAuthData, clearAuthData, hasValidAuth } from '../utils/authPersistence';
 
 interface User {
   id: number;
@@ -37,45 +38,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already logged in
-    const token = localStorage.getItem('token');
+    // Check if user is already logged in using the new persistence system
+    const authData = getAuthData();
     const currentDomain = window.location.origin;
-    const storedDomain = localStorage.getItem('domain');
     
-    console.log('Token check:', token ? 'exists' : 'not found');
-    console.log('Current domain:', currentDomain);
-    console.log('Stored domain:', storedDomain);
+    console.log('Auth check - Domain:', currentDomain);
+    console.log('Auth data exists:', !!authData);
     
-    // If domain changed, clear all auth data
-    if (storedDomain && storedDomain !== currentDomain) {
-      console.log('Domain changed, clearing auth data');
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('domain');
-      delete api.defaults.headers.common['Authorization'];
-      setLoading(false);
-      return;
-    }
-    
-    if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    if (authData && hasValidAuth()) {
+      console.log('Found valid auth data, verifying with backend...');
+      api.defaults.headers.common['Authorization'] = `Bearer ${authData.token}`;
+      
       // Verify token and get user info from the auth verify endpoint
       api.get('/api/auth/verify')
         .then(response => {
           console.log('Verify response in AuthContext:', response.data);
           if (response.data.user) {
             setUser(response.data.user);
-            // Store current domain for future checks
-            localStorage.setItem('domain', currentDomain);
-            console.log('User logged in successfully');
+            // Update auth data with current domain
+            storeAuthData(authData.token, response.data.user);
+            console.log('User logged in successfully on domain:', currentDomain);
           }
         })
         .catch((error) => {
           console.error('Error verifying user:', error);
-          // Token is invalid, remove it
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          localStorage.removeItem('domain');
+          // Token is invalid, clear all auth data
+          clearAuthData();
           delete api.defaults.headers.common['Authorization'];
           console.log('Token cleared due to verification failure');
         })
@@ -83,7 +71,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setLoading(false);
         });
     } else {
-      console.log('No token found, user not logged in');
+      console.log('No valid auth data found, user not logged in');
       setLoading(false);
     }
   }, []);
@@ -93,10 +81,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await api.post('/api/auth/login', { email, password });
       const { token, user: userData } = response.data;
       
-      // Store token, user data, and current domain in localStorage
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('domain', window.location.origin);
+      // Store authentication data using the new persistence system
+      storeAuthData(token, userData);
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       setUser({
@@ -116,10 +102,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await api.post('/api/auth/register', { email, password, first_name, last_name, username });
       const { token, user: userData } = response.data;
       
-      // Store token, user data, and current domain in localStorage
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('domain', window.location.origin);
+      // Store authentication data using the new persistence system
+      storeAuthData(token, userData);
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       setUser({
@@ -135,10 +119,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    // Clear user data from localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('domain');
+    // Clear all authentication data using the new persistence system
+    clearAuthData();
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
   };

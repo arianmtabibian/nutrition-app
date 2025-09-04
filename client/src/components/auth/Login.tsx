@@ -125,6 +125,13 @@ const Login: React.FC = () => {
         </form>
 
 
+        {/* Help Message */}
+        <div className="text-center mt-4">
+          <p className="text-sm text-gray-500">
+            Can't log in after a new deployment? Your account might not exist in the production database yet.
+          </p>
+        </div>
+
         {/* Register Link */}
         <div className="text-center mt-6">
           <p className="text-gray-600">
