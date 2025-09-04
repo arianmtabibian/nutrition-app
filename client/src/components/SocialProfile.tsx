@@ -114,19 +114,7 @@ const SocialProfile: React.FC = () => {
 
       console.log('Sample day data (first 3):', sortedDays.slice(0, 3));
       
-      // Check if any days actually have goals met
-      const daysWithGoalsMet = sortedDays.filter((day: any) => day.calories_met || day.protein_met);
-      console.log('Days with at least one goal met:', daysWithGoalsMet.length);
-
       let currentStreak = 0;
-      
-      // If no days have goals met, streak is 0
-      if (daysWithGoalsMet.length === 0) {
-        console.log('No days with goals met, streak is 0');
-        console.log('Final calculated streak: 0');
-        setStreak(0);
-        return;
-      }
       
       // EXACT SAME LOGIC AS DIARY CALENDAR - Copy the getDayStatus function
       const getDayStatus = (day: any) => {
@@ -148,16 +136,18 @@ const SocialProfile: React.FC = () => {
           status: status
         });
         
-        // Count GREEN (both-met) or YELLOW (partial) squares
-        const isGreenOrYellow = status === 'both-met' || status === 'partial';
-        
-        if (isGreenOrYellow) {
+        // ONLY count GREEN or YELLOW squares (ignore no-data days)
+        if (status === 'both-met' || status === 'partial') {
           currentStreak++;
           const color = status === 'both-met' ? 'GREEN' : 'YELLOW';
-          console.log(`Day ${day.date} is ${color} square, streak now: ${currentStreak}`);
+          console.log(`✅ Day ${day.date} is ${color}, streak: ${currentStreak}`);
+        } else if (status === 'none-met') {
+          // Red square - streak ends
+          console.log(`❌ Day ${day.date} is RED, streak ends at: ${currentStreak}`);
+          break;
         } else {
-          console.log(`Day ${day.date} is RED/GRAY square, streak ends at: ${currentStreak}`);
-          break; // Streak ends when a day is not green or yellow
+          // No data - skip this day, don't break streak
+          console.log(`⚪ Day ${day.date} has no data, skipping`);
         }
       }
       

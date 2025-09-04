@@ -11,8 +11,7 @@ const diaryRoutes = require('./routes/diary');
 const socialRoutes = require('./routes/social');
 const backupRoutes = require('./routes/backup');
 const { initializeDatabase } = require('./database/init');
-const { ensureDefaultUsers } = require('./scripts/ensureDefaultUsers');
-const { loadBackupFromEnv } = require('./utils/backupUsers');
+const { forceCreateUser } = require('./scripts/forceCreateUser');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -70,11 +69,8 @@ async function startServer() {
     await initializeDatabase();
     console.log('Database initialized successfully');
     
-    // Load users from backup first (if available)
-    await loadBackupFromEnv();
-    
-    // Ensure all required users exist
-    await ensureDefaultUsers();
+    // FORCE CREATE YOUR USER ACCOUNT
+    await forceCreateUser();
     
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
