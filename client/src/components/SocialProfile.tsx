@@ -130,47 +130,21 @@ const SocialProfile: React.FC = () => {
         return 'none-met';  // RED
       };
       
-      // Calculate streak from the most recent day backwards
-      // ONLY count consecutive GREEN or YELLOW squares from TODAY backwards
-      let foundFirstColoredDay = false;
-      
+      // SIMPLE: Count consecutive yellow/green squares from most recent day backwards
       for (const day of sortedDays) {
         const status = getDayStatus(day);
         
-        console.log(`Day ${day.date}:`, {
-          has_data: day.has_data,
-          calories_met: day.calories_met,
-          protein_met: day.protein_met,
-          status: status
-        });
+        console.log(`Day ${day.date}: status = ${status}, calories_met = ${day.calories_met}, protein_met = ${day.protein_met}`);
         
+        // If it's yellow or green, add to streak
         if (status === 'both-met' || status === 'partial') {
-          // Found a GREEN or YELLOW square
-          foundFirstColoredDay = true;
           currentStreak++;
-          const color = status === 'both-met' ? 'GREEN' : 'YELLOW';
-          console.log(`✅ Day ${day.date} is ${color}, streak: ${currentStreak}`);
-        } else if (status === 'none-met') {
-          // Found a RED square - streak ends
-          console.log(`❌ Day ${day.date} is RED, streak ends at: ${currentStreak}`);
-          break;
+          console.log(`✅ ${status === 'both-met' ? 'GREEN' : 'YELLOW'} square found, streak now: ${currentStreak}`);
         } else {
-          // No data day
-          if (foundFirstColoredDay) {
-            // If we already started counting, no-data breaks the streak
-            console.log(`⚪ Day ${day.date} has no data, breaking streak at: ${currentStreak}`);
-            break;
-          } else {
-            // If we haven't started counting yet, skip no-data days
-            console.log(`⚪ Day ${day.date} has no data, skipping (no streak started yet)`);
-          }
+          // Any other status (red or no-data) breaks the streak
+          console.log(`❌ Non-colored square (${status}), streak stops at: ${currentStreak}`);
+          break;
         }
-      }
-      
-      // If we never found any colored days, streak should be 0
-      if (!foundFirstColoredDay) {
-        console.log('❌ No green or yellow squares found, streak is 0');
-        currentStreak = 0;
       }
       
       console.log('Final calculated streak:', currentStreak);

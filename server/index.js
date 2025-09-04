@@ -11,7 +11,7 @@ const diaryRoutes = require('./routes/diary');
 const socialRoutes = require('./routes/social');
 const backupRoutes = require('./routes/backup');
 const { initializeDatabase } = require('./database/init');
-const { restoreAllUsers, startAutoBackup } = require('./utils/autoBackup');
+const { restoreFromEnv, simpleBackup } = require('./utils/realPersistence');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -69,11 +69,13 @@ async function startServer() {
     await initializeDatabase();
     console.log('Database initialized successfully');
     
-    // RESTORE ALL USERS from backup
-    await restoreAllUsers();
+    // RESTORE USERS from environment backup
+    await restoreFromEnv();
     
-    // START AUTOMATIC BACKUP SYSTEM
-    startAutoBackup();
+    // BACKUP USERS on startup (so you can copy the backup)
+    setTimeout(() => {
+      simpleBackup().catch(console.error);
+    }, 5000); // Wait 5 seconds after startup
     
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
