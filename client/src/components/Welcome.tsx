@@ -6,243 +6,131 @@ const Welcome: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-gray-50">
       
       {/* Top Spacing */}
       <div className="h-20"></div>
       
       <div className="max-w-5xl mx-auto px-4">
         
-        {/* Hero Section */}
-        <div className="text-center mb-24">
-          <div className="flex items-center justify-center space-x-3 mb-8">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center">
-              <Target className="w-8 h-8 text-white" />
+        {/* Hero Section - Strava-inspired */}
+        <div className="text-center mb-20">
+          <div className="flex items-center justify-center space-x-2 mb-6">
+            <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+              <Target className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-gray-900">
               NutriTrack
             </h1>
           </div>
           
-          <h2 className="text-7xl font-bold text-gray-900 leading-tight mb-8">
-            Track Your
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-              Nutrition
+          <h2 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight mb-6">
+            Every Meal
+            <span className="block text-orange-500">
+              Matters
             </span>
-            <span className="block text-3xl text-gray-600 mt-4 font-normal">in Seconds</span>
           </h2>
+          
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
+            Track your nutrition with the precision of an athlete. 
+            Set goals, monitor progress, and achieve peak performance.
+          </p>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {/* CTA Buttons - Strava style */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={() => navigate('/register')}
-              className="group relative px-10 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xl font-semibold rounded-2xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-1 transition-all duration-300"
+              className="group px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center space-x-2"
             >
-              <span className="flex items-center space-x-3">
-                <span>Get Started Free</span>
-                <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
-              </span>
+              <span>Get Started Free</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
             <button
               onClick={() => navigate('/login')}
-              className="px-10 py-5 border-2 border-gray-300 text-gray-700 text-xl font-semibold rounded-2xl hover:border-gray-400 hover:bg-gray-50 transition-all duration-200"
+              className="px-8 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-all duration-200"
             >
               Sign In
             </button>
           </div>
         </div>
 
-        {/* Section Break */}
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-24"></div>
 
-        {/* Three Steps - Visual */}
-        <div className="mb-24">
-          <h3 className="text-3xl font-bold text-center text-gray-900 mb-16">Get Started in 2 Minutes</h3>
+        {/* Three Steps - Strava-inspired clean design */}
+        <div className="mb-20">
+          <h3 className="text-2xl font-bold text-center text-gray-900 mb-12">How it works</h3>
           
-          {/* Enhanced Steps Container */}
-          <div className="relative">
-            {/* Background Decorative Elements */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-3xl -m-8"></div>
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full"></div>
+          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             
-            <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl p-12 shadow-xl border border-white/20">
-              <div className="grid md:grid-cols-3 gap-8">
-                
-                {/* Step 1 */}
-                <div className="text-center group">
-                  <div className="relative mb-6">
-                    {/* Step Circle */}
-                    <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto relative overflow-hidden shadow-lg group-hover:shadow-2xl transition-all duration-300 transform group-hover:scale-110">
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
-                      <span className="text-3xl font-bold text-white relative z-10">1</span>
-                    </div>
-                    
-                    {/* Connecting Line */}
-                    <div className="hidden md:block absolute top-1/2 -right-4 w-8 h-0.5 bg-gradient-to-r from-blue-300 to-indigo-300 transform -translate-y-1/2"></div>
-                  </div>
-                  
-                  <h4 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">Sign Up</h4>
-                  <p className="text-gray-600 mb-4">Quick & easy account creation</p>
-                  
-                  {/* Feature Highlight */}
-                  <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
-                    <div className="flex items-center justify-center space-x-2 text-blue-700">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm font-medium">30 seconds</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Step 2 */}
-                <div className="text-center group">
-                  <div className="relative mb-6">
-                    {/* Step Circle */}
-                    <div className="w-24 h-24 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center mx-auto relative overflow-hidden shadow-lg group-hover:shadow-2xl transition-all duration-300 transform group-hover:scale-110">
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
-                      <span className="text-3xl font-bold text-white relative z-10">2</span>
-                    </div>
-                    
-                    {/* Connecting Line */}
-                    <div className="hidden md:block absolute top-1/2 -right-4 w-8 h-0.5 bg-gradient-to-r from-indigo-300 to-purple-300 transform -translate-y-1/2"></div>
-                  </div>
-                  
-                  <h4 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-indigo-600 transition-colors">Set Goals</h4>
-                  <p className="text-gray-600 mb-4">Personalize your nutrition targets</p>
-                  
-                  {/* Feature Highlight */}
-                  <div className="bg-indigo-50 rounded-xl p-3 border border-indigo-100">
-                    <div className="flex items-center justify-center space-x-2 text-indigo-700">
-                      <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
-                      <span className="text-sm font-medium">AI-powered</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Step 3 */}
-                <div className="text-center group">
-                  <div className="relative mb-6">
-                    {/* Step Circle */}
-                    <div className="w-24 h-24 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto relative overflow-hidden shadow-lg group-hover:shadow-2xl transition-all duration-300 transform group-hover:scale-110">
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
-                      <span className="text-3xl font-bold text-white relative z-10">3</span>
-                    </div>
-                  </div>
-                  
-                  <h4 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-purple-600 transition-colors">Track</h4>
-                  <p className="text-gray-600 mb-4">AI analyzes your meals instantly</p>
-                  
-                  {/* Feature Highlight */}
-                  <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
-                    <div className="flex items-center justify-center space-x-2 text-purple-700">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                      <span className="text-sm font-medium">Real-time</span>
-                    </div>
-                  </div>
-                </div>
+            {/* Step 1 */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-orange-500 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-white">1</span>
               </div>
-              
-              {/* Bottom Decorative Line */}
-              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full"></div>
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">Sign Up</h4>
+              <p className="text-gray-600 text-sm">Create your account in under 30 seconds</p>
+            </div>
+            
+            {/* Step 2 */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-orange-500 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-white">2</span>
+              </div>
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">Set Goals</h4>
+              <p className="text-gray-600 text-sm">AI calculates your personalized targets</p>
+            </div>
+            
+            {/* Step 3 */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-orange-500 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-white">3</span>
+              </div>
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">Track</h4>
+              <p className="text-gray-600 text-sm">Log meals and monitor your progress</p>
             </div>
           </div>
-          
-          {/* Additional Info */}
-          <div className="text-center mt-16">
-            <p className="text-gray-600 text-lg">
-              <span className="font-semibold text-blue-600">No complex setup</span> • 
-              <span className="font-semibold text-indigo-600"> Instant results</span> • 
-              <span className="font-semibold text-purple-600"> Smart insights</span>
+        </div>
+
+
+        {/* Key Features - Strava-style cards */}
+        <div className="mb-20">
+          <div className="text-center mb-12">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">Built for Athletes</h3>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Track your nutrition with the precision and insights that serious athletes demand.
             </p>
           </div>
-        </div>
 
-        {/* Section Break */}
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-24"></div>
-
-        {/* Key Features Grid */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-24">
-          
-          {/* Left Side - Features */}
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Why NutriTrack is Different</h3>
-              <p className="text-gray-600 mb-6">
-                We've eliminated the complexity that makes other apps frustrating. 
-                NutriTrack focuses on what matters: making nutrition tracking effortless.
-              </p>
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            
+            {/* Feature 1 */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
+                <Sparkles className="w-6 h-6 text-orange-500" />
+              </div>
+              <h4 className="font-semibold text-gray-900 mb-2">AI-Powered Analysis</h4>
+              <p className="text-gray-600 text-sm">Describe your meal in plain English. Our AI handles the complex nutrition calculations.</p>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <h4 className="text-base font-semibold text-gray-900 mb-1">AI-Powered Simplicity</h4>
-                  <p className="text-sm text-gray-600">Just describe your meal in plain English. Our AI calculates everything else.</p>
-                </div>
+            {/* Feature 2 */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
+                <BarChart3 className="w-6 h-6 text-orange-500" />
               </div>
-
-              <div className="flex items-start space-x-3">
-                <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <TrendingUp className="w-5 h-5 text-indigo-600" />
-                </div>
-                <div>
-                  <h4 className="text-base font-semibold text-gray-900 mb-1">Smart Insights</h4>
-                  <p className="text-sm text-gray-600">Get personalized recommendations that actually help you improve.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Lightbulb className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <h4 className="text-base font-semibold text-gray-900 mb-1">Adaptive Goals</h4>
-                  <p className="text-sm text-gray-600">Your targets automatically adjust based on your progress.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Side - Demo Card */}
-          <div className="relative">
-            <div className="bg-white rounded-3xl shadow-2xl p-8 transform rotate-2 hover:rotate-0 transition-transform duration-500">
-              <div className="space-y-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
-                    <User className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Sarah M.</h3>
-                    <p className="text-sm text-gray-500">Lost 15 lbs in 3 months</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Today's Progress</span>
-                    <span className="font-semibold text-gray-900">85%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-3 rounded-full" style={{ width: '85%' }}></div>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">1,700 / 2,000</span>
-                    <span className="text-green-600 font-medium">+15% this week</span>
-                  </div>
-                </div>
-              </div>
+              <h4 className="font-semibold text-gray-900 mb-2">Performance Insights</h4>
+              <p className="text-gray-600 text-sm">Get detailed analytics on your nutrition trends and performance patterns.</p>
             </div>
 
-            {/* Floating Elements */}
-            <div className="absolute -top-4 -right-4 w-20 h-20 bg-gradient-to-r from-green-400 to-blue-500 rounded-full opacity-80 animate-pulse"></div>
-            <div className="absolute -bottom-6 -left-6 w-16 h-16 bg-gradient-to-r from-indigo-400 to-blue-500 rounded-full opacity-60 animate-pulse" style={{ animationDelay: '1s' }}></div>
+            {/* Feature 3 */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
+                <TrendingUp className="w-6 h-6 text-orange-500" />
+              </div>
+              <h4 className="font-semibold text-gray-900 mb-2">Goal Tracking</h4>
+              <p className="text-gray-600 text-sm">Set ambitious targets and track your progress with precision metrics.</p>
+            </div>
           </div>
         </div>
 
-        {/* Section Break */}
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-24"></div>
 
         {/* Demo Card - Nutrition Focused */}
         <div className="mb-24">
@@ -311,8 +199,6 @@ const Welcome: React.FC = () => {
           </div>
         </div>
 
-        {/* Section Break */}
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-24"></div>
 
         {/* Social Media & Community Section */}
         <div className="mb-24">

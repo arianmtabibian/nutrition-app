@@ -409,7 +409,7 @@ const SocialProfile: React.FC = () => {
                 {streakLoading ? (
                   <span className="text-lg text-orange-500">Loading...</span>
                 ) : streak > 0 ? (
-                  <span className="text-2xl font-bold text-orange-500">{streak} days</span>
+                  <span className="text-2xl font-bold text-orange-500">{streak} {streak === 1 ? 'day' : 'days'}</span>
                 ) : (
                   <span className="text-lg text-orange-500">Start your goal today!</span>
                 )}
@@ -417,7 +417,7 @@ const SocialProfile: React.FC = () => {
               <div className="text-right">
                 <p className="text-xs text-gray-600">
                   {streakLoading ? 'Calculating...' : streak > 0 
-                    ? `Hit your goal for ${streak} day${streak === 1 ? '' : 's'} in a row!` 
+                    ? `Hit your goal for ${streak} ${streak === 1 ? 'day' : 'days'} in a row!` 
                     : 'Build a streak!'
                   }
                 </p>
