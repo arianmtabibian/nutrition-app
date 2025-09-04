@@ -6,15 +6,15 @@ const createDefaultUser = async () => {
   try {
     const db = getDatabase();
     
-    // Check if any users exist
-    db.get('SELECT COUNT(*) as count FROM users', async (err, row) => {
+    // Check if the specific user exists (not just any users)
+    db.get('SELECT id FROM users WHERE email = ?', ['arianmtabibian@gmail.com'], async (err, row) => {
       if (err) {
-        console.error('Error checking users:', err);
+        console.error('Error checking for default user:', err);
         return;
       }
       
-      if (row.count === 0) {
-        console.log('No users found, creating default user...');
+      if (!row) {
+        console.log('Default user not found, creating arianmtabibian@gmail.com...');
         
         // Create default user
         const email = 'arianmtabibian@gmail.com';
@@ -31,11 +31,12 @@ const createDefaultUser = async () => {
             if (err) {
               console.error('Error creating default user:', err);
             } else {
-              console.log('Default user created successfully with ID:', this.lastID);
+              console.log('✅ Default user arianmtabibian@gmail.com created successfully with ID:', this.lastID);
+              console.log('You can now login with: arianmtabibian@gmail.com / newpassword123');
             }
           });
       } else {
-        console.log('Users already exist, skipping default user creation');
+        console.log('✅ Default user arianmtabibian@gmail.com already exists with ID:', row.id);
       }
     });
   } catch (error) {

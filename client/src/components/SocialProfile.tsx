@@ -131,19 +131,28 @@ const SocialProfile: React.FC = () => {
       // Calculate streak from the most recent day backwards
       // Count consecutive days that would show as yellow or green squares in diary
       for (const day of sortedDays) {
-        console.log(`Checking day ${day.date}: calories_met=${day.calories_met}, protein_met=${day.protein_met}`);
+        console.log(`Checking day ${day.date}:`, {
+          calories_met: day.calories_met,
+          protein_met: day.protein_met,
+          total_calories: day.total_calories,
+          total_protein: day.total_protein,
+          calories_goal: day.calories_goal,
+          protein_goal: day.protein_goal
+        });
         
-        // A day counts toward streak if it would be yellow or green in diary
-        // Yellow: either goal met (calories_met OR protein_met)
-        // Green: both goals met (calories_met AND protein_met)
-        const isYellowOrGreen = day.calories_met || day.protein_met;
+        // STRICT CHECK: Only count as yellow/green if goals are actually met
+        // calories_met should be true AND protein_met should be true for the flags to count
+        // If the flags are undefined/null, treat as false
+        const caloriesActuallyMet = day.calories_met === true;
+        const proteinActuallyMet = day.protein_met === true;
+        const isYellowOrGreen = caloriesActuallyMet || proteinActuallyMet;
         
         if (isYellowOrGreen) {
           currentStreak++;
-          const color = (day.calories_met && day.protein_met) ? 'green' : 'yellow';
+          const color = (caloriesActuallyMet && proteinActuallyMet) ? 'green' : 'yellow';
           console.log(`Day ${day.date} is ${color} square, streak now: ${currentStreak}`);
         } else {
-          console.log(`Day ${day.date} would be red square, streak ends at: ${currentStreak}`);
+          console.log(`Day ${day.date} would be red square (no goals met), streak ends at: ${currentStreak}`);
           break; // Streak ends when a day would show as red (no goals met)
         }
       }

@@ -3,8 +3,9 @@ const path = require('path');
 const fs = require('fs');
 
 // Use persistent storage for production (Render) or local path for development
+// For Render, use /opt/render/project/data for persistence
 const dbPath = process.env.NODE_ENV === 'production' 
-  ? (process.env.DB_PATH || '/opt/render/project/src/data/nutrition.db')
+  ? (process.env.DB_PATH || '/opt/render/project/data/nutrition.db')
   : (process.env.DB_PATH || path.join(__dirname, '..', 'nutrition.db'));
 
 // Ensure the directory exists
