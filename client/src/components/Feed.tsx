@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Heart, MessageCircle, Share, MoreHorizontal, PenTool, Bookmark, Image, X } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Heart, MessageCircle, Share, MoreHorizontal, PenTool, Bookmark, Image, X, Plus, UserCircle, Calendar, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
+import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 interface Post {
   id: number;
@@ -38,6 +39,7 @@ interface Comment {
 
 const Feed: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreatePost, setShowCreatePost] = useState(false);
@@ -52,6 +54,13 @@ const Feed: React.FC = () => {
   const [comments, setComments] = useState<{ [postId: number]: Comment[] }>({});
   const [newComments, setNewComments] = useState<{ [postId: number]: string }>({});
   const [loadingComments, setLoadingComments] = useState<Set<number>>(new Set());
+  
+  // Sidebar data states
+  const [profileData, setProfileData] = useState<any>(null);
+  const [todayNutrition, setTodayNutrition] = useState<any>(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [monthData, setMonthData] = useState<any>(null);
+  const [sidebarLoading, setSidebarLoading] = useState(true);
 
   const formatPostDate = (dateString: string) => {
     const postDate = new Date(dateString);
@@ -72,6 +81,7 @@ const Feed: React.FC = () => {
   useEffect(() => {
     if (user) {
       loadFeed();
+      loadSidebarData();
     }
   }, [user]);
 
@@ -194,6 +204,82 @@ const Feed: React.FC = () => {
     }
   };
 
+  const loadSidebarData = async () => {
+    try {
+      setSidebarLoading(true);
+      
+      // Load profile data with stats
+      const profileResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/profile/${user?.id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (profileResponse.ok) {
+        const profileData = await profileResponse.json();
+        setProfileData(profileData);
+      }
+      
+      // Load today's nutrition data
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const mealsResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/meals/date/${today}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (mealsResponse.ok) {
+        const mealsData = await mealsResponse.json();
+        const meals = mealsData.meals || [];
+        
+        // Calculate totals
+        const totalCalories = meals.reduce((sum: number, meal: any) => sum + (meal.calories || 0), 0);
+        const totalProtein = meals.reduce((sum: number, meal: any) => sum + (meal.protein || 0), 0);
+        
+        // Get calorie and protein goals from profile
+        const calorieGoal = profileData?.profile?.daily_calories || 2000;
+        const proteinGoal = profileData?.profile?.daily_protein || 150;
+        const calorieDeficit = calorieGoal - totalCalories;
+        
+        setTodayNutrition({
+          totalCalories,
+          totalProtein,
+          calorieGoal,
+          proteinGoal,
+          calorieDeficit
+        });
+      }
+      
+      // Load calendar data for current month
+      await loadMonthData();
+      
+    } catch (error) {
+      console.error('Error loading sidebar data:', error);
+    } finally {
+      setSidebarLoading(false);
+    }
+  };
+
+  const loadMonthData = async () => {
+    try {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/diary/month/${year}/${month}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setMonthData(data);
+      }
+    } catch (error) {
+      console.error('Error loading month data:', error);
+    }
+  };
+
   const loadComments = async (postId: number) => {
     if (loadingComments.has(postId)) return;
     
@@ -283,7 +369,227 @@ const Feed: React.FC = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto bg-white">
+    <div className="flex max-w-7xl mx-auto gap-6 p-4">
+      {/* Sidebar */}
+      <div className="w-80 flex-shrink-0 sticky top-4 self-start space-y-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
+        {/* Profile Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          {sidebarLoading ? (
+            <div className="animate-pulse">
+              <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-4"></div>
+              <div className="flex justify-between mb-4">
+                <div className="h-4 bg-gray-200 rounded w-16"></div>
+                <div className="h-4 bg-gray-200 rounded w-16"></div>
+                <div className="h-4 bg-gray-200 rounded w-16"></div>
+              </div>
+            </div>
+          ) : profileData ? (
+            <>
+              {/* Profile Image */}
+              <div className="text-center mb-4">
+                {profileData.profile?.profile_picture ? (
+                  <img
+                    src={profileData.profile.profile_picture}
+                    alt={`${user?.first_name} ${user?.last_name}`}
+                    className="w-20 h-20 rounded-full mx-auto object-cover border-4 border-blue-100"
+                  />
+                ) : (
+                  <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto flex items-center justify-center border-4 border-blue-100">
+                    <UserCircle className="w-12 h-12 text-gray-400" />
+                  </div>
+                )}
+              </div>
+              
+              {/* Name */}
+              <h2 className="text-xl font-semibold text-gray-900 text-center mb-1">
+                {user?.first_name} {user?.last_name}
+              </h2>
+              <p className="text-gray-500 text-center text-sm mb-4">@{user?.username}</p>
+              
+              {/* Stats */}
+              <div className="flex justify-between text-center mb-4">
+                <div>
+                  <div className="font-semibold text-lg text-gray-900">{profileData.stats?.posts || 0}</div>
+                  <div className="text-xs text-gray-500">Posts</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-lg text-gray-900">{profileData.stats?.followers || 0}</div>
+                  <div className="text-xs text-gray-500">Followers</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-lg text-gray-900">{profileData.stats?.following || 0}</div>
+                  <div className="text-xs text-gray-500">Following</div>
+                </div>
+              </div>
+              
+              {/* Section Break */}
+              <div className="border-t border-gray-200 pt-4">
+                <button
+                  onClick={() => navigate('/dashboard/inputs')}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Meal</span>
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-4">
+              <div className="text-gray-500">Unable to load profile</div>
+            </div>
+          )}
+        </div>
+
+        {/* Overview Summary Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <BarChart3 className="w-5 h-5 mr-2" />
+            Today's Overview
+          </h3>
+          
+          {sidebarLoading ? (
+            <div className="animate-pulse space-y-3">
+              <div className="h-4 bg-gray-200 rounded"></div>
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            </div>
+          ) : todayNutrition ? (
+            <div className="space-y-3">
+              {/* Calorie Deficit */}
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Calorie Deficit:</span>
+                <div className="flex items-center">
+                  {todayNutrition.calorieDeficit > 0 ? (
+                    <TrendingDown className="w-4 h-4 text-green-600 mr-1" />
+                  ) : (
+                    <TrendingUp className="w-4 h-4 text-red-600 mr-1" />
+                  )}
+                  <span className={`font-semibold ${todayNutrition.calorieDeficit > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {Math.abs(todayNutrition.calorieDeficit)} cal
+                  </span>
+                </div>
+              </div>
+              
+              {/* Protein */}
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Protein:</span>
+                <span className="font-semibold text-gray-900">
+                  {Math.round(todayNutrition.totalProtein)}g / {todayNutrition.proteinGoal}g
+                </span>
+              </div>
+              
+              {/* Progress Bars */}
+              <div className="space-y-2">
+                <div>
+                  <div className="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>Calories</span>
+                    <span>{todayNutrition.totalCalories} / {todayNutrition.calorieGoal}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full"
+                      style={{ width: `${Math.min((todayNutrition.totalCalories / todayNutrition.calorieGoal) * 100, 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>Protein</span>
+                    <span>{Math.round(todayNutrition.totalProtein)} / {todayNutrition.proteinGoal}g</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-green-600 h-2 rounded-full"
+                      style={{ width: `${Math.min((todayNutrition.totalProtein / todayNutrition.proteinGoal) * 100, 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <div className="text-gray-500">No data available</div>
+            </div>
+          )}
+        </div>
+
+        {/* Calendar Streak Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <Calendar className="w-5 h-5 mr-2" />
+            {format(currentDate, 'MMMM yyyy')}
+          </h3>
+          
+          {sidebarLoading ? (
+            <div className="animate-pulse">
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: 35 }).map((_, i) => (
+                  <div key={i} className="h-8 bg-gray-200 rounded"></div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7 gap-1 text-center text-xs">
+                {/* Day headers */}
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                  <div key={i} className="font-medium text-gray-500 py-2">
+                    {day}
+                  </div>
+                ))}
+                
+                {/* Calendar days */}
+                {monthData && eachDayOfInterval({
+                  start: startOfMonth(currentDate),
+                  end: endOfMonth(currentDate)
+                }).map((date) => {
+                  const dateStr = format(date, 'yyyy-MM-dd');
+                  const dayData = monthData.days?.find((d: any) => d.date === dateStr);
+                  const hasData = dayData?.has_data;
+                  const metGoals = dayData?.calories_met && dayData?.protein_met;
+                  
+                  return (
+                    <div
+                      key={dateStr}
+                      className={`
+                        h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium
+                        ${isToday(date) ? 'ring-2 ring-blue-500' : ''}
+                        ${!isSameMonth(date, currentDate) ? 'text-gray-300' : ''}
+                        ${hasData 
+                          ? metGoals 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-yellow-100 text-yellow-800'
+                          : 'text-gray-400 hover:bg-gray-100'
+                        }
+                      `}
+                    >
+                      {format(date, 'd')}
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {/* Legend */}
+              <div className="flex items-center justify-center space-x-4 text-xs">
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 bg-green-100 rounded-full"></div>
+                  <span className="text-gray-600">Goals met</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 bg-yellow-100 rounded-full"></div>
+                  <span className="text-gray-600">Partial</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Feed Content */}
+      <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200">
       {/* Create Post Button */}
       <div className="sticky top-0 bg-white border-b border-gray-200 p-4 z-10">
         <button
@@ -640,6 +946,7 @@ const Feed: React.FC = () => {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 };
