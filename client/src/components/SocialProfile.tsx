@@ -128,44 +128,36 @@ const SocialProfile: React.FC = () => {
         return;
       }
       
+      // EXACT SAME LOGIC AS DIARY CALENDAR - Copy the getDayStatus function
+      const getDayStatus = (day: any) => {
+        if (!day.has_data) return 'no-data';
+        if (day.calories_met && day.protein_met) return 'both-met';  // GREEN
+        if (day.calories_met || day.protein_met) return 'partial';   // YELLOW
+        return 'none-met';  // RED
+      };
+      
       // Calculate streak from the most recent day backwards
-      // Count consecutive days that would show as yellow or green squares in diary
+      // Count consecutive days that are GREEN or YELLOW (same as diary calendar)
       for (const day of sortedDays) {
-        console.log(`Checking day ${day.date}:`, {
+        const status = getDayStatus(day);
+        
+        console.log(`Day ${day.date}:`, {
+          has_data: day.has_data,
           calories_met: day.calories_met,
           protein_met: day.protein_met,
-          total_calories: day.total_calories,
-          total_protein: day.total_protein,
-          calories_goal: day.calories_goal,
-          protein_goal: day.protein_goal
+          status: status
         });
         
-        // CALCULATE GOALS MANUALLY if flags are unreliable
-        let caloriesActuallyMet = day.calories_met === true;
-        let proteinActuallyMet = day.protein_met === true;
+        // Count GREEN (both-met) or YELLOW (partial) squares
+        const isGreenOrYellow = status === 'both-met' || status === 'partial';
         
-        // If flags are missing/false but we have actual data, calculate manually
-        if (!caloriesActuallyMet && day.total_calories > 0 && day.calories_goal > 0) {
-          // For calories: met if within 10% of goal (allows for slight deficit)
-          caloriesActuallyMet = day.total_calories >= (day.calories_goal * 0.9) && day.total_calories <= (day.calories_goal * 1.1);
-          console.log(`Manual calorie check: ${day.total_calories} vs ${day.calories_goal} = ${caloriesActuallyMet}`);
-        }
-        
-        if (!proteinActuallyMet && day.total_protein > 0 && day.protein_goal > 0) {
-          // For protein: met if at least 90% of goal
-          proteinActuallyMet = day.total_protein >= (day.protein_goal * 0.9);
-          console.log(`Manual protein check: ${day.total_protein} vs ${day.protein_goal} = ${proteinActuallyMet}`);
-        }
-        
-        const isYellowOrGreen = caloriesActuallyMet || proteinActuallyMet;
-        
-        if (isYellowOrGreen) {
+        if (isGreenOrYellow) {
           currentStreak++;
-          const color = (caloriesActuallyMet && proteinActuallyMet) ? 'green' : 'yellow';
+          const color = status === 'both-met' ? 'GREEN' : 'YELLOW';
           console.log(`Day ${day.date} is ${color} square, streak now: ${currentStreak}`);
         } else {
-          console.log(`Day ${day.date} would be red square (no goals met), streak ends at: ${currentStreak}`);
-          break; // Streak ends when a day would show as red (no goals met)
+          console.log(`Day ${day.date} is RED/GRAY square, streak ends at: ${currentStreak}`);
+          break; // Streak ends when a day is not green or yellow
         }
       }
       
