@@ -12,6 +12,7 @@ interface Post {
   likes_count: number;
   comments_count: number;
   is_liked: boolean;
+  is_bookmarked: boolean;
   allow_comments?: boolean;
   hide_like_count?: boolean;
   created_at: string;
@@ -301,6 +302,31 @@ const Feed: React.FC = () => {
       }
     } catch (error) {
       console.error('Error liking post:', error);
+    }
+  };
+
+  const handleBookmark = async (postId: number) => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts/${postId}/favorite`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        // Update local state
+        setPosts(posts.map(post => 
+          post.id === postId 
+            ? { 
+                ...post, 
+                is_bookmarked: !post.is_bookmarked
+              }
+            : post
+        ));
+      }
+    } catch (error) {
+      console.error('Error bookmarking post:', error);
     }
   };
 
@@ -980,8 +1006,13 @@ const Feed: React.FC = () => {
                       <Share className="w-6 h-6" />
                     </button>
                   </div>
-                  <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                    <Bookmark className="w-6 h-6" />
+                  <button
+                    onClick={() => handleBookmark(post.id)}
+                    className={`flex items-center space-x-2 transition-colors ${
+                      post.is_bookmarked ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'
+                    }`}
+                  >
+                    <Bookmark className={`w-6 h-6 ${post.is_bookmarked ? 'fill-current' : ''}`} />
                   </button>
                 </div>
               </div>

@@ -12,6 +12,7 @@ interface Post {
   likes_count: number;
   comments_count: number;
   is_liked: boolean;
+  is_bookmarked: boolean;
   allow_comments?: boolean;
   hide_like_count?: boolean;
   created_at: string;
@@ -56,8 +57,10 @@ const SocialProfile: React.FC = () => {
   const { user } = useAuth();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [likedPosts, setLikedPosts] = useState<Post[]>([]);
+  const [bookmarkedPosts, setBookmarkedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'liked' | 'bookmarked' | 'saved'>('posts');
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [newPost, setNewPost] = useState({ 
     content: '', 
@@ -144,6 +147,14 @@ const SocialProfile: React.FC = () => {
       loadPosts();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (user && activeTab === 'liked') {
+      loadLikedPosts();
+    } else if (user && activeTab === 'bookmarked') {
+      loadBookmarkedPosts();
+    }
+  }, [user, activeTab]);
 
   const loadProfile = async (retryCount = 0) => {
     try {
@@ -263,6 +274,38 @@ const SocialProfile: React.FC = () => {
     }
   };
 
+  const loadLikedPosts = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/profile/${user?.id}/liked-posts`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setLikedPosts(data.posts);
+      }
+    } catch (error) {
+      console.error('Error loading liked posts:', error);
+    }
+  };
+
+  const loadBookmarkedPosts = async () => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/profile/${user?.id}/favorited-posts`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBookmarkedPosts(data.posts);
+      }
+    } catch (error) {
+      console.error('Error loading bookmarked posts:', error);
+    }
+  };
+
   const handleLike = async (postId: number) => {
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts/${postId}/like`, {
@@ -286,6 +329,38 @@ const SocialProfile: React.FC = () => {
       }
     } catch (error) {
       console.error('Error liking post:', error);
+    }
+  };
+
+  const handleBookmark = async (postId: number) => {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts/${postId}/favorite`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        // Update local state in all relevant arrays
+        setPosts(posts.map(post => 
+          post.id === postId 
+            ? { ...post, is_bookmarked: !post.is_bookmarked }
+            : post
+        ));
+        setLikedPosts(likedPosts.map(post => 
+          post.id === postId 
+            ? { ...post, is_bookmarked: !post.is_bookmarked }
+            : post
+        ));
+        setBookmarkedPosts(bookmarkedPosts.map(post => 
+          post.id === postId 
+            ? { ...post, is_bookmarked: !post.is_bookmarked }
+            : post
+        ));
+      }
+    } catch (error) {
+      console.error('Error bookmarking post:', error);
     }
   };
 
@@ -658,6 +733,28 @@ const SocialProfile: React.FC = () => {
           <span>POSTS</span>
         </button>
         <button
+          onClick={() => setActiveTab('liked')}
+          className={`flex items-center space-x-2 px-8 py-5 border-b-2 transition-colors ${
+            activeTab === 'liked' 
+              ? 'border-gray-900 text-gray-900' 
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Heart className="w-4 h-4" />
+          <span>LIKED</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('bookmarked')}
+          className={`flex items-center space-x-2 px-8 py-5 border-b-2 transition-colors ${
+            activeTab === 'bookmarked' 
+              ? 'border-gray-900 text-gray-900' 
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Bookmark className="w-4 h-4" />
+          <span>BOOKMARKED</span>
+        </button>
+        <button
           onClick={() => setActiveTab('saved')}
           className={`flex items-center space-x-2 px-8 py-5 border-b-2 transition-colors ${
             activeTab === 'saved' 
@@ -749,8 +846,193 @@ const SocialProfile: React.FC = () => {
                   </button>
                 </div>
                 
-                <button className="text-gray-600 hover:text-gray-900 transition-colors">
-                  <Bookmark className="w-5 h-5" />
+                <button
+                  onClick={() => handleBookmark(post.id)}
+                  className={`flex items-center space-x-2 transition-colors ${
+                    post.is_bookmarked ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'
+                  }`}
+                >
+                  <Bookmark className={`w-5 h-5 ${post.is_bookmarked ? 'fill-current' : ''}`} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Liked Posts */}
+      {activeTab === 'liked' && (
+        <div className="space-y-6 pt-6">
+          {likedPosts.map((post) => (
+            <div key={post.id} className="border border-gray-200 rounded-lg">
+              {/* Post Header */}
+              <div className="flex items-center justify-between p-4 pb-3">
+                <div className="flex items-center space-x-3">
+                  {post.user.profile_picture ? (
+                    <img
+                      src={post.user.profile_picture}
+                      alt={`${post.user.first_name} ${post.user.last_name}`}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                      <UserCircle className="w-6 h-6 text-gray-400" />
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      {post.user.first_name} {post.user.last_name}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {new Date(post.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <MoreHorizontal className="w-5 h-5 text-gray-400 cursor-pointer hover:text-gray-600" />
+              </div>
+
+              {/* Post Content */}
+              {post.content && (
+                <div className="px-4 pb-3">
+                  <p className="text-gray-900">{post.content}</p>
+                </div>
+              )}
+
+              {/* Post Image */}
+              {post.image_url && (
+                <div className="px-4 pb-3">
+                  <img
+                    src={post.image_url}
+                    alt="Post content"
+                    className="w-full rounded-lg object-cover max-h-96"
+                  />
+                </div>
+              )}
+
+              {/* Post Actions */}
+              <div className="flex items-center justify-between p-4 border-t border-gray-200">
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => handleLike(post.id)}
+                    className={`flex items-center space-x-2 transition-colors ${
+                      post.is_liked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'
+                    }`}
+                  >
+                    <Heart className={`w-6 h-6 ${post.is_liked ? 'fill-current' : ''}`} />
+                    {!post.hide_like_count && (
+                      <span className="text-sm">{post.likes_count}</span>
+                    )}
+                  </button>
+                  <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                    <MessageCircle className="w-6 h-6" />
+                    <span className="text-sm ml-1">{post.comments_count}</span>
+                  </button>
+                  <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                    <Share className="w-6 h-6" />
+                  </button>
+                </div>
+                <button
+                  onClick={() => handleBookmark(post.id)}
+                  className={`flex items-center space-x-2 transition-colors ${
+                    post.is_bookmarked ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'
+                  }`}
+                >
+                  <Bookmark className={`w-6 h-6 ${post.is_bookmarked ? 'fill-current' : ''}`} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Bookmarked Posts */}
+      {activeTab === 'bookmarked' && (
+        <div className="space-y-6 pt-6">
+          {bookmarkedPosts.map((post) => (
+            <div key={post.id} className="border border-gray-200 rounded-lg">
+              {/* Post Header */}
+              <div className="flex items-center justify-between p-4 pb-3">
+                <div className="flex items-center space-x-3">
+                  {post.user.profile_picture ? (
+                    <img
+                      src={post.user.profile_picture}
+                      alt={`${post.user.first_name} ${post.user.last_name}`}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                      <UserCircle className="w-6 h-6 text-gray-400" />
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      {post.user.first_name} {post.user.last_name}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {new Date(post.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <MoreHorizontal className="w-5 h-5 text-gray-400 cursor-pointer hover:text-gray-600" />
+              </div>
+
+              {/* Post Content */}
+              {post.content && (
+                <div className="px-4 pb-3">
+                  <p className="text-gray-900">{post.content}</p>
+                </div>
+              )}
+
+              {/* Post Image */}
+              {post.image_url && (
+                <div className="px-4 pb-3">
+                  <img
+                    src={post.image_url}
+                    alt="Post content"
+                    className="w-full rounded-lg object-cover max-h-96"
+                  />
+                </div>
+              )}
+
+              {/* Post Actions */}
+              <div className="flex items-center justify-between p-4 border-t border-gray-200">
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => handleLike(post.id)}
+                    className={`flex items-center space-x-2 transition-colors ${
+                      post.is_liked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'
+                    }`}
+                  >
+                    <Heart className={`w-6 h-6 ${post.is_liked ? 'fill-current' : ''}`} />
+                    {!post.hide_like_count && (
+                      <span className="text-sm">{post.likes_count}</span>
+                    )}
+                  </button>
+                  <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                    <MessageCircle className="w-6 h-6" />
+                    <span className="text-sm ml-1">{post.comments_count}</span>
+                  </button>
+                  <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                    <Share className="w-6 h-6" />
+                  </button>
+                </div>
+                <button
+                  onClick={() => handleBookmark(post.id)}
+                  className={`flex items-center space-x-2 transition-colors ${
+                    post.is_bookmarked ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'
+                  }`}
+                >
+                  <Bookmark className={`w-6 h-6 ${post.is_bookmarked ? 'fill-current' : ''}`} />
                 </button>
               </div>
             </div>
@@ -779,6 +1061,24 @@ const SocialProfile: React.FC = () => {
           >
             Share your first photo
           </button>
+        </div>
+      )}
+
+      {/* No Liked Posts Message */}
+      {activeTab === 'liked' && likedPosts.length === 0 && (
+        <div className="p-12 text-center text-gray-500">
+          <Heart className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+          <h3 className="text-xl font-medium mb-2">No liked posts yet</h3>
+          <p>Posts you like will appear here.</p>
+        </div>
+      )}
+
+      {/* No Bookmarked Posts Message */}
+      {activeTab === 'bookmarked' && bookmarkedPosts.length === 0 && (
+        <div className="p-12 text-center text-gray-500">
+          <Bookmark className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+          <h3 className="text-xl font-medium mb-2">No bookmarked posts yet</h3>
+          <p>Posts you bookmark will appear here.</p>
         </div>
       )}
 

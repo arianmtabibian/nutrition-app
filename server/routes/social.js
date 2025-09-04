@@ -353,6 +353,45 @@ router.post('/posts/:postId/like', auth, (req, res) => {
   }
 });
 
+// Favorite/unfavorite a post
+router.post('/posts/:postId/favorite', auth, (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user.userId;
+    const db = getDatabase();
+    
+    // Check if already favorited
+    db.get('SELECT id FROM post_favorites WHERE post_id = ? AND user_id = ?', [postId, userId], (err, existing) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (existing) {
+        // Unfavorite
+        db.run('DELETE FROM post_favorites WHERE post_id = ? AND user_id = ?', [postId, userId], function(err) {
+          if (err) {
+            return res.status(500).json({ error: 'Failed to unfavorite post' });
+          }
+          
+          res.json({ message: 'Post unfavorited', favorited: false });
+        });
+      } else {
+        // Favorite
+        db.run('INSERT INTO post_favorites (post_id, user_id) VALUES (?, ?)', [postId, userId], function(err) {
+          if (err) {
+            return res.status(500).json({ error: 'Failed to favorite post' });
+          }
+          
+          res.json({ message: 'Post favorited', favorited: true });
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Favorite post error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Comment on a post
 router.post('/posts/:postId/comments', auth, (req, res) => {
   try {
@@ -477,7 +516,8 @@ router.get('/feed', auth, (req, res) => {
       SELECT p.*, u.username, u.first_name, u.last_name, up.profile_picture,
              (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as likes_count,
              (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comments_count,
-             EXISTS(SELECT 1 FROM post_likes WHERE post_id = p.id AND user_id = ?) as is_liked
+             EXISTS(SELECT 1 FROM post_likes WHERE post_id = p.id AND user_id = ?) as is_liked,
+             EXISTS(SELECT 1 FROM post_favorites WHERE post_id = p.id AND user_id = ?) as is_bookmarked
       FROM posts p
       JOIN users u ON p.user_id = u.id
       LEFT JOIN user_profiles up ON u.id = up.user_id
@@ -488,7 +528,7 @@ router.get('/feed', auth, (req, res) => {
       )
       ORDER BY p.created_at DESC
       LIMIT 20
-    `, [userId, userId, userId], (err, posts) => {
+    `, [userId, userId, userId, userId], (err, posts) => {
       if (err) {
         return res.status(500).json({ error: 'Database error' });
       }
@@ -529,6 +569,104 @@ router.get('/uploads/:filename', (req, res) => {
     res.sendFile(filePath);
   } catch (error) {
     console.error('Serve file error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get liked posts for a user
+router.get('/profile/:userId/liked-posts', auth, (req, res) => {
+  try {
+    const { userId } = req.params;
+    const db = getDatabase();
+    
+    // Verify that the requesting user is authenticated and the userId matches
+    if (parseInt(userId) !== req.user.userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    db.all(`
+      SELECT p.*, u.username, u.first_name, u.last_name, up.profile_picture,
+             (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as likes_count,
+             (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comments_count,
+             EXISTS(SELECT 1 FROM post_likes WHERE post_id = p.id AND user_id = ?) as is_liked,
+             EXISTS(SELECT 1 FROM post_favorites WHERE post_id = p.id AND user_id = ?) as is_bookmarked
+      FROM posts p
+      JOIN users u ON p.user_id = u.id
+      LEFT JOIN user_profiles up ON u.id = up.user_id
+      JOIN post_likes pl ON p.id = pl.post_id
+      WHERE pl.user_id = ?
+      ORDER BY pl.created_at DESC
+    `, [userId, userId, userId], (err, posts) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      // Parse meal data and format posts
+      const formattedPosts = posts.map(post => ({
+        ...post,
+        meal_data: post.meal_data ? JSON.parse(post.meal_data) : null,
+        user: {
+          id: post.user_id,
+          username: post.username,
+          first_name: post.first_name,
+          last_name: post.last_name,
+          profile_picture: post.profile_picture
+        }
+      }));
+      
+      res.json({ posts: formattedPosts });
+    });
+  } catch (error) {
+    console.error('Get liked posts error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get favorited posts for a user
+router.get('/profile/:userId/favorited-posts', auth, (req, res) => {
+  try {
+    const { userId } = req.params;
+    const db = getDatabase();
+    
+    // Verify that the requesting user is authenticated and the userId matches
+    if (parseInt(userId) !== req.user.userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    db.all(`
+      SELECT p.*, u.username, u.first_name, u.last_name, up.profile_picture,
+             (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as likes_count,
+             (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comments_count,
+             EXISTS(SELECT 1 FROM post_likes WHERE post_id = p.id AND user_id = ?) as is_liked,
+             EXISTS(SELECT 1 FROM post_favorites WHERE post_id = p.id AND user_id = ?) as is_bookmarked
+      FROM posts p
+      JOIN users u ON p.user_id = u.id
+      LEFT JOIN user_profiles up ON u.id = up.user_id
+      JOIN post_favorites pf ON p.id = pf.post_id
+      WHERE pf.user_id = ?
+      ORDER BY pf.created_at DESC
+    `, [userId, userId, userId], (err, posts) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      // Parse meal data and format posts
+      const formattedPosts = posts.map(post => ({
+        ...post,
+        meal_data: post.meal_data ? JSON.parse(post.meal_data) : null,
+        user: {
+          id: post.user_id,
+          username: post.username,
+          first_name: post.first_name,
+          last_name: post.last_name,
+          profile_picture: post.profile_picture
+        }
+      }));
+      
+      res.json({ posts: formattedPosts });
+    });
+  } catch (error) {
+    console.error('Get favorited posts error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

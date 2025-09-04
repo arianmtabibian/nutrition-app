@@ -141,6 +141,18 @@ function initializeDatabase() {
       `);
 
       db.run(`
+        CREATE TABLE IF NOT EXISTS post_favorites (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          post_id INTEGER NOT NULL,
+          user_id INTEGER NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE,
+          FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+          UNIQUE(post_id, user_id)
+        )
+      `);
+
+      db.run(`
         CREATE TABLE IF NOT EXISTS user_follows (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           follower_id INTEGER NOT NULL,
@@ -159,6 +171,8 @@ function initializeDatabase() {
       db.run(`CREATE INDEX IF NOT EXISTS idx_posts_user_id ON posts(user_id)`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_post_likes_post_id ON post_likes(post_id)`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_post_comments_post_id ON post_comments(post_id)`);
+      db.run(`CREATE INDEX IF NOT EXISTS idx_post_favorites_post_id ON post_favorites(post_id)`);
+      db.run(`CREATE INDEX IF NOT EXISTS idx_post_favorites_user_id ON post_favorites(user_id)`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_user_follows_follower ON user_follows(follower_id)`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_user_follows_following ON user_follows(following_id)`);
 
