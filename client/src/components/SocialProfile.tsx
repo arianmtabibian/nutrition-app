@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Heart, MessageCircle, Share, MoreHorizontal, Camera, Edit3, Settings, Grid, Bookmark, UserPlus, UserCheck, UserCircle } from 'lucide-react';
+import { Heart, MessageCircle, Share, MoreHorizontal, PenTool, Edit3, Settings, Grid, Bookmark, UserPlus, UserCheck, UserCircle, Image, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { diaryAPI, mealsAPI } from '../services/api';
 
@@ -12,11 +12,15 @@ interface Post {
   likes_count: number;
   comments_count: number;
   is_liked: boolean;
+  allow_comments?: boolean;
+  hide_like_count?: boolean;
   created_at: string;
   user: {
+    id: number;
     username: string;
     first_name: string;
     last_name: string;
+    profile_picture?: string;
   };
 }
 
@@ -55,7 +59,13 @@ const SocialProfile: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
   const [showCreatePost, setShowCreatePost] = useState(false);
-  const [newPost, setNewPost] = useState({ content: '', imageUrl: '', mealData: null });
+  const [newPost, setNewPost] = useState({ 
+    content: '', 
+    imageFile: null as File | null, 
+    mealData: null,
+    allowComments: true,
+    hideLikeCount: false
+  });
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [editProfileData, setEditProfileData] = useState({
     daily_calories: 0,
@@ -281,18 +291,40 @@ const SocialProfile: React.FC = () => {
 
   const handleCreatePost = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts`, {
+      const formData = new FormData();
+      formData.append('content', newPost.content);
+      formData.append('allowComments', newPost.allowComments.toString());
+      formData.append('hideLikeCount', newPost.hideLikeCount.toString());
+      
+      if (newPost.imageFile) {
+        formData.append('image', newPost.imageFile);
+      }
+      
+      if (newPost.mealData) {
+        formData.append('mealData', JSON.stringify(newPost.mealData));
+      }
+
+      const response = await fetch('/api/social/posts', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(newPost)
+        body: formData
       });
+      
       if (response.ok) {
-        setNewPost({ content: '', imageUrl: '', mealData: null });
+        setNewPost({ 
+          content: '', 
+          imageFile: null, 
+          mealData: null,
+          allowComments: true,
+          hideLikeCount: false
+        });
         setShowCreatePost(false);
         loadPosts(); // Reload posts
+      } else {
+        const error = await response.json();
+        console.error('Failed to create post:', error);
       }
     } catch (error) {
       console.error('Error creating post:', error);
@@ -348,7 +380,7 @@ const SocialProfile: React.FC = () => {
                )}
             </div>
             <button className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors">
-              <Camera className="w-4 h-4" />
+              <PenTool className="w-4 h-4" />
             </button>
           </div>
 
@@ -465,42 +497,139 @@ const SocialProfile: React.FC = () => {
           onClick={() => setShowCreatePost(true)}
           className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
         >
-          <Camera className="w-5 h-5" />
+          <PenTool className="w-5 h-5" />
           <span>Create a new post</span>
         </button>
       </div>
 
       {/* Create Post Modal */}
       {showCreatePost && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4">Create Post</h3>
-            <textarea
-              value={newPost.content}
-              onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-              placeholder="What's on your mind?"
-              className="w-full border border-gray-300 rounded-lg p-3 mb-4 resize-none"
-              rows={4}
-            />
-            <input
-              type="text"
-              value={newPost.imageUrl}
-              onChange={(e) => setNewPost({ ...newPost, imageUrl: e.target.value })}
-              placeholder="Image URL (optional)"
-              className="w-full border border-gray-300 rounded-lg p-3 mb-4"
-            />
-            <div className="flex space-x-3">
-              <button
-                onClick={handleCreatePost}
-                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Post
-              </button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-xl font-semibold text-gray-900">Create New Post</h3>
               <button
                 onClick={() => setShowCreatePost(false)}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              {/* Text Input */}
+              <div>
+                <textarea
+                  value={newPost.content}
+                  onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+                  placeholder="What's going on?"
+                  className="w-full border border-gray-300 rounded-lg p-4 resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  rows={6}
+                />
+              </div>
+
+              {/* Image Preview */}
+              {newPost.imageFile && (
+                <div className="relative">
+                  <img
+                    src={URL.createObjectURL(newPost.imageFile)}
+                    alt="Preview"
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+                  <button
+                    onClick={() => setNewPost({ ...newPost, imageFile: null })}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors shadow-lg"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Upload Controls */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h4 className="font-medium text-gray-900 mb-3">Add to your post</h4>
+                <div className="flex items-center space-x-4">
+                  <label className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg cursor-pointer transition-colors">
+                    <Image className="h-5 w-5" />
+                    <span className="text-sm font-medium">Upload Photo</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setNewPost({ ...newPost, imageFile: file });
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Privacy Settings */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h4 className="font-medium text-gray-900 mb-4">Privacy Settings</h4>
+                <div className="space-y-4">
+                  {/* Allow Comments Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Allow comments</label>
+                      <p className="text-xs text-gray-500">Let people comment on your post</p>
+                    </div>
+                    <button
+                      onClick={() => setNewPost({ ...newPost, allowComments: !newPost.allowComments })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        newPost.allowComments ? 'bg-blue-600' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          newPost.allowComments ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Hide Like Count Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Hide like count</label>
+                      <p className="text-xs text-gray-500">Only you will see the total number of likes</p>
+                    </div>
+                    <button
+                      onClick={() => setNewPost({ ...newPost, hideLikeCount: !newPost.hideLikeCount })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        newPost.hideLikeCount ? 'bg-blue-600' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          newPost.hideLikeCount ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
+              <button
+                onClick={() => setShowCreatePost(false)}
+                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
               >
                 Cancel
+              </button>
+              <button
+                onClick={handleCreatePost}
+                disabled={!newPost.content.trim()}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors"
+              >
+                Post
               </button>
             </div>
           </div>
@@ -583,7 +712,7 @@ const SocialProfile: React.FC = () => {
       {/* No Posts Message */}
       {activeTab === 'posts' && posts.length === 0 && (
         <div className="p-12 text-center text-gray-500">
-          <Camera className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+          <PenTool className="w-16 h-16 mx-auto mb-4 text-gray-300" />
           <h3 className="text-xl font-medium mb-2">No posts yet</h3>
           <p>When you share photos and videos, they'll appear on your profile.</p>
           <button
