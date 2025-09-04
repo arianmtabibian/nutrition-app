@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { getDatabase } = require('../database/init');
 const { authenticateToken } = require('../middleware/auth');
+const { backupAllUsers } = require('../utils/autoBackup');
 
 const router = express.Router();
 
@@ -58,6 +59,10 @@ router.post('/register', async (req, res) => {
           );
           
           console.log('Registration successful for:', email);
+          
+          // IMMEDIATELY BACKUP ALL USERS after new registration
+          backupAllUsers().catch(err => console.error('Backup failed:', err));
+          
           res.status(201).json({
             message: 'User created successfully',
             token,

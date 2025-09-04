@@ -11,7 +11,7 @@ const diaryRoutes = require('./routes/diary');
 const socialRoutes = require('./routes/social');
 const backupRoutes = require('./routes/backup');
 const { initializeDatabase } = require('./database/init');
-const { forceCreateUser } = require('./scripts/forceCreateUser');
+const { restoreAllUsers, startAutoBackup } = require('./utils/autoBackup');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -69,8 +69,11 @@ async function startServer() {
     await initializeDatabase();
     console.log('Database initialized successfully');
     
-    // FORCE CREATE YOUR USER ACCOUNT
-    await forceCreateUser();
+    // RESTORE ALL USERS from backup
+    await restoreAllUsers();
+    
+    // START AUTOMATIC BACKUP SYSTEM
+    startAutoBackup();
     
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
