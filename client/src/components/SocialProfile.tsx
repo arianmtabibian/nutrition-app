@@ -107,20 +107,28 @@ const SocialProfile: React.FC = () => {
         .filter((day: any) => day.has_data) // Only count days with meal data
         .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+      console.log('Days with data for streak calculation:', sortedDays.length);
+      console.log('Sample day data:', sortedDays.slice(0, 3));
+
       let currentStreak = 0;
       
       // Calculate streak from the most recent day backwards
       for (const day of sortedDays) {
+        console.log(`Checking day ${day.date}: calories_met=${day.calories_met}, protein_met=${day.protein_met}`);
+        
         // Check if either calorie goal OR protein goal was met
         // For calories: under or at goal (calories_met = true)
         // For protein: at or above goal (protein_met = true)
         if (day.calories_met || day.protein_met) {
           currentStreak++;
+          console.log(`Day ${day.date} met goal, streak now: ${currentStreak}`);
         } else {
+          console.log(`Day ${day.date} did not meet goal, streak ends at: ${currentStreak}`);
           break; // Streak ends when a day doesn't meet either goal
         }
       }
       
+      console.log('Final calculated streak:', currentStreak);
       setStreak(currentStreak);
     } catch (error) {
       console.error('Failed to calculate streak:', error);
