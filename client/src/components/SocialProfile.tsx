@@ -73,27 +73,16 @@ const SocialProfile: React.FC = () => {
   const [streak, setStreak] = useState(0);
   const [streakLoading, setStreakLoading] = useState(true);
 
-  // Calculate streak from diary data
+  // SIMPLE streak calculation - just count consecutive yellow/green squares
   const calculateStreak = async () => {
     try {
       setStreakLoading(true);
       
-      // First, try to recalculate daily nutrition for the current month to ensure data is up to date
+      // Get current month data
       const currentDate = new Date();
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1;
-      const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
-      const lastDay = new Date(year, month, 0).getDate();
-      const endDate = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
       
-      try {
-        await mealsAPI.recalculateDailyNutrition(startDate, endDate);
-        console.log('Daily nutrition recalculated for streak calculation');
-      } catch (recalcError) {
-        console.log('Could not recalculate daily nutrition, continuing with existing data');
-      }
-      
-      // Get the current month's data to calculate streak
       const response = await diaryAPI.getMonth(year, month);
       const monthData = response.data;
       
@@ -102,55 +91,31 @@ const SocialProfile: React.FC = () => {
         return;
       }
 
-      // Sort days by date (newest first) and calculate consecutive days where goals were met
-      const allDays = monthData.days || [];
-      console.log('Total days in month data:', allDays.length);
-      
-      const daysWithData = allDays.filter((day: any) => day.has_data);
-      console.log('Days with meal data:', daysWithData.length);
-      
-      const sortedDays = daysWithData
+      // Get days with data, sorted by date (newest first)
+      const daysWithData = monthData.days
+        .filter((day: any) => day.has_data)
         .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-      console.log('Sample day data (first 3):', sortedDays.slice(0, 3));
+      let streak = 0;
       
-      let currentStreak = 0;
-      
-      // EXACT SAME LOGIC AS DIARY CALENDAR - Copy the getDayStatus function
-      const getDayStatus = (day: any) => {
-        // Must have meal data to be counted
-        if (!day.has_data) return 'no-data';
+      // Count consecutive colored squares from today backwards
+      for (const day of daysWithData) {
+        // Simple check: yellow = one goal met, green = both goals met
+        const isColored = day.calories_met || day.protein_met;
         
-        // Check the actual boolean values (not just truthy)
-        const caloriesMet = day.calories_met === true;
-        const proteinMet = day.protein_met === true;
-        
-        if (caloriesMet && proteinMet) return 'both-met';  // GREEN
-        if (caloriesMet || proteinMet) return 'partial';   // YELLOW
-        return 'none-met';  // RED
-      };
-      
-      // SIMPLE: Count consecutive yellow/green squares from most recent day backwards
-      for (const day of sortedDays) {
-        const status = getDayStatus(day);
-        
-        console.log(`Day ${day.date}: status = ${status}, calories_met = ${day.calories_met}, protein_met = ${day.protein_met}`);
-        
-        // If it's yellow or green, add to streak
-        if (status === 'both-met' || status === 'partial') {
-          currentStreak++;
-          console.log(`✅ ${status === 'both-met' ? 'GREEN' : 'YELLOW'} square found, streak now: ${currentStreak}`);
+        if (isColored) {
+          streak++;
+          console.log(`Day ${day.date}: COLORED (calories: ${day.calories_met}, protein: ${day.protein_met}) - Streak: ${streak}`);
         } else {
-          // Any other status (red or no-data) breaks the streak
-          console.log(`❌ Non-colored square (${status}), streak stops at: ${currentStreak}`);
+          console.log(`Day ${day.date}: NOT colored - Streak stops at ${streak}`);
           break;
         }
       }
       
-      console.log('Final calculated streak:', currentStreak);
-      setStreak(currentStreak);
+      console.log(`FINAL STREAK: ${streak}`);
+      setStreak(streak);
     } catch (error) {
-      console.error('Failed to calculate streak:', error);
+      console.error('Streak calculation failed:', error);
       setStreak(0);
     } finally {
       setStreakLoading(false);
