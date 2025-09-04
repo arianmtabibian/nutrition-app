@@ -61,7 +61,7 @@ const Dashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Error creating post:', error);
-      alert('Error creating post: ' + error.message);
+      alert('Error creating post: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 
