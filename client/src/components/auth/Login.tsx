@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { migrateUserData } from '../../utils/domainMigration';
-import { Eye, EyeOff, Loader2, ArrowLeft, Target, RefreshCw } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ArrowLeft, Target } from 'lucide-react';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -13,22 +12,6 @@ const Login: React.FC = () => {
   
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [migrationLoading, setMigrationLoading] = useState(false);
-
-  const handleDomainMigration = async () => {
-    setMigrationLoading(true);
-    try {
-      console.log('Manual domain migration triggered');
-      await migrateUserData();
-      console.log('Manual domain migration completed');
-      // Reload the page to apply the migration
-      window.location.reload();
-    } catch (error) {
-      console.error('Manual domain migration failed:', error);
-    } finally {
-      setMigrationLoading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,18 +124,6 @@ const Login: React.FC = () => {
           </button>
         </form>
 
-        {/* Domain Migration Help */}
-        <div className="text-center mt-4">
-          <button
-            onClick={handleDomainMigration}
-            disabled={migrationLoading}
-            className="text-sm text-gray-500 hover:text-gray-700 transition-colors duration-200 flex items-center justify-center space-x-2 mx-auto"
-            title="If you can't log in after a Vercel deployment, click this to fix domain issues"
-          >
-            <RefreshCw className={`h-4 w-4 ${migrationLoading ? 'animate-spin' : ''}`} />
-            <span>{migrationLoading ? 'Fixing...' : 'Having login issues? Click here'}</span>
-          </button>
-        </div>
 
         {/* Register Link */}
         <div className="text-center mt-6">

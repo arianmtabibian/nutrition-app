@@ -39,7 +39,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Check if user is already logged in
     const token = localStorage.getItem('token');
+    const currentDomain = window.location.origin;
+    const storedDomain = localStorage.getItem('domain');
+    
     console.log('Token check:', token ? 'exists' : 'not found');
+    console.log('Current domain:', currentDomain);
+    console.log('Stored domain:', storedDomain);
+    
+    // If domain changed, clear all auth data
+    if (storedDomain && storedDomain !== currentDomain) {
+      console.log('Domain changed, clearing auth data');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('domain');
+      delete api.defaults.headers.common['Authorization'];
+      setLoading(false);
+      return;
+    }
     
     if (token) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -49,6 +65,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('Verify response in AuthContext:', response.data);
           if (response.data.user) {
             setUser(response.data.user);
+            // Store current domain for future checks
+            localStorage.setItem('domain', currentDomain);
             console.log('User logged in successfully');
           }
         })
@@ -56,6 +74,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.error('Error verifying user:', error);
           // Token is invalid, remove it
           localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('domain');
           delete api.defaults.headers.common['Authorization'];
           console.log('Token cleared due to verification failure');
         })
@@ -73,9 +93,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await api.post('/api/auth/login', { email, password });
       const { token, user: userData } = response.data;
       
-      // Store token and user data in localStorage
+      // Store token, user data, and current domain in localStorage
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('domain', window.location.origin);
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       setUser({
@@ -95,9 +116,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await api.post('/api/auth/register', { email, password, first_name, last_name, username });
       const { token, user: userData } = response.data;
       
-      // Store token and user data in localStorage
+      // Store token, user data, and current domain in localStorage
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('domain', window.location.origin);
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       setUser({
@@ -116,6 +138,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Clear user data from localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('domain');
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
   };
