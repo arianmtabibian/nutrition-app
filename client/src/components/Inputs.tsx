@@ -131,7 +131,8 @@ const Inputs: React.FC = () => {
       // Notify other tabs that a meal was added
       localStorage.setItem('mealAdded', Date.now().toString());
       
-      // Also trigger a custom event for the same tab
+      // Also trigger custom events for the same tab
+      window.dispatchEvent(new CustomEvent('mealAdded'));
       window.dispatchEvent(new CustomEvent('mealDataChanged'));
     } catch (error: any) {
       setMessage(error.response?.data?.error || 'Failed to add meal');
@@ -150,7 +151,8 @@ const Inputs: React.FC = () => {
       // Notify other tabs that a meal was deleted
       localStorage.setItem('mealDeleted', Date.now().toString());
       
-      // Also trigger a custom event for the same tab
+      // Also trigger custom events for the same tab
+      window.dispatchEvent(new CustomEvent('mealDeleted'));
       window.dispatchEvent(new CustomEvent('mealDataChanged'));
     } catch (error: any) {
       setMessage(error.response?.data?.error || 'Failed to delete meal');
@@ -195,6 +197,9 @@ const Inputs: React.FC = () => {
       
       // Notify other tabs that a meal was updated
       localStorage.setItem('mealUpdated', Date.now().toString());
+      
+      // Also trigger custom events for the same tab
+      window.dispatchEvent(new CustomEvent('mealUpdated'));
       window.dispatchEvent(new CustomEvent('mealDataChanged'));
     } catch (error: any) {
       setMessage(error.response?.data?.error || 'Failed to update meal');

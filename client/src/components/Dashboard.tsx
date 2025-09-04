@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { LogOut, User, Calendar, Plus, BarChart3, Home, Target, PenTool, Image, X, ChevronDown, UserPlus, Settings } from 'lucide-react';
 import { profileAPI } from '../services/api';
@@ -20,6 +21,7 @@ const Dashboard: React.FC = () => {
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [showNewPostModal, setShowNewPostModal] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [dropdownButtonRef, setDropdownButtonRef] = useState<HTMLButtonElement | null>(null);
   const [newPost, setNewPost] = useState({
     content: '',
     imageFile: null as File | null,
@@ -242,6 +244,7 @@ const Dashboard: React.FC = () => {
               {/* Profile Dropdown */}
               <div className="relative profile-dropdown">
                 <button
+                  ref={setDropdownButtonRef}
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                   className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-all duration-200"
                 >
@@ -261,53 +264,6 @@ const Dashboard: React.FC = () => {
                   }`} />
                 </button>
 
-                {/* Dropdown Menu */}
-                {showProfileDropdown && (
-                  <div className="fixed right-4 top-20 w-48 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[99999]" style={{ zIndex: 99999 }}>
-                    <button
-                      onClick={() => {
-                        setShowProfileDropdown(false);
-                        // TODO: Navigate to find friends page
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                    >
-                      <UserPlus className="w-4 h-4" />
-                      <span>Find Friends</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowProfileDropdown(false);
-                        navigate('/dashboard/profile');
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                    >
-                      <User className="w-4 h-4" />
-                      <span>My Profile</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowProfileDropdown(false);
-                        // TODO: Navigate to settings page
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                    >
-                      <Settings className="w-4 h-4" />
-                      <span>Settings</span>
-                    </button>
-                    <div className="border-t border-gray-100 my-1"></div>
-                    <button
-                      onClick={() => {
-                        setShowProfileDropdown(false);
-                        handleLogout();
-                      }}
-                      disabled={loading}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span>Logout</span>
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -499,6 +455,69 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Profile Dropdown Portal - Renders outside normal DOM hierarchy */}
+      {showProfileDropdown && dropdownButtonRef && createPortal(
+        <div 
+          className="profile-dropdown"
+          style={{
+            position: 'fixed',
+            top: `${dropdownButtonRef.getBoundingClientRect().bottom + 8}px`,
+            right: `${window.innerWidth - dropdownButtonRef.getBoundingClientRect().right}px`,
+            zIndex: 999999,
+            width: '192px',
+            backgroundColor: 'white',
+            borderRadius: '0.5rem',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+            border: '1px solid rgb(229, 231, 235)',
+            padding: '0.25rem 0'
+          }}
+        >
+          <button
+            onClick={() => {
+              setShowProfileDropdown(false);
+              // TODO: Navigate to find friends page
+            }}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Find Friends</span>
+          </button>
+          <button
+            onClick={() => {
+              setShowProfileDropdown(false);
+              navigate('/dashboard/profile');
+            }}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+          >
+            <User className="w-4 h-4" />
+            <span>My Profile</span>
+          </button>
+          <button
+            onClick={() => {
+              setShowProfileDropdown(false);
+              // TODO: Navigate to settings page
+            }}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+          >
+            <Settings className="w-4 h-4" />
+            <span>Settings</span>
+          </button>
+          <div className="border-t border-gray-100 my-1"></div>
+          <button
+            onClick={() => {
+              setShowProfileDropdown(false);
+              handleLogout();
+            }}
+            disabled={loading}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Logout</span>
+          </button>
+        </div>,
+        document.body
       )}
     </div>
   );

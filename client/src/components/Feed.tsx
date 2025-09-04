@@ -169,7 +169,7 @@ const Feed: React.FC = () => {
       const today = format(new Date(), 'yyyy-MM-dd');
       console.log('Loading meals for date:', today);
       
-      const mealsResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/meals/date/${today}`, {
+      const mealsResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/meals/${today}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -256,7 +256,10 @@ const Feed: React.FC = () => {
   useEffect(() => {
     const handleMealUpdate = (event: any) => {
       console.log('Meal update event received:', event.type);
-      loadSidebarData();
+      // Add a small delay to ensure backend has processed the meal update
+      setTimeout(() => {
+        loadSidebarData();
+      }, 500);
     };
 
     // Listen to various meal-related events
