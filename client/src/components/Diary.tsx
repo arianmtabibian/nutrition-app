@@ -402,30 +402,30 @@ const Diary: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Nutrition Diary</h2>
+        <h2 className="text-3xl font-bold text-gray-900">Nutrition Diary</h2>
         <div className="flex items-center space-x-2">
-          <CalendarIcon className="h-5 w-5 text-gray-400" />
-          <span className="text-sm text-gray-500">Track your daily nutrition goals</span>
+          <CalendarIcon className="h-6 w-6 text-orange-500" />
+          <span className="text-sm text-gray-600 font-medium">Track your daily nutrition goals</span>
         </div>
       </div>
 
       {/* Weekly Progress Section */}
-      <div className="card bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+      <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-2xl p-6 shadow-lg">
         <div className="flex items-center space-x-2 mb-4">
-          <BarChart3 className="h-5 w-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-blue-900">Weekly Progress Analysis</h3>
+          <BarChart3 className="h-6 w-6 text-orange-600" />
+          <h3 className="text-xl font-bold text-orange-900">Weekly Progress Analysis</h3>
         </div>
         
         {weeklyProgress.loading ? (
           <div className="flex items-center justify-center py-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600"></div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Average Daily Deficit/Surplus */}
-            <div className="bg-white rounded-lg p-4 border border-blue-200">
+            <div className="bg-white rounded-xl p-6 border border-orange-200 shadow-md">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium text-gray-700">Average Daily Calorie</h4>
+                <h4 className="font-semibold text-gray-700">Average Daily Calorie</h4>
                 {weeklyProgress.averageDeficit > 0 ? (
                   <TrendingDown className="h-5 w-5 text-green-600" />
                 ) : weeklyProgress.averageDeficit < 0 ? (
@@ -452,9 +452,9 @@ const Diary: React.FC = () => {
             </div>
             
                          {/* Weekly Weight Change */}
-             <div className="bg-white rounded-lg p-4 border border-blue-200">
+             <div className="bg-white rounded-xl p-6 border border-orange-200 shadow-md">
                <div className="flex items-center justify-between mb-2">
-                 <h4 className="font-medium text-gray-700">Weekly Weight Change</h4>
+                 <h4 className="font-semibold text-gray-700">Weekly Weight Change</h4>
                  {weeklyProgress.weeklyWeightChange > 0 ? (
                    <TrendingUp className="h-5 w-5 text-orange-600" />
                  ) : weeklyProgress.weeklyWeightChange < 0 ? (
@@ -482,8 +482,8 @@ const Diary: React.FC = () => {
           </div>
         )}
         
-        <div className="mt-4 pt-4 border-t border-blue-200">
-          <div className="text-xs text-blue-700">
+        <div className="mt-4 pt-4 border-t border-orange-200">
+          <div className="text-xs text-orange-700">
             <strong>Calculation:</strong> Based on your average daily calorie {weeklyProgress.averageDeficit > 0 ? 'deficit' : weeklyProgress.averageDeficit < 0 ? 'surplus' : 'maintenance'} over the past 7 days. 
             Weekly weight change = (Average daily {weeklyProgress.averageDeficit > 0 ? 'deficit' : weeklyProgress.averageDeficit < 0 ? 'surplus' : 'balance'} × 7) ÷ 3,500 calories per pound.
           </div>
@@ -494,19 +494,19 @@ const Diary: React.FC = () => {
       <div className="flex items-center justify-between">
         <button
           onClick={() => navigateMonth('prev')}
-          className="btn-secondary flex items-center space-x-2"
+          className="flex items-center space-x-2 px-4 py-2 border-2 border-gray-300 hover:border-orange-300 text-gray-700 hover:text-orange-600 rounded-xl font-medium transition-all duration-200 hover:bg-orange-50"
         >
           <ChevronLeft className="h-4 w-4" />
           <span>Previous</span>
         </button>
         
-        <h3 className="text-xl font-semibold text-gray-900">
+        <h3 className="text-2xl font-bold text-gray-900">
           {format(currentDate, 'MMMM yyyy')}
         </h3>
         
         <button
           onClick={() => navigateMonth('next')}
-          className="btn-secondary flex items-center space-x-2"
+          className="flex items-center space-x-2 px-4 py-2 border-2 border-gray-300 hover:border-orange-300 text-gray-700 hover:text-orange-600 rounded-xl font-medium transition-all duration-200 hover:bg-orange-50"
         >
           <span>Next</span>
           <ChevronRight className="h-4 w-4" />
@@ -514,30 +514,32 @@ const Diary: React.FC = () => {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 text-sm">
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 bg-success-500 rounded"></div>
-          <span>Both goals met</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 bg-warning-500 rounded"></div>
-          <span>One goal met</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 bg-danger-500 rounded"></div>
-          <span>No goals met</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 bg-gray-100 rounded"></div>
-          <span>No data</span>
+      <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200">
+        <div className="flex flex-wrap items-center gap-6 text-sm font-medium">
+          <div className="flex items-center space-x-2">
+            <div className="w-5 h-5 bg-green-500 rounded-lg shadow-sm"></div>
+            <span className="text-gray-700">Both goals met</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-5 h-5 bg-yellow-500 rounded-lg shadow-sm"></div>
+            <span className="text-gray-700">One goal met</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-5 h-5 bg-red-500 rounded-lg shadow-sm"></div>
+            <span className="text-gray-700">No goals met</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-5 h-5 bg-gray-200 rounded-lg shadow-sm"></div>
+            <span className="text-gray-700">No data</span>
+          </div>
         </div>
       </div>
 
       {/* Calendar */}
-      <div className="card">
+      <div className="bg-white rounded-2xl p-6 shadow-lg border border-white/20">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
           </div>
         ) : (
           renderCalendar()
@@ -546,8 +548,8 @@ const Diary: React.FC = () => {
 
       {/* Selected Date Details */}
       {selectedDate && selectedDayData && (
-        <div className="card bg-gray-50">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl p-6 shadow-lg border border-orange-200">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">
             {format(new Date(selectedDate), 'EEEE, MMMM d, yyyy')}
           </h3>
           

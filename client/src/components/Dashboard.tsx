@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, User, Calendar, Plus, BarChart3, Home } from 'lucide-react';
+import { LogOut, User, Calendar, Plus, BarChart3, Home, Target } from 'lucide-react';
 import { profileAPI } from '../services/api';
 import Overview from './Overview';
 import SocialProfile from './SocialProfile';
@@ -70,9 +70,9 @@ const Dashboard: React.FC = () => {
 
   if (checkingProfile) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Checking your profile...</p>
         </div>
       </div>
@@ -80,17 +80,19 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-orange-200/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-18">
             <div className="flex items-center">
-              <div className="h-8 w-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                <span className="text-white text-sm font-bold">N</span>
+              <div className="relative">
+                <div className="h-10 w-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
+                  <Target className="w-5 h-5 text-white" />
+                </div>
               </div>
-              <h1 className="ml-3 text-xl font-semibold text-gray-900">
-                Nutrition Tracker
+              <h1 className="ml-3 text-xl font-bold text-gray-900">
+                NutriTrack
               </h1>
             </div>
             
@@ -105,15 +107,15 @@ const Dashboard: React.FC = () => {
 
               <button
                 onClick={() => navigate('/dashboard/inputs')}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2"
+                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
                 <Plus className="h-4 w-4" />
-                <span>Input Meal</span>
+                <span>Add Meal</span>
               </button>
               <button
                 onClick={handleLogout}
                 disabled={loading}
-                className="btn-secondary flex items-center space-x-2"
+                className="border-2 border-gray-300 hover:border-orange-300 text-gray-700 hover:text-orange-600 px-4 py-2 rounded-xl font-medium transition-all duration-200 flex items-center space-x-2 hover:bg-orange-50"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Logout</span>
@@ -124,7 +126,7 @@ const Dashboard: React.FC = () => {
       </header>
 
       {/* Navigation Tabs */}
-      <nav className="bg-white border-b border-gray-200">
+      <nav className="bg-white/80 backdrop-blur-sm border-b border-orange-200/50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8">
             {tabs.map((tab) => {
@@ -135,10 +137,10 @@ const Dashboard: React.FC = () => {
                 <button
                   key={tab.id}
                   onClick={() => navigate(tab.path)}
-                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                  className={`flex items-center space-x-2 py-4 px-1 border-b-3 font-semibold text-sm transition-all duration-200 transform hover:-translate-y-0.5 ${
                     isActive
-                      ? 'border-primary-500 text-primary-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'border-orange-500 text-orange-600 shadow-sm'
+                      : 'border-transparent text-gray-500 hover:text-orange-600 hover:border-orange-300'
                   }`}
                 >
                   <Icon className="h-5 w-5" />
