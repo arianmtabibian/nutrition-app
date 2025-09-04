@@ -140,11 +140,23 @@ const SocialProfile: React.FC = () => {
           protein_goal: day.protein_goal
         });
         
-        // STRICT CHECK: Only count as yellow/green if goals are actually met
-        // calories_met should be true AND protein_met should be true for the flags to count
-        // If the flags are undefined/null, treat as false
-        const caloriesActuallyMet = day.calories_met === true;
-        const proteinActuallyMet = day.protein_met === true;
+        // CALCULATE GOALS MANUALLY if flags are unreliable
+        let caloriesActuallyMet = day.calories_met === true;
+        let proteinActuallyMet = day.protein_met === true;
+        
+        // If flags are missing/false but we have actual data, calculate manually
+        if (!caloriesActuallyMet && day.total_calories > 0 && day.calories_goal > 0) {
+          // For calories: met if within 10% of goal (allows for slight deficit)
+          caloriesActuallyMet = day.total_calories >= (day.calories_goal * 0.9) && day.total_calories <= (day.calories_goal * 1.1);
+          console.log(`Manual calorie check: ${day.total_calories} vs ${day.calories_goal} = ${caloriesActuallyMet}`);
+        }
+        
+        if (!proteinActuallyMet && day.total_protein > 0 && day.protein_goal > 0) {
+          // For protein: met if at least 90% of goal
+          proteinActuallyMet = day.total_protein >= (day.protein_goal * 0.9);
+          console.log(`Manual protein check: ${day.total_protein} vs ${day.protein_goal} = ${proteinActuallyMet}`);
+        }
+        
         const isYellowOrGreen = caloriesActuallyMet || proteinActuallyMet;
         
         if (isYellowOrGreen) {

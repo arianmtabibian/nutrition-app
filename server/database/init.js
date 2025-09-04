@@ -1,22 +1,8 @@
 const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const fs = require('fs');
+const { createPersistentDatabase } = require('../config/externalDb');
 
-// Use persistent storage for production (Render) or local path for development
-// For Render, use /opt/render/project/data for persistence
-const dbPath = process.env.NODE_ENV === 'production' 
-  ? (process.env.DB_PATH || '/opt/render/project/data/nutrition.db')
-  : (process.env.DB_PATH || path.join(__dirname, '..', 'nutrition.db'));
-
-// Ensure the directory exists
-const dbDir = path.dirname(dbPath);
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
-  console.log('Created database directory:', dbDir);
-}
-
-console.log('Database path:', dbPath);
-const db = new sqlite3.Database(dbPath);
+// Use the persistent database configuration
+const db = createPersistentDatabase();
 
 function initializeDatabase() {
   return new Promise((resolve, reject) => {
