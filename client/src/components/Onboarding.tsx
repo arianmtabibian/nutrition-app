@@ -524,6 +524,10 @@ const Onboarding: React.FC = () => {
     })();
     
     console.log(`Step ${currentStep}: canProceed = ${result}`);
+    console.log('Profile data:', profileData);
+    if (currentStep === 9) {
+      console.log('Step 9 - calculated_deficit:', profileData.calculated_deficit);
+    }
     return result;
   };
 
