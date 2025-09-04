@@ -244,13 +244,13 @@ router.get('/profile/:userId', auth, (req, res) => {
 // Create a post with file upload
 router.post('/posts', auth, upload.single('image'), (req, res) => {
   try {
-    const { content, mealData, allowComments } = req.body;
+    const { content, mealData, allowComments, hideLikeCount } = req.body;
     const userId = req.user.userId;
     
     // Get image URL if file was uploaded
     let imageUrl = null;
     if (req.file) {
-      imageUrl = `/api/uploads/${req.file.filename}`;
+      imageUrl = `/api/social/uploads/${req.file.filename}`;
     }
     
     if (!content && !imageUrl && !mealData) {
@@ -259,8 +259,8 @@ router.post('/posts', auth, upload.single('image'), (req, res) => {
     
     const db = getDatabase();
     db.run(
-      'INSERT INTO posts (user_id, content, image_url, meal_data, allow_comments) VALUES (?, ?, ?, ?, ?)',
-      [userId, content, imageUrl, mealData ? JSON.stringify(mealData) : null, allowComments !== 'false'],
+      'INSERT INTO posts (user_id, content, image_url, meal_data, allow_comments, hide_like_count) VALUES (?, ?, ?, ?, ?, ?)',
+      [userId, content, imageUrl, mealData ? JSON.stringify(mealData) : null, allowComments !== 'false', hideLikeCount === 'true'],
       function(err) {
         if (err) {
           console.error('Database error creating post:', err);

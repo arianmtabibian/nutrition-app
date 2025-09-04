@@ -94,6 +94,7 @@ function initializeDatabase() {
           image_url TEXT,
           meal_data TEXT,
           allow_comments BOOLEAN DEFAULT 1,
+          hide_like_count BOOLEAN DEFAULT 0,
           likes_count INTEGER DEFAULT 0,
           comments_count INTEGER DEFAULT 0,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -105,6 +106,13 @@ function initializeDatabase() {
       db.run(`ALTER TABLE posts ADD COLUMN allow_comments BOOLEAN DEFAULT 1`, (err) => {
         if (err && !err.message.includes('duplicate column name')) {
           console.error('Error adding allow_comments column:', err);
+        }
+      });
+
+      // Add hide_like_count column to existing posts table if it doesn't exist
+      db.run(`ALTER TABLE posts ADD COLUMN hide_like_count BOOLEAN DEFAULT 0`, (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('Error adding hide_like_count column:', err);
         }
       });
 

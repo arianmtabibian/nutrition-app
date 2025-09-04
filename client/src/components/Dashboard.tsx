@@ -22,7 +22,8 @@ const Dashboard: React.FC = () => {
   const [newPost, setNewPost] = useState({
     content: '',
     imageFile: null as File | null,
-    allowComments: true
+    allowComments: true,
+    hideLikeCount: false
   });
 
   const handleCreatePost = async () => {
@@ -33,6 +34,7 @@ const Dashboard: React.FC = () => {
       const formData = new FormData();
       formData.append('content', newPost.content);
       formData.append('allowComments', newPost.allowComments.toString());
+      formData.append('hideLikeCount', newPost.hideLikeCount.toString());
       
       if (newPost.imageFile) {
         formData.append('image', newPost.imageFile);
@@ -50,7 +52,7 @@ const Dashboard: React.FC = () => {
       if (response.ok) {
         const result = await response.json();
         console.log('Post created successfully:', result);
-        setNewPost({ content: '', imageFile: null, allowComments: true });
+        setNewPost({ content: '', imageFile: null, allowComments: true, hideLikeCount: false });
         setShowNewPostModal(false);
         // Navigate to feed to see the new post
         navigate('/dashboard/feed');
@@ -229,7 +231,7 @@ const Dashboard: React.FC = () => {
       {/* New Post Modal */}
       {showNewPostModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h3 className="text-xl font-semibold text-gray-900">Create New Post</h3>
@@ -242,42 +244,42 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="p-6">
+            <div className="p-6 space-y-6">
               {/* Text Input */}
-              <div className="mb-4">
+              <div>
                 <textarea
                   value={newPost.content}
                   onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
                   placeholder="What's going on?"
                   className="w-full border border-gray-300 rounded-lg p-4 resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  rows={4}
+                  rows={6}
                 />
               </div>
 
               {/* Image Preview */}
               {newPost.imageFile && (
-                <div className="mb-4 relative">
+                <div className="relative">
                   <img
                     src={URL.createObjectURL(newPost.imageFile)}
                     alt="Preview"
-                    className="w-full h-48 object-cover rounded-lg"
+                    className="w-full h-64 object-cover rounded-lg"
                   />
                   <button
                     onClick={() => setNewPost({ ...newPost, imageFile: null })}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors shadow-lg"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
               )}
 
-              {/* Bottom Controls */}
-              <div className="flex items-center justify-between">
-                {/* Image Upload */}
+              {/* Upload Controls */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h4 className="font-medium text-gray-900 mb-3">Add to your post</h4>
                 <div className="flex items-center space-x-4">
-                  <label className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 cursor-pointer transition-colors">
+                  <label className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg cursor-pointer transition-colors">
                     <Image className="h-5 w-5" />
-                    <span className="text-sm font-medium">Add Image</span>
+                    <span className="text-sm font-medium">Upload Photo</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -286,22 +288,51 @@ const Dashboard: React.FC = () => {
                     />
                   </label>
                 </div>
+              </div>
 
-                {/* Allow Comments Toggle */}
-                <div className="flex items-center space-x-2">
-                  <label className="text-sm font-medium text-gray-700">Allow comments</label>
-                  <button
-                    onClick={() => setNewPost({ ...newPost, allowComments: !newPost.allowComments })}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      newPost.allowComments ? 'bg-blue-600' : 'bg-gray-200'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        newPost.allowComments ? 'translate-x-6' : 'translate-x-1'
+              {/* Privacy Settings */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h4 className="font-medium text-gray-900 mb-4">Privacy Settings</h4>
+                <div className="space-y-4">
+                  {/* Allow Comments Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Allow comments</label>
+                      <p className="text-xs text-gray-500">Let people comment on your post</p>
+                    </div>
+                    <button
+                      onClick={() => setNewPost({ ...newPost, allowComments: !newPost.allowComments })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        newPost.allowComments ? 'bg-blue-600' : 'bg-gray-200'
                       }`}
-                    />
-                  </button>
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          newPost.allowComments ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Hide Like Count Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Hide like count</label>
+                      <p className="text-xs text-gray-500">Only you will see the total number of likes</p>
+                    </div>
+                    <button
+                      onClick={() => setNewPost({ ...newPost, hideLikeCount: !newPost.hideLikeCount })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        newPost.hideLikeCount ? 'bg-blue-600' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          newPost.hideLikeCount ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
