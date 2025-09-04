@@ -602,8 +602,8 @@ const Onboarding: React.FC = () => {
                 </div>
               </div>
               <h2 className="text-3xl font-bold text-gray-900 mb-2">{currentStepData.title}</h2>
-            <p className="text-gray-600">{currentStepData.subtitle}</p>
-          </div>
+              <p className="text-gray-600">{currentStepData.subtitle}</p>
+            </div>
           
           <div className="min-h-[200px] flex items-center justify-center">
             {currentStepData.content}
