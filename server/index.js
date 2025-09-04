@@ -10,6 +10,7 @@ const mealRoutes = require('./routes/meals');
 const diaryRoutes = require('./routes/diary');
 const socialRoutes = require('./routes/social');
 const { initializeDatabase } = require('./database/init');
+const { createDefaultUser } = require('./scripts/createDefaultUser');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -65,6 +66,9 @@ async function startServer() {
   try {
     await initializeDatabase();
     console.log('Database initialized successfully');
+    
+    // Create default user if no users exist
+    await createDefaultUser();
     
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
