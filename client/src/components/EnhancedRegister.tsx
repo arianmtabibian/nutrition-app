@@ -244,7 +244,6 @@ const EnhancedRegister: React.FC = () => {
                   {fieldErrors.first_name && (
                     <p className="mt-1 text-sm text-red-600">{fieldErrors.first_name}</p>
                   )}
-                  </div>
                 </div>
                 
                 <div>
@@ -272,7 +271,6 @@ const EnhancedRegister: React.FC = () => {
                   {fieldErrors.last_name && (
                     <p className="mt-1 text-sm text-red-600">{fieldErrors.last_name}</p>
                   )}
-                  </div>
                 </div>
               </div>
 
@@ -301,7 +299,6 @@ const EnhancedRegister: React.FC = () => {
                 {fieldErrors.username && (
                   <p className="mt-1 text-sm text-red-600">{fieldErrors.username}</p>
                 )}
-                </div>
               </div>
 
               <div>
@@ -329,7 +326,6 @@ const EnhancedRegister: React.FC = () => {
                 {fieldErrors.email && (
                   <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
                 )}
-                </div>
               </div>
 
               <div>
