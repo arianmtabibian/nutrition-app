@@ -60,7 +60,7 @@ const SocialProfile: React.FC = () => {
   const [likedPosts, setLikedPosts] = useState<Post[]>([]);
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'posts' | 'liked' | 'bookmarked' | 'saved'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'liked' | 'saved'>('posts');
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [newPost, setNewPost] = useState({ 
     content: '', 
@@ -151,7 +151,7 @@ const SocialProfile: React.FC = () => {
   useEffect(() => {
     if (user && activeTab === 'liked') {
       loadLikedPosts();
-    } else if (user && activeTab === 'bookmarked') {
+    } else if (user && activeTab === 'saved') {
       loadBookmarkedPosts();
     }
   }, [user, activeTab]);
@@ -744,17 +744,6 @@ const SocialProfile: React.FC = () => {
           <span>LIKED</span>
         </button>
         <button
-          onClick={() => setActiveTab('bookmarked')}
-          className={`flex items-center space-x-2 px-8 py-5 border-b-2 transition-colors ${
-            activeTab === 'bookmarked' 
-              ? 'border-gray-900 text-gray-900' 
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <Bookmark className="w-4 h-4" />
-          <span>BOOKMARKED</span>
-        </button>
-        <button
           onClick={() => setActiveTab('saved')}
           className={`flex items-center space-x-2 px-8 py-5 border-b-2 transition-colors ${
             activeTab === 'saved' 
@@ -950,8 +939,8 @@ const SocialProfile: React.FC = () => {
         </div>
       )}
 
-      {/* Bookmarked Posts */}
-      {activeTab === 'bookmarked' && (
+      {/* Saved Posts */}
+      {activeTab === 'saved' && (
         <div className="space-y-6 pt-6">
           {bookmarkedPosts.map((post) => (
             <div key={post.id} className="border border-gray-200 rounded-lg">
@@ -1040,14 +1029,6 @@ const SocialProfile: React.FC = () => {
         </div>
       )}
 
-      {/* Saved Posts */}
-      {activeTab === 'saved' && (
-        <div className="p-12 text-center text-gray-500">
-          <Bookmark className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-xl font-medium mb-2">No saved posts yet</h3>
-          <p>Save photos and videos that you want to see again.</p>
-        </div>
-      )}
 
       {/* No Posts Message */}
       {activeTab === 'posts' && posts.length === 0 && (
@@ -1073,12 +1054,12 @@ const SocialProfile: React.FC = () => {
         </div>
       )}
 
-      {/* No Bookmarked Posts Message */}
-      {activeTab === 'bookmarked' && bookmarkedPosts.length === 0 && (
+      {/* No Saved Posts Message */}
+      {activeTab === 'saved' && bookmarkedPosts.length === 0 && (
         <div className="p-12 text-center text-gray-500">
           <Bookmark className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-xl font-medium mb-2">No bookmarked posts yet</h3>
-          <p>Posts you bookmark will appear here.</p>
+          <h3 className="text-xl font-medium mb-2">No saved posts yet</h3>
+          <p>Posts you save will appear here.</p>
         </div>
       )}
 
