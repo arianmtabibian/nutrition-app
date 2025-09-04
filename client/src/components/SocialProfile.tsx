@@ -313,6 +313,7 @@ const SocialProfile: React.FC = () => {
       });
       
       if (response.ok) {
+        const result = await response.json();
         setNewPost({ 
           content: '', 
           imageFile: null, 
@@ -321,6 +322,10 @@ const SocialProfile: React.FC = () => {
           hideLikeCount: false
         });
         setShowCreatePost(false);
+        
+        // Trigger a custom event to update the feed
+        window.dispatchEvent(new CustomEvent('postCreated', { detail: result }));
+        
         loadPosts(); // Reload posts
       } else {
         const error = await response.json();

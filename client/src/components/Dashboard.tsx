@@ -64,9 +64,12 @@ const Dashboard: React.FC = () => {
         console.log('Dashboard post created successfully:', result);
         setNewPost({ content: '', imageFile: null, allowComments: true, hideLikeCount: false });
         setShowNewPostModal(false);
+        
+        // Trigger a custom event to update the feed
+        window.dispatchEvent(new CustomEvent('postCreated', { detail: result }));
+        
         // Navigate to feed to see the new post
         navigate('/dashboard/feed');
-        alert('Post created successfully!');
       } else {
         const errorText = await response.text();
         console.error('Dashboard failed to create post. Status:', response.status, 'Response:', errorText);

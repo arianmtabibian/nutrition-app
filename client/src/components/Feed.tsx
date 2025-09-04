@@ -75,6 +75,19 @@ const Feed: React.FC = () => {
     }
   }, [user]);
 
+  // Listen for post creation events to auto-update feed
+  useEffect(() => {
+    const handlePostCreated = () => {
+      loadFeed();
+    };
+
+    window.addEventListener('postCreated', handlePostCreated);
+    
+    return () => {
+      window.removeEventListener('postCreated', handlePostCreated);
+    };
+  }, []);
+
   const loadFeed = async () => {
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/feed`, {
@@ -165,8 +178,11 @@ const Feed: React.FC = () => {
           hideLikeCount: false
         });
         setShowCreatePost(false);
+        
+        // Trigger a custom event to update the feed
+        window.dispatchEvent(new CustomEvent('postCreated', { detail: result }));
+        
         loadFeed(); // Reload feed
-        alert('Post created successfully!');
       } else {
         const errorText = await response.text();
         console.error('Failed to create post. Status:', response.status, 'Response:', errorText);
