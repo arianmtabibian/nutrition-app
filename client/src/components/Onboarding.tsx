@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowRight, ArrowLeft, Target, User, Activity, Scale, Ruler, Calendar, CheckCircle, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { profileAPI } from '../services/api';
@@ -36,7 +36,7 @@ const Onboarding: React.FC = () => {
   const [timeframeError, setTimeframeError] = useState('');
 
   // Validate timeframe input
-  const validateTimeframe = (timeline: string): boolean => {
+  const validateTimeframe = useCallback((timeline: string): boolean => {
     if (!timeline || !timeline.trim()) {
       setTimeframeError('Please enter a timeframe');
       return false;
@@ -79,7 +79,7 @@ const Onboarding: React.FC = () => {
 
     setTimeframeError('');
     return true;
-  };
+  }, []);
 
   // AI-powered nutrition plan calculation
   const calculateNutritionPlan = async () => {
@@ -291,9 +291,8 @@ const Onboarding: React.FC = () => {
               onChange={(e) => {
                 const value = e.target.value;
                 setProfileData(prev => ({ ...prev, timeline: value }));
-                if (value.trim()) {
-                  validateTimeframe(value);
-                } else {
+                // Clear error when user starts typing
+                if (timeframeError) {
                   setTimeframeError('');
                 }
               }}
@@ -547,6 +546,19 @@ const Onboarding: React.FC = () => {
 
   const handleNext = async () => {
     if (currentStep < steps.length - 1) {
+      // Special validation for timeline step (step 4)
+      if (currentStep === 4) {
+        const timeline = profileData.timeline?.trim();
+        if (!timeline) {
+          setTimeframeError('Please enter a timeframe');
+          return;
+        }
+        
+        if (!validateTimeframe(timeline)) {
+          return; // Don't proceed if validation fails
+        }
+      }
+      
       setCurrentStep(currentStep + 1);
       setTimeframeError(''); // Clear any validation errors when moving to next step
     } else {
@@ -576,7 +588,7 @@ const Onboarding: React.FC = () => {
         case 1: return profileData.goal;
         case 2: return profileData.weight > 0;
         case 3: return profileData.target_weight > 0;
-        case 4: return profileData.timeline && profileData.timeline.trim().length > 0 && validateTimeframe(profileData.timeline);
+        case 4: return profileData.timeline && profileData.timeline.trim().length > 0;
         case 5: return profileData.height > 0;
         case 6: return profileData.age > 0;
         case 7: return profileData.activity_level;
@@ -594,6 +606,7 @@ const Onboarding: React.FC = () => {
     }
     return result;
   };
+
 
   if (loading) {
       return (

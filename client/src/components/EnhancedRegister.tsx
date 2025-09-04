@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, ArrowRight, Target, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,19 +18,103 @@ const EnhancedRegister: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({
+    first_name: '',
+    last_name: '',
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+
+  // Comprehensive form validation
+  const validateForm = useCallback(() => {
+    const errors = {
+      first_name: '',
+      last_name: '',
+      username: '',
+      email: '',
+      password: '',
+      confirmPassword: ''
+    };
+
+    // First name validation
+    if (!formData.first_name.trim()) {
+      errors.first_name = 'First name is required';
+    } else if (formData.first_name.trim().length < 2) {
+      errors.first_name = 'First name must be at least 2 characters';
+    } else if (!/^[a-zA-Z\s'-]+$/.test(formData.first_name.trim())) {
+      errors.first_name = 'First name can only contain letters, spaces, hyphens, and apostrophes';
+    }
+
+    // Last name validation
+    if (!formData.last_name.trim()) {
+      errors.last_name = 'Last name is required';
+    } else if (formData.last_name.trim().length < 2) {
+      errors.last_name = 'Last name must be at least 2 characters';
+    } else if (!/^[a-zA-Z\s'-]+$/.test(formData.last_name.trim())) {
+      errors.last_name = 'Last name can only contain letters, spaces, hyphens, and apostrophes';
+    }
+
+    // Username validation
+    if (!formData.username.trim()) {
+      errors.username = 'Username is required';
+    } else if (formData.username.trim().length < 3) {
+      errors.username = 'Username must be at least 3 characters';
+    } else if (formData.username.trim().length > 20) {
+      errors.username = 'Username cannot exceed 20 characters';
+    } else if (!/^[a-zA-Z0-9_-]+$/.test(formData.username.trim())) {
+      errors.username = 'Username can only contain letters, numbers, underscores, and hyphens';
+    } else if (/^[0-9_-]/.test(formData.username.trim())) {
+      errors.username = 'Username must start with a letter';
+    }
+
+    // Email validation
+    if (!formData.email.trim()) {
+      errors.email = 'Email address is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      errors.email = 'Please enter a valid email address';
+    }
+
+    // Password validation
+    if (!formData.password) {
+      errors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      errors.password = 'Password must be at least 8 characters long';
+    } else if (!/(?=.*[a-z])/.test(formData.password)) {
+      errors.password = 'Password must contain at least one lowercase letter';
+    } else if (!/(?=.*[A-Z])/.test(formData.password)) {
+      errors.password = 'Password must contain at least one uppercase letter';
+    } else if (!/(?=.*\d)/.test(formData.password)) {
+      errors.password = 'Password must contain at least one number';
+    } else if (!/(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/.test(formData.password)) {
+      errors.password = 'Password must contain at least one special character';
+    }
+
+    // Confirm password validation
+    if (!formData.confirmPassword) {
+      errors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+
+    setFieldErrors(errors);
+    return Object.values(errors).every(error => error === '');
+  }, [formData]);
+
+  // Clear field error when user starts typing
+  const clearFieldError = (fieldName: string) => {
+    if (fieldErrors[fieldName as keyof typeof fieldErrors]) {
+      setFieldErrors(prev => ({ ...prev, [fieldName]: '' }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Validation
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    // Validate form - only on submit
+    if (!validateForm()) {
       return;
     }
 
@@ -144,11 +228,22 @@ const EnhancedRegister: React.FC = () => {
                     <input
                       type="text"
                       value={formData.first_name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, first_name: e.target.value }));
+                        clearFieldError('first_name');
+                      }}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent transition-all duration-200 ${
+                        fieldErrors.first_name 
+                          ? 'border-red-500 focus:ring-red-500' 
+                          : 'border-gray-300 focus:ring-orange-500 hover:border-gray-400'
+                      }`}
                       placeholder="John"
                       required
                     />
+                  </div>
+                  {fieldErrors.first_name && (
+                    <p className="mt-1 text-sm text-red-600">{fieldErrors.first_name}</p>
+                  )}
                   </div>
                 </div>
                 
@@ -161,11 +256,22 @@ const EnhancedRegister: React.FC = () => {
                     <input
                       type="text"
                       value={formData.last_name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, last_name: e.target.value }));
+                        clearFieldError('last_name');
+                      }}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent transition-all duration-200 ${
+                        fieldErrors.last_name 
+                          ? 'border-red-500 focus:ring-red-500' 
+                          : 'border-gray-300 focus:ring-orange-500 hover:border-gray-400'
+                      }`}
                       placeholder="Doe"
                       required
                     />
+                  </div>
+                  {fieldErrors.last_name && (
+                    <p className="mt-1 text-sm text-red-600">{fieldErrors.last_name}</p>
+                  )}
                   </div>
                 </div>
               </div>
@@ -179,11 +285,22 @@ const EnhancedRegister: React.FC = () => {
                   <input
                     type="text"
                     value={formData.username}
-                    onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, username: e.target.value }));
+                      clearFieldError('username');
+                    }}
+                    className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent transition-all duration-200 ${
+                      fieldErrors.username 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-orange-500 hover:border-gray-400'
+                    }`}
                     placeholder="johndoe123"
                     required
                   />
+                </div>
+                {fieldErrors.username && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.username}</p>
+                )}
                 </div>
               </div>
 
@@ -196,11 +313,22 @@ const EnhancedRegister: React.FC = () => {
                   <input
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, email: e.target.value }));
+                      clearFieldError('email');
+                    }}
+                    className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent transition-all duration-200 ${
+                      fieldErrors.email 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-orange-500 hover:border-gray-400'
+                    }`}
                     placeholder="john@example.com"
                     required
                   />
+                </div>
+                {fieldErrors.email && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+                )}
                 </div>
               </div>
 
@@ -213,8 +341,15 @@ const EnhancedRegister: React.FC = () => {
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
-                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, password: e.target.value }));
+                      clearFieldError('password');
+                    }}
+                    className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:border-transparent transition-all duration-200 ${
+                      fieldErrors.password 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-orange-500 hover:border-gray-400'
+                    }`}
                     placeholder="••••••••"
                     required
                   />
@@ -226,6 +361,9 @@ const EnhancedRegister: React.FC = () => {
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
+                {fieldErrors.password && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.password}</p>
+                )}
               </div>
 
               <div>
@@ -237,8 +375,15 @@ const EnhancedRegister: React.FC = () => {
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
-                    onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, confirmPassword: e.target.value }));
+                      clearFieldError('confirmPassword');
+                    }}
+                    className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 focus:border-transparent transition-all duration-200 ${
+                      fieldErrors.confirmPassword 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-orange-500 hover:border-gray-400'
+                    }`}
                     placeholder="••••••••"
                     required
                   />
@@ -250,6 +395,9 @@ const EnhancedRegister: React.FC = () => {
                     {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
+                {fieldErrors.confirmPassword && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.confirmPassword}</p>
+                )}
               </div>
 
               {error && (
