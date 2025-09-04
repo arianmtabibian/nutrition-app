@@ -103,14 +103,30 @@ const SocialProfile: React.FC = () => {
       }
 
       // Sort days by date (newest first) and calculate consecutive days where goals were met
-      const sortedDays = monthData.days
-        .filter((day: any) => day.has_data) // Only count days with meal data
+      const allDays = monthData.days || [];
+      console.log('Total days in month data:', allDays.length);
+      
+      const daysWithData = allDays.filter((day: any) => day.has_data);
+      console.log('Days with meal data:', daysWithData.length);
+      
+      const sortedDays = daysWithData
         .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-      console.log('Days with data for streak calculation:', sortedDays.length);
-      console.log('Sample day data:', sortedDays.slice(0, 3));
+      console.log('Sample day data (first 3):', sortedDays.slice(0, 3));
+      
+      // Check if any days actually have goals met
+      const daysWithGoalsMet = sortedDays.filter((day: any) => day.calories_met || day.protein_met);
+      console.log('Days with at least one goal met:', daysWithGoalsMet.length);
 
       let currentStreak = 0;
+      
+      // If no days have goals met, streak is 0
+      if (daysWithGoalsMet.length === 0) {
+        console.log('No days with goals met, streak is 0');
+        console.log('Final calculated streak: 0');
+        setStreak(0);
+        return;
+      }
       
       // Calculate streak from the most recent day backwards
       // Count consecutive days that would show as yellow or green squares in diary
