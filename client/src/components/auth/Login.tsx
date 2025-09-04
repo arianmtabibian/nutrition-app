@@ -49,7 +49,10 @@ const Login: React.FC = () => {
               <ArrowLeft className="w-5 h-5 text-gray-600" />
             </button>
             
-            <div className="flex items-center justify-center space-x-3 mb-6">
+            <button 
+              onClick={() => navigate('/')}
+              className="flex items-center justify-center space-x-3 mb-6 hover:opacity-80 transition-opacity"
+            >
               <div className="relative">
                 <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
                   <Target className="w-8 h-8 text-white" />
@@ -61,7 +64,7 @@ const Login: React.FC = () => {
               <h1 className="text-3xl font-bold text-gray-900">
                 NutriTrack
               </h1>
-            </div>
+            </button>
             
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h2>
             <p className="text-gray-600">Sign in to continue your nutrition journey</p>

@@ -33,6 +33,53 @@ const Onboarding: React.FC = () => {
   });
   const [timeRemaining, setTimeRemaining] = useState(120);
   const [loading, setLoading] = useState(true);
+  const [timeframeError, setTimeframeError] = useState('');
+
+  // Validate timeframe input
+  const validateTimeframe = (timeline: string): boolean => {
+    if (!timeline || !timeline.trim()) {
+      setTimeframeError('Please enter a timeframe');
+      return false;
+    }
+
+    const timelineText = timeline.toLowerCase().trim();
+    const numberMatch = timelineText.match(/(\d+)/);
+    const unitMatch = timelineText.match(/(week|month|day|wk|mo|d)s?/i);
+
+    if (!numberMatch) {
+      setTimeframeError('Please include a number (e.g., "8 weeks", "3 months")');
+      return false;
+    }
+
+    if (!unitMatch) {
+      setTimeframeError('Please specify a time unit: days, weeks, or months (e.g., "8 weeks", "3 months", "60 days")');
+      return false;
+    }
+
+    const number = parseInt(numberMatch[1]);
+    const unit = unitMatch[1].toLowerCase();
+
+    // Check for reasonable ranges
+    if (unit.includes('day') || unit === 'd') {
+      if (number < 7 || number > 365) {
+        setTimeframeError('Please enter between 7 and 365 days');
+        return false;
+      }
+    } else if (unit.includes('week') || unit === 'wk') {
+      if (number < 1 || number > 52) {
+        setTimeframeError('Please enter between 1 and 52 weeks');
+        return false;
+      }
+    } else if (unit.includes('month') || unit === 'mo') {
+      if (number < 1 || number > 12) {
+        setTimeframeError('Please enter between 1 and 12 months');
+        return false;
+      }
+    }
+
+    setTimeframeError('');
+    return true;
+  };
 
   // AI-powered nutrition plan calculation
   const calculateNutritionPlan = async () => {
@@ -241,12 +288,28 @@ const Onboarding: React.FC = () => {
             <input
               type="text"
               value={profileData.timeline || ''}
-              onChange={(e) => setProfileData(prev => ({ ...prev, timeline: e.target.value }))}
-              className="text-2xl font-medium text-center w-48 border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-orange-500 focus:outline-none transition-all duration-200 hover:border-orange-300"
+              onChange={(e) => {
+                const value = e.target.value;
+                setProfileData(prev => ({ ...prev, timeline: value }));
+                if (value.trim()) {
+                  validateTimeframe(value);
+                } else {
+                  setTimeframeError('');
+                }
+              }}
+              className={`text-2xl font-medium text-center w-48 border-2 rounded-lg px-4 py-2 focus:outline-none transition-all duration-200 ${
+                timeframeError 
+                  ? 'border-red-500 focus:border-red-500' 
+                  : 'border-gray-300 focus:border-orange-500 hover:border-orange-300'
+              }`}
               placeholder="e.g., 8 weeks, 3 months, 60 days"
             />
-            <div className="text-gray-500 text-sm mt-2">
-              Enter any format: weeks, months, days
+            <div className="text-sm mt-2">
+              {timeframeError ? (
+                <div className="text-red-500">{timeframeError}</div>
+              ) : (
+                <div className="text-gray-500">Enter any format: weeks, months, days</div>
+              )}
             </div>
           </div>
         </div>
@@ -485,6 +548,7 @@ const Onboarding: React.FC = () => {
   const handleNext = async () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
+      setTimeframeError(''); // Clear any validation errors when moving to next step
     } else {
       try {
         // Update profile with collected data
@@ -512,7 +576,7 @@ const Onboarding: React.FC = () => {
         case 1: return profileData.goal;
         case 2: return profileData.weight > 0;
         case 3: return profileData.target_weight > 0;
-        case 4: return profileData.timeline && profileData.timeline.trim().length > 0;
+        case 4: return profileData.timeline && profileData.timeline.trim().length > 0 && validateTimeframe(profileData.timeline);
         case 5: return profileData.height > 0;
         case 6: return profileData.age > 0;
         case 7: return profileData.activity_level;

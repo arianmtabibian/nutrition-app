@@ -154,7 +154,10 @@ const Dashboard: React.FC = () => {
       <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-orange-200/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
-            <div className="flex items-center">
+            <button 
+              onClick={() => navigate('/dashboard/feed')}
+              className="flex items-center hover:opacity-80 transition-opacity"
+            >
               <div className="relative">
                 <div className="h-10 w-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
                   <Target className="w-5 h-5 text-white" />
@@ -163,7 +166,7 @@ const Dashboard: React.FC = () => {
               <h1 className="ml-3 text-xl font-bold text-gray-900">
                 NutriTrack
               </h1>
-            </div>
+            </button>
             
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-700">

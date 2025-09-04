@@ -228,6 +228,7 @@ const Feed: React.FC = () => {
   const loadSidebarData = async () => {
     try {
       setSidebarLoading(true);
+      console.log('Loading sidebar data...');
       
       // Load profile data with stats
       const profileResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/profile/${user?.id}`, {
@@ -236,37 +237,51 @@ const Feed: React.FC = () => {
         }
       });
       
+      console.log('Profile response status:', profileResponse.status);
+      
       if (profileResponse.ok) {
         const profileData = await profileResponse.json();
+        console.log('Profile data received:', profileData);
         setProfileData(profileData);
+      } else {
+        console.error('Profile API error:', profileResponse.status, await profileResponse.text());
       }
       
       // Load today's nutrition data
       const today = format(new Date(), 'yyyy-MM-dd');
+      console.log('Loading meals for date:', today);
+      
       const mealsResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/meals/date/${today}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
       
+      console.log('Meals response status:', mealsResponse.status);
+      
       if (mealsResponse.ok) {
         const mealsData = await mealsResponse.json();
+        console.log('Meals data received:', mealsData);
         const meals = mealsData.meals || [];
         
         // Calculate totals
         const totalCalories = meals.reduce((sum: number, meal: any) => sum + (meal.calories || 0), 0);
         const totalProtein = meals.reduce((sum: number, meal: any) => sum + (meal.protein || 0), 0);
         
+        console.log('Calculated totals:', { totalCalories, totalProtein });
+        
         // Get profile data first for goals
         let calorieGoal = 2000;
         let proteinGoal = 150;
         
         if (profileResponse.ok) {
-          const profileData = await profileResponse.json();
-          calorieGoal = profileData.profile?.daily_calories || 2000;
-          proteinGoal = profileData.profile?.daily_protein || 150;
+          const profileDataForGoals = await profileResponse.json();
+          calorieGoal = profileDataForGoals.profile?.daily_calories || 2000;
+          proteinGoal = profileDataForGoals.profile?.daily_protein || 150;
         }
         const calorieDeficit = calorieGoal - totalCalories;
+        
+        console.log('Final nutrition data:', { totalCalories, totalProtein, calorieGoal, proteinGoal, calorieDeficit });
         
         setTodayNutrition({
           totalCalories,
@@ -275,6 +290,8 @@ const Feed: React.FC = () => {
           proteinGoal,
           calorieDeficit
         });
+      } else {
+        console.error('Meals API error:', mealsResponse.status, await mealsResponse.text());
       }
       
       // Load calendar data for current month

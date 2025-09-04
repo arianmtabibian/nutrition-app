@@ -22,7 +22,10 @@ const Welcome: React.FC = () => {
           
           {/* Hero Content */}
           <div className="text-center mb-12">
-          <div className="flex items-center justify-center space-x-3 mb-8">
+          <button 
+            onClick={() => navigate('/')}
+            className="flex items-center justify-center space-x-3 mb-8 hover:opacity-80 transition-opacity"
+          >
               <div className="relative">
                 <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
               <Target className="w-8 h-8 text-white" />
@@ -34,7 +37,7 @@ const Welcome: React.FC = () => {
               <h1 className="text-4xl font-bold text-gray-900">
               NutriTrack
             </h1>
-          </div>
+          </button>
           
             <h2 className="text-6xl md:text-7xl font-bold text-gray-900 leading-tight mb-6">
               Every Meal
