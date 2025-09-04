@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, User, Calendar, Plus, BarChart3, Home, Target } from 'lucide-react';
+import { LogOut, User, Calendar, Plus, BarChart3, Home, Target, PenTool, Image, X } from 'lucide-react';
 import { profileAPI } from '../services/api';
 import Overview from './Overview';
 import SocialProfile from './SocialProfile';
@@ -18,6 +18,59 @@ const Dashboard: React.FC = () => {
   const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(true);
+  const [showNewPostModal, setShowNewPostModal] = useState(false);
+  const [newPost, setNewPost] = useState({
+    content: '',
+    imageFile: null as File | null,
+    allowComments: true
+  });
+
+  const handleCreatePost = async () => {
+    if (!newPost.content.trim()) return;
+
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('content', newPost.content);
+      formData.append('allowComments', newPost.allowComments.toString());
+      
+      if (newPost.imageFile) {
+        formData.append('image', newPost.imageFile);
+      }
+
+      const response = await fetch('/api/social/posts', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          // Don't set Content-Type header - let the browser set it for FormData
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Post created successfully:', result);
+        setNewPost({ content: '', imageFile: null, allowComments: true });
+        setShowNewPostModal(false);
+        // Navigate to feed to see the new post
+        navigate('/dashboard/feed');
+      } else {
+        const error = await response.json();
+        console.error('Failed to create post:', error);
+        alert('Failed to create post: ' + (error.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error creating post:', error);
+      alert('Error creating post: ' + error.message);
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewPost({ ...newPost, imageFile: file });
+    }
+  };
 
   const handleLogout = async () => {
     setLoading(true);
@@ -84,7 +137,7 @@ const Dashboard: React.FC = () => {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-orange-200/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-18">
+          <div className="flex justify-between items-center h-20">
             <div className="flex items-center">
               <div className="relative">
                 <div className="h-10 w-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
@@ -107,15 +160,22 @@ const Dashboard: React.FC = () => {
 
               <button
                 onClick={() => navigate('/dashboard/inputs')}
-                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
               >
                 <Plus className="h-4 w-4" />
                 <span>Add Meal</span>
               </button>
               <button
+                onClick={() => setShowNewPostModal(true)}
+                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
+              >
+                <PenTool className="h-4 w-4" />
+                <span>New Post</span>
+              </button>
+              <button
                 onClick={handleLogout}
                 disabled={loading}
-                className="border-2 border-gray-300 hover:border-orange-300 text-gray-700 hover:text-orange-600 px-4 py-2 rounded-xl font-medium transition-all duration-200 flex items-center space-x-2 hover:bg-orange-50"
+                className="border-2 border-gray-300 hover:border-orange-300 text-gray-700 hover:text-orange-600 px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 hover:bg-orange-50"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Logout</span>
@@ -165,6 +225,106 @@ const Dashboard: React.FC = () => {
 
         </Routes>
       </main>
+
+      {/* New Post Modal */}
+      {showNewPostModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-xl font-semibold text-gray-900">Create New Post</h3>
+              <button
+                onClick={() => setShowNewPostModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              {/* Text Input */}
+              <div className="mb-4">
+                <textarea
+                  value={newPost.content}
+                  onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+                  placeholder="What's going on?"
+                  className="w-full border border-gray-300 rounded-lg p-4 resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  rows={4}
+                />
+              </div>
+
+              {/* Image Preview */}
+              {newPost.imageFile && (
+                <div className="mb-4 relative">
+                  <img
+                    src={URL.createObjectURL(newPost.imageFile)}
+                    alt="Preview"
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
+                  <button
+                    onClick={() => setNewPost({ ...newPost, imageFile: null })}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Bottom Controls */}
+              <div className="flex items-center justify-between">
+                {/* Image Upload */}
+                <div className="flex items-center space-x-4">
+                  <label className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 cursor-pointer transition-colors">
+                    <Image className="h-5 w-5" />
+                    <span className="text-sm font-medium">Add Image</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {/* Allow Comments Toggle */}
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm font-medium text-gray-700">Allow comments</label>
+                  <button
+                    onClick={() => setNewPost({ ...newPost, allowComments: !newPost.allowComments })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      newPost.allowComments ? 'bg-blue-600' : 'bg-gray-200'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        newPost.allowComments ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
+              <button
+                onClick={() => setShowNewPostModal(false)}
+                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreatePost}
+                disabled={!newPost.content.trim()}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors"
+              >
+                Post
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

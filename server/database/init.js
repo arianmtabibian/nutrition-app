@@ -93,12 +93,20 @@ function initializeDatabase() {
           content TEXT,
           image_url TEXT,
           meal_data TEXT,
+          allow_comments BOOLEAN DEFAULT 1,
           likes_count INTEGER DEFAULT 0,
           comments_count INTEGER DEFAULT 0,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (user_id) REFERENCES users (id)
         )
       `);
+
+      // Add allow_comments column to existing posts table if it doesn't exist
+      db.run(`ALTER TABLE posts ADD COLUMN allow_comments BOOLEAN DEFAULT 1`, (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('Error adding allow_comments column:', err);
+        }
+      });
 
       db.run(`
         CREATE TABLE IF NOT EXISTS post_likes (

@@ -1,8 +1,46 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { getDatabase } = require('../database/init');
 const { authenticateToken: auth } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    // Generate unique filename with timestamp and random string
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'post-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  // Only allow image files
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only image files are allowed!'), false);
+  }
+};
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  }
+});
 
 // Debug: Get current user from token
 router.get('/debug/current-user', auth, (req, res) => {
@@ -203,11 +241,17 @@ router.get('/profile/:userId', auth, (req, res) => {
   }
 });
 
-// Create a post
-router.post('/posts', auth, (req, res) => {
+// Create a post with file upload
+router.post('/posts', auth, upload.single('image'), (req, res) => {
   try {
-    const { content, imageUrl, mealData } = req.body;
+    const { content, mealData, allowComments } = req.body;
     const userId = req.user.userId;
+    
+    // Get image URL if file was uploaded
+    let imageUrl = null;
+    if (req.file) {
+      imageUrl = `/api/uploads/${req.file.filename}`;
+    }
     
     if (!content && !imageUrl && !mealData) {
       return res.status(400).json({ error: 'Post must have content, image, or meal data' });
@@ -215,16 +259,18 @@ router.post('/posts', auth, (req, res) => {
     
     const db = getDatabase();
     db.run(
-      'INSERT INTO posts (user_id, content, image_url, meal_data) VALUES (?, ?, ?, ?)',
-      [userId, content, imageUrl, mealData ? JSON.stringify(mealData) : null],
+      'INSERT INTO posts (user_id, content, image_url, meal_data, allow_comments) VALUES (?, ?, ?, ?, ?)',
+      [userId, content, imageUrl, mealData ? JSON.stringify(mealData) : null, allowComments !== 'false'],
       function(err) {
         if (err) {
+          console.error('Database error creating post:', err);
           return res.status(500).json({ error: 'Failed to create post' });
         }
         
         res.status(201).json({
           message: 'Post created successfully',
-          postId: this.lastID
+          postId: this.lastID,
+          imageUrl: imageUrl
         });
       }
     );
@@ -346,9 +392,10 @@ router.get('/posts/:postId/comments', auth, (req, res) => {
     const db = getDatabase();
     
     db.all(`
-      SELECT c.*, u.username, u.first_name, u.last_name
+      SELECT c.*, u.username, u.first_name, u.last_name, up.profile_picture
       FROM post_comments c
       JOIN users u ON c.user_id = u.id
+      LEFT JOIN user_profiles up ON u.id = up.user_id
       WHERE c.post_id = ?
       ORDER BY c.created_at ASC
     `, [postId], (err, comments) => {
@@ -356,7 +403,19 @@ router.get('/posts/:postId/comments', auth, (req, res) => {
         return res.status(500).json({ error: 'Database error' });
       }
       
-      res.json({ comments });
+      // Format comments with user data
+      const formattedComments = comments.map(comment => ({
+        ...comment,
+        user: {
+          id: comment.user_id,
+          username: comment.username,
+          first_name: comment.first_name,
+          last_name: comment.last_name,
+          profile_picture: comment.profile_picture
+        }
+      }));
+      
+      res.json({ comments: formattedComments });
     });
   } catch (error) {
     console.error('Get comments error:', error);
@@ -408,39 +467,68 @@ router.post('/follow/:userId', auth, (req, res) => {
   }
 });
 
-// Get feed (posts from followed users)
+// Get feed (posts from followed users and own posts)
 router.get('/feed', auth, (req, res) => {
   try {
     const userId = req.user.userId;
     const db = getDatabase();
     
     db.all(`
-      SELECT p.*, u.username, u.first_name, u.last_name,
+      SELECT p.*, u.username, u.first_name, u.last_name, up.profile_picture,
              (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as likes_count,
              (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comments_count,
              EXISTS(SELECT 1 FROM post_likes WHERE post_id = p.id AND user_id = ?) as is_liked
       FROM posts p
       JOIN users u ON p.user_id = u.id
+      LEFT JOIN user_profiles up ON u.id = up.user_id
       WHERE p.user_id IN (
         SELECT following_id FROM user_follows WHERE follower_id = ?
+        UNION
+        SELECT ? as user_id
       )
       ORDER BY p.created_at DESC
       LIMIT 20
-    `, [userId, userId], (err, posts) => {
+    `, [userId, userId, userId], (err, posts) => {
       if (err) {
         return res.status(500).json({ error: 'Database error' });
       }
       
-      // Parse meal data
+      // Parse meal data and format posts
       const formattedPosts = posts.map(post => ({
         ...post,
-        meal_data: post.meal_data ? JSON.parse(post.meal_data) : null
+        meal_data: post.meal_data ? JSON.parse(post.meal_data) : null,
+        user: {
+          id: post.user_id,
+          username: post.username,
+          first_name: post.first_name,
+          last_name: post.last_name,
+          profile_picture: post.profile_picture
+        }
       }));
       
       res.json({ posts: formattedPosts });
     });
   } catch (error) {
     console.error('Get feed error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Serve uploaded files
+router.get('/uploads/:filename', (req, res) => {
+  try {
+    const filename = req.params.filename;
+    const filePath = path.join(uploadsDir, filename);
+    
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
+    // Send the file
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error('Serve file error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
