@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Heart, MessageCircle, Share, MoreHorizontal, PenTool, Bookmark, Image, X, Plus, UserCircle, Calendar, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
 import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday } from 'date-fns';
@@ -84,42 +84,46 @@ const Feed: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (user) {
-      loadFeed();
-      loadSidebarData();
+  const loadMonthData = useCallback(async () => {
+    try {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      
+      console.log('Loading calendar data for:', { year, month });
+      
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/diary/month/${year}/${month}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      console.log('Calendar response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Calendar data received:', data);
+        setMonthData(data);
+      } else {
+        console.error('Calendar API error:', response.status, await response.text());
+        // Set empty data structure as fallback
+        setMonthData({
+          year,
+          month,
+          days: []
+        });
+      }
+    } catch (error) {
+      console.error('Error loading month data:', error);
+      // Set empty data structure as fallback
+      setMonthData({
+        year: currentDate.getFullYear(),
+        month: currentDate.getMonth() + 1,
+        days: []
+      });
     }
-  }, [user]);
+  }, [currentDate]);
 
-  // Listen for post creation events to auto-update feed
-  useEffect(() => {
-    const handlePostCreated = () => {
-      loadFeed();
-    };
-
-    window.addEventListener('postCreated', handlePostCreated);
-    
-    return () => {
-      window.removeEventListener('postCreated', handlePostCreated);
-    };
-  }, []);
-
-  // Listen for meal updates to refresh sidebar
-  useEffect(() => {
-    const handleMealUpdate = () => {
-      loadSidebarData();
-    };
-
-    window.addEventListener('mealAdded', handleMealUpdate);
-    window.addEventListener('mealDataChanged', handleMealUpdate);
-    
-    return () => {
-      window.removeEventListener('mealAdded', handleMealUpdate);
-      window.removeEventListener('mealDataChanged', handleMealUpdate);
-    };
-  }, []);
-
-  const loadFeed = async () => {
+  const loadFeed = useCallback(async () => {
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/feed`, {
         headers: {
@@ -135,7 +139,139 @@ const Feed: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const loadSidebarData = useCallback(async () => {
+    try {
+      setSidebarLoading(true);
+      console.log('Loading sidebar data...');
+      
+      let profileDataForGoals = null;
+      
+      // Load profile data with stats
+      const profileResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/profile/${user?.id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      console.log('Profile response status:', profileResponse.status);
+      
+      if (profileResponse.ok) {
+        profileDataForGoals = await profileResponse.json();
+        console.log('Profile data received:', profileDataForGoals);
+        setProfileData(profileDataForGoals);
+      } else {
+        console.error('Profile API error:', profileResponse.status, await profileResponse.text());
+      }
+      
+      // Load today's nutrition data
+      const today = format(new Date(), 'yyyy-MM-dd');
+      console.log('Loading meals for date:', today);
+      
+      const mealsResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/meals/date/${today}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      console.log('Meals response status:', mealsResponse.status);
+      
+      if (mealsResponse.ok) {
+        const mealsData = await mealsResponse.json();
+        console.log('Meals data received:', mealsData);
+        const meals = mealsData.meals || [];
+        
+        // Calculate totals
+        const totalCalories = meals.reduce((sum: number, meal: any) => sum + (meal.calories || 0), 0);
+        const totalProtein = meals.reduce((sum: number, meal: any) => sum + (meal.protein || 0), 0);
+        
+        console.log('Calculated totals:', { totalCalories, totalProtein });
+        
+        // Get goals from profile data
+        let calorieGoal = 2000;
+        let proteinGoal = 150;
+        
+        if (profileDataForGoals?.profile) {
+          calorieGoal = profileDataForGoals.profile.daily_calories || 2000;
+          proteinGoal = profileDataForGoals.profile.daily_protein || 150;
+        }
+        
+        const calorieDeficit = calorieGoal - totalCalories;
+        
+        console.log('Final nutrition data:', { totalCalories, totalProtein, calorieGoal, proteinGoal, calorieDeficit });
+        
+        setTodayNutrition({
+          totalCalories,
+          totalProtein,
+          calorieGoal,
+          proteinGoal,
+          calorieDeficit
+        });
+      } else {
+        console.error('Meals API error:', mealsResponse.status, await mealsResponse.text());
+        // Set default nutrition data if no meals
+        setTodayNutrition({
+          totalCalories: 0,
+          totalProtein: 0,
+          calorieGoal: profileDataForGoals?.profile?.daily_calories || 2000,
+          proteinGoal: profileDataForGoals?.profile?.daily_protein || 150,
+          calorieDeficit: profileDataForGoals?.profile?.daily_calories || 2000
+        });
+      }
+      
+      // Load calendar data for current month
+      await loadMonthData();
+      
+    } catch (error) {
+      console.error('Error loading sidebar data:', error);
+    } finally {
+      setSidebarLoading(false);
+    }
+  }, [user?.id, currentDate, loadMonthData]);
+
+  useEffect(() => {
+    if (user) {
+      loadFeed();
+      loadSidebarData();
+    }
+  }, [user, loadFeed, loadSidebarData]);
+
+  // Listen for post creation events to auto-update feed and sidebar
+  useEffect(() => {
+    const handlePostCreated = () => {
+      console.log('Post created event received, refreshing feed and sidebar');
+      loadFeed();
+      loadSidebarData(); // Also refresh sidebar to update post count
+    };
+
+    window.addEventListener('postCreated', handlePostCreated);
+    
+    return () => {
+      window.removeEventListener('postCreated', handlePostCreated);
+    };
+  }, [loadFeed, loadSidebarData]);
+
+  // Listen for meal updates to refresh sidebar
+  useEffect(() => {
+    const handleMealUpdate = (event: any) => {
+      console.log('Meal update event received:', event.type);
+      loadSidebarData();
+    };
+
+    // Listen to various meal-related events
+    window.addEventListener('mealAdded', handleMealUpdate);
+    window.addEventListener('mealDataChanged', handleMealUpdate);
+    window.addEventListener('mealDeleted', handleMealUpdate);
+    window.addEventListener('mealUpdated', handleMealUpdate);
+    
+    return () => {
+      window.removeEventListener('mealAdded', handleMealUpdate);
+      window.removeEventListener('mealDataChanged', handleMealUpdate);
+      window.removeEventListener('mealDeleted', handleMealUpdate);
+      window.removeEventListener('mealUpdated', handleMealUpdate);
+    };
+  }, [loadSidebarData]);
 
   const handleLike = async (postId: number) => {
     try {
@@ -213,7 +349,9 @@ const Feed: React.FC = () => {
         // Trigger a custom event to update the feed
         window.dispatchEvent(new CustomEvent('postCreated', { detail: result }));
         
-        loadFeed(); // Reload feed
+        // Reload feed and sidebar data
+        loadFeed();
+        loadSidebarData();
       } else {
         const errorText = await response.text();
         console.error('Failed to create post. Status:', response.status, 'Response:', errorText);
@@ -225,123 +363,6 @@ const Feed: React.FC = () => {
     }
   };
 
-  const loadSidebarData = async () => {
-    try {
-      setSidebarLoading(true);
-      console.log('Loading sidebar data...');
-      
-      // Load profile data with stats
-      const profileResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/profile/${user?.id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      console.log('Profile response status:', profileResponse.status);
-      
-      if (profileResponse.ok) {
-        const profileData = await profileResponse.json();
-        console.log('Profile data received:', profileData);
-        setProfileData(profileData);
-      } else {
-        console.error('Profile API error:', profileResponse.status, await profileResponse.text());
-      }
-      
-      // Load today's nutrition data
-      const today = format(new Date(), 'yyyy-MM-dd');
-      console.log('Loading meals for date:', today);
-      
-      const mealsResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/meals/date/${today}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      console.log('Meals response status:', mealsResponse.status);
-      
-      if (mealsResponse.ok) {
-        const mealsData = await mealsResponse.json();
-        console.log('Meals data received:', mealsData);
-        const meals = mealsData.meals || [];
-        
-        // Calculate totals
-        const totalCalories = meals.reduce((sum: number, meal: any) => sum + (meal.calories || 0), 0);
-        const totalProtein = meals.reduce((sum: number, meal: any) => sum + (meal.protein || 0), 0);
-        
-        console.log('Calculated totals:', { totalCalories, totalProtein });
-        
-        // Get profile data first for goals
-        let calorieGoal = 2000;
-        let proteinGoal = 150;
-        
-        if (profileResponse.ok) {
-          const profileDataForGoals = await profileResponse.json();
-          calorieGoal = profileDataForGoals.profile?.daily_calories || 2000;
-          proteinGoal = profileDataForGoals.profile?.daily_protein || 150;
-        }
-        const calorieDeficit = calorieGoal - totalCalories;
-        
-        console.log('Final nutrition data:', { totalCalories, totalProtein, calorieGoal, proteinGoal, calorieDeficit });
-        
-        setTodayNutrition({
-          totalCalories,
-          totalProtein,
-          calorieGoal,
-          proteinGoal,
-          calorieDeficit
-        });
-      } else {
-        console.error('Meals API error:', mealsResponse.status, await mealsResponse.text());
-      }
-      
-      // Load calendar data for current month
-      await loadMonthData();
-      
-    } catch (error) {
-      console.error('Error loading sidebar data:', error);
-    } finally {
-      setSidebarLoading(false);
-    }
-  };
-
-  const loadMonthData = async () => {
-    try {
-      const year = currentDate.getFullYear();
-      const month = currentDate.getMonth() + 1;
-      
-      console.log('Loading calendar data for:', { year, month });
-      
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/diary/month/${year}/${month}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      console.log('Calendar response status:', response.status);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Calendar data received:', data);
-        setMonthData(data);
-      } else {
-        console.error('Calendar API error:', response.status, await response.text());
-        // Set empty data structure as fallback
-        setMonthData({
-          year,
-          month,
-          days: []
-        });
-      }
-    } catch (error) {
-      console.error('Error loading month data:', error);
-      // Set empty data structure as fallback
-      setMonthData({
-        year: currentDate.getFullYear(),
-        month: currentDate.getMonth() + 1,
-        days: []
-      });
-    }
-  };
 
   const searchUsers = async (query: string) => {
     if (!query.trim()) {

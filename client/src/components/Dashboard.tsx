@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, User, Calendar, Plus, BarChart3, Home, Target, PenTool, Image, X } from 'lucide-react';
+import { LogOut, User, Calendar, Plus, BarChart3, Home, Target, PenTool, Image, X, ChevronDown, UserPlus, Settings } from 'lucide-react';
 import { profileAPI } from '../services/api';
 import Overview from './Overview';
 import SocialProfile from './SocialProfile';
@@ -19,6 +19,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [showNewPostModal, setShowNewPostModal] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [newPost, setNewPost] = useState({
     content: '',
     imageFile: null as File | null,
@@ -137,6 +138,24 @@ const Dashboard: React.FC = () => {
     }
   }, [user, navigate]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.profile-dropdown')) {
+        setShowProfileDropdown(false);
+      }
+    };
+
+    if (showProfileDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showProfileDropdown]);
+
   if (checkingProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 flex items-center justify-center">
@@ -191,14 +210,76 @@ const Dashboard: React.FC = () => {
                 <PenTool className="h-4 w-4" />
                 <span>New Post</span>
               </button>
-              <button
-                onClick={handleLogout}
-                disabled={loading}
-                className="border-2 border-gray-300 hover:border-orange-300 text-gray-700 hover:text-orange-600 px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 hover:bg-orange-50"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Logout</span>
-              </button>
+              {/* Profile Dropdown */}
+              <div className="relative profile-dropdown">
+                <button
+                  onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                  className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-all duration-200"
+                >
+                  <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
+                    {user?.profile_picture ? (
+                      <img 
+                        src={user.profile_picture} 
+                        alt="Profile" 
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-4 h-4 text-white" />
+                    )}
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${
+                    showProfileDropdown ? 'rotate-180' : ''
+                  }`} />
+                </button>
+
+                {/* Dropdown Menu */}
+                {showProfileDropdown && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    <button
+                      onClick={() => {
+                        setShowProfileDropdown(false);
+                        // TODO: Navigate to find friends page
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      <span>Find Friends</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowProfileDropdown(false);
+                        navigate('/dashboard/profile');
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                    >
+                      <User className="w-4 h-4" />
+                      <span>My Profile</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowProfileDropdown(false);
+                        // TODO: Navigate to settings page
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>Settings</span>
+                    </button>
+                    <div className="border-t border-gray-100 my-1"></div>
+                    <button
+                      onClick={() => {
+                        setShowProfileDropdown(false);
+                        handleLogout();
+                      }}
+                      disabled={loading}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -222,7 +303,21 @@ const Dashboard: React.FC = () => {
                       : 'border-transparent text-gray-500 hover:text-orange-600 hover:border-orange-300'
                   }`}
                 >
-                  <Icon className="h-5 w-5" />
+                  {tab.id === 'profile' ? (
+                    <div className="w-5 h-5 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500">
+                      {user?.profile_picture ? (
+                        <img 
+                          src={user.profile_picture} 
+                          alt="Profile" 
+                          className="w-5 h-5 rounded-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-3 h-3 text-white" />
+                      )}
+                    </div>
+                  ) : (
+                    <Icon className="h-5 w-5" />
+                  )}
                   <span>{tab.name}</span>
                 </button>
               );
