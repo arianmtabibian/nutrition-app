@@ -27,7 +27,13 @@ const Dashboard: React.FC = () => {
   });
 
   const handleCreatePost = async () => {
-    if (!newPost.content.trim()) return;
+    console.log('Dashboard handleCreatePost called with:', newPost);
+    
+    if (!newPost.content.trim()) {
+      console.log('No content, returning early');
+      alert('Please enter some content for your post');
+      return;
+    }
 
     try {
       // Create FormData for file upload
@@ -38,9 +44,11 @@ const Dashboard: React.FC = () => {
       
       if (newPost.imageFile) {
         formData.append('image', newPost.imageFile);
+        console.log('Added image file:', newPost.imageFile.name);
       }
 
-      const response = await fetch('/api/social/posts', {
+      console.log('Sending request to /api/social/posts from Dashboard');
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -49,20 +57,23 @@ const Dashboard: React.FC = () => {
         body: formData
       });
 
+      console.log('Dashboard response status:', response.status);
+
       if (response.ok) {
         const result = await response.json();
-        console.log('Post created successfully:', result);
+        console.log('Dashboard post created successfully:', result);
         setNewPost({ content: '', imageFile: null, allowComments: true, hideLikeCount: false });
         setShowNewPostModal(false);
         // Navigate to feed to see the new post
         navigate('/dashboard/feed');
+        alert('Post created successfully!');
       } else {
-        const error = await response.json();
-        console.error('Failed to create post:', error);
-        alert('Failed to create post: ' + (error.error || 'Unknown error'));
+        const errorText = await response.text();
+        console.error('Dashboard failed to create post. Status:', response.status, 'Response:', errorText);
+        alert(`Failed to create post: ${response.status} - ${errorText}`);
       }
     } catch (error) {
-      console.error('Error creating post:', error);
+      console.error('Dashboard error creating post:', error);
       alert('Error creating post: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };

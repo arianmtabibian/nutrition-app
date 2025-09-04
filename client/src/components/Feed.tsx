@@ -77,7 +77,7 @@ const Feed: React.FC = () => {
 
   const loadFeed = async () => {
     try {
-      const response = await fetch('/api/social/feed', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/feed`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -95,7 +95,7 @@ const Feed: React.FC = () => {
 
   const handleLike = async (postId: number) => {
     try {
-      const response = await fetch(`/api/social/posts/${postId}/like`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts/${postId}/like`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -120,6 +120,14 @@ const Feed: React.FC = () => {
   };
 
   const handleCreatePost = async () => {
+    console.log('handleCreatePost called with:', newPost);
+    
+    if (!newPost.content.trim()) {
+      console.log('No content, returning early');
+      alert('Please enter some content for your post');
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append('content', newPost.content);
@@ -128,13 +136,15 @@ const Feed: React.FC = () => {
       
       if (newPost.imageFile) {
         formData.append('image', newPost.imageFile);
+        console.log('Added image file:', newPost.imageFile.name);
       }
       
       if (newPost.mealData) {
         formData.append('mealData', JSON.stringify(newPost.mealData));
       }
 
-      const response = await fetch('/api/social/posts', {
+      console.log('Sending request to /api/social/posts');
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -142,7 +152,11 @@ const Feed: React.FC = () => {
         body: formData
       });
       
+      console.log('Response status:', response.status);
+      
       if (response.ok) {
+        const result = await response.json();
+        console.log('Post created successfully:', result);
         setNewPost({ 
           content: '', 
           imageFile: null, 
@@ -152,12 +166,15 @@ const Feed: React.FC = () => {
         });
         setShowCreatePost(false);
         loadFeed(); // Reload feed
+        alert('Post created successfully!');
       } else {
-        const error = await response.json();
-        console.error('Failed to create post:', error);
+        const errorText = await response.text();
+        console.error('Failed to create post. Status:', response.status, 'Response:', errorText);
+        alert(`Failed to create post: ${response.status} - ${errorText}`);
       }
     } catch (error) {
       console.error('Error creating post:', error);
+      alert(`Error creating post: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -171,7 +188,7 @@ const Feed: React.FC = () => {
     });
     
     try {
-      const response = await fetch(`/api/social/posts/${postId}/comments`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts/${postId}/comments`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -217,7 +234,7 @@ const Feed: React.FC = () => {
     if (!content) return;
 
     try {
-      const response = await fetch(`/api/social/posts/${postId}/comments`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts/${postId}/comments`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,

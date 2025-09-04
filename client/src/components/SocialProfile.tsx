@@ -304,7 +304,7 @@ const SocialProfile: React.FC = () => {
         formData.append('mealData', JSON.stringify(newPost.mealData));
       }
 
-      const response = await fetch('/api/social/posts', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
