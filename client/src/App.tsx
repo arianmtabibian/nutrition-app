@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import DomainMigrationWrapper from './components/DomainMigrationWrapper';
+
 import Welcome from './components/Welcome';
 import EnhancedRegister from './components/EnhancedRegister';
 import Onboarding from './components/Onboarding';
@@ -62,13 +62,11 @@ function AppRoutes() {
 
 function App() {
   return (
-    <DomainMigrationWrapper>
-      <AuthProvider>
-        <div className="min-h-screen bg-gray-50">
-          <AppRoutes />
-        </div>
-      </AuthProvider>
-    </DomainMigrationWrapper>
+    <AuthProvider>
+      <div className="min-h-screen bg-gray-50">
+        <AppRoutes />
+      </div>
+    </AuthProvider>
   );
 }
 

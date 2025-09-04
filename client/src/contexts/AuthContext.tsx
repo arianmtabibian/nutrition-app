@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { setUserData, clearUserData } from '../utils/domainMigration';
 import { api } from '../services/api';
 
 interface User {
@@ -74,8 +73,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await api.post('/api/auth/login', { email, password });
       const { token, user: userData } = response.data;
       
-      // Use the utility function to store user data with domain tracking
-      setUserData(token, userData);
+      // Store token and user data in localStorage
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userData));
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       setUser({
@@ -95,8 +95,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await api.post('/api/auth/register', { email, password, first_name, last_name, username });
       const { token, user: userData } = response.data;
       
-      // Use the utility function to store user data with domain tracking
-      setUserData(token, userData);
+      // Store token and user data in localStorage
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userData));
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       setUser({
@@ -112,8 +113,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    // Use the utility function to clear user data but keep domain tracking
-    clearUserData();
+    // Clear user data from localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
   };
