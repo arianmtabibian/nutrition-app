@@ -61,6 +61,12 @@ const Feed: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [monthData, setMonthData] = useState<any>(null);
   const [sidebarLoading, setSidebarLoading] = useState(true);
+  
+  // Follow people search states
+  const [showFollowSearch, setShowFollowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const formatPostDate = (dateString: string) => {
     const postDate = new Date(dateString);
@@ -95,6 +101,21 @@ const Feed: React.FC = () => {
     
     return () => {
       window.removeEventListener('postCreated', handlePostCreated);
+    };
+  }, []);
+
+  // Listen for meal updates to refresh sidebar
+  useEffect(() => {
+    const handleMealUpdate = () => {
+      loadSidebarData();
+    };
+
+    window.addEventListener('mealAdded', handleMealUpdate);
+    window.addEventListener('mealDataChanged', handleMealUpdate);
+    
+    return () => {
+      window.removeEventListener('mealAdded', handleMealUpdate);
+      window.removeEventListener('mealDataChanged', handleMealUpdate);
     };
   }, []);
 
@@ -236,9 +257,15 @@ const Feed: React.FC = () => {
         const totalCalories = meals.reduce((sum: number, meal: any) => sum + (meal.calories || 0), 0);
         const totalProtein = meals.reduce((sum: number, meal: any) => sum + (meal.protein || 0), 0);
         
-        // Get calorie and protein goals from profile
-        const calorieGoal = profileData?.profile?.daily_calories || 2000;
-        const proteinGoal = profileData?.profile?.daily_protein || 150;
+        // Get profile data first for goals
+        let calorieGoal = 2000;
+        let proteinGoal = 150;
+        
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          calorieGoal = profileData.profile?.daily_calories || 2000;
+          proteinGoal = profileData.profile?.daily_protein || 150;
+        }
         const calorieDeficit = calorieGoal - totalCalories;
         
         setTodayNutrition({
@@ -265,18 +292,64 @@ const Feed: React.FC = () => {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1;
       
+      console.log('Loading calendar data for:', { year, month });
+      
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/diary/month/${year}/${month}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
       
+      console.log('Calendar response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Calendar data received:', data);
         setMonthData(data);
+      } else {
+        console.error('Calendar API error:', response.status, await response.text());
+        // Set empty data structure as fallback
+        setMonthData({
+          year,
+          month,
+          days: []
+        });
       }
     } catch (error) {
       console.error('Error loading month data:', error);
+      // Set empty data structure as fallback
+      setMonthData({
+        year: currentDate.getFullYear(),
+        month: currentDate.getMonth() + 1,
+        days: []
+      });
+    }
+  };
+
+  const searchUsers = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      setSearchLoading(true);
+      // For now, return mock data since search doesn't need to work yet
+      const mockUsers = [
+        { id: 1, username: 'john_doe', first_name: 'John', last_name: 'Doe', profile_picture: null },
+        { id: 2, username: 'jane_smith', first_name: 'Jane', last_name: 'Smith', profile_picture: null },
+        { id: 3, username: 'fitness_guru', first_name: 'Mike', last_name: 'Johnson', profile_picture: null }
+      ].filter(user => 
+        user.username.toLowerCase().includes(query.toLowerCase()) ||
+        user.first_name.toLowerCase().includes(query.toLowerCase()) ||
+        user.last_name.toLowerCase().includes(query.toLowerCase())
+      );
+      
+      setSearchResults(mockUsers);
+    } catch (error) {
+      console.error('Error searching users:', error);
+    } finally {
+      setSearchLoading(false);
     }
   };
 
@@ -743,13 +816,23 @@ const Feed: React.FC = () => {
         <div className="p-8 text-center text-gray-500">
           <PenTool className="w-16 h-16 mx-auto mb-4 text-gray-300" />
           <h3 className="text-xl font-medium mb-2">No posts in your feed</h3>
-          <p>Follow some users to see their posts here, or create your own post!</p>
-          <button
-            onClick={() => setShowCreatePost(true)}
-            className="mt-4 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Create your first post
-          </button>
+          <p className="mb-6">Follow some users to see their posts here, or create your own post!</p>
+          
+          <div className="space-y-4">
+            <button
+              onClick={() => setShowCreatePost(true)}
+              className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors mr-4"
+            >
+              Create your first post
+            </button>
+            
+            <button
+              onClick={() => setShowFollowSearch(true)}
+              className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Find people to follow
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-6">
@@ -944,6 +1027,94 @@ const Feed: React.FC = () => {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Follow People Search Modal */}
+      {showFollowSearch && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="text-xl font-semibold text-gray-900">Find People to Follow</h3>
+              <button
+                onClick={() => {
+                  setShowFollowSearch(false);
+                  setSearchQuery('');
+                  setSearchResults([]);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div className="p-4">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  searchUsers(e.target.value);
+                }}
+                placeholder="Search for users..."
+                className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
+            </div>
+
+            {/* Search Results */}
+            <div className="max-h-64 overflow-y-auto">
+              {searchLoading ? (
+                <div className="p-4 text-center">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                </div>
+              ) : searchResults.length > 0 ? (
+                <div className="space-y-2 p-4">
+                  {searchResults.map((user) => (
+                    <div key={user.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        {user.profile_picture ? (
+                          <img
+                            src={user.profile_picture}
+                            alt={`${user.first_name} ${user.last_name}`}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                            <UserCircle className="w-6 h-6 text-gray-400" />
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {user.first_name} {user.last_name}
+                          </div>
+                          <div className="text-sm text-gray-500">@{user.username}</div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          // Follow functionality placeholder
+                          alert(`Follow functionality coming soon for ${user.username}!`);
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg transition-colors"
+                      >
+                        Follow
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : searchQuery && !searchLoading ? (
+                <div className="p-4 text-center text-gray-500">
+                  No users found matching "{searchQuery}"
+                </div>
+              ) : (
+                <div className="p-4 text-center text-gray-500">
+                  Start typing to search for users...
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
       </div>

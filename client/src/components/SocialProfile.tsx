@@ -670,38 +670,88 @@ const SocialProfile: React.FC = () => {
         </button>
       </div>
 
-      {/* Posts Grid */}
+      {/* Posts Feed */}
       {activeTab === 'posts' && (
-        <div className="grid grid-cols-3 gap-1 pt-6">
+        <div className="space-y-6 pt-6">
           {posts.map((post) => (
-            <div key={post.id} className="aspect-square bg-gray-100 relative group cursor-pointer">
-              {post.image_url ? (
-                <img 
-                  src={post.image_url} 
-                  alt="Post" 
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  <div className="text-center">
-                    <MessageCircle className="w-8 h-8 mx-auto mb-2" />
-                    <p className="text-sm">{post.content?.substring(0, 50)}...</p>
+            <div key={post.id} className="border border-gray-200 rounded-lg">
+              {/* Post Header */}
+              <div className="flex items-center justify-between p-4 pb-3">
+                <div className="flex items-center space-x-3">
+                  {profileData?.profile?.profile_picture ? (
+                    <img
+                      src={profileData.profile.profile_picture}
+                      alt={`${user?.first_name} ${user?.last_name}`}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                      <UserCircle className="w-6 h-6 text-gray-400" />
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      {user?.first_name} {user?.last_name}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {new Date(post.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit'
+                      })}
+                    </p>
                   </div>
+                </div>
+                <MoreHorizontal className="w-5 h-5 text-gray-400 cursor-pointer hover:text-gray-600" />
+              </div>
+
+              {/* Post Content */}
+              {post.content && (
+                <div className="px-4 pb-3">
+                  <p className="text-gray-900">{post.content}</p>
                 </div>
               )}
-              
-              {/* Hover overlay with stats */}
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
-                <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-6">
-                  <div className="flex items-center space-x-2">
-                    <Heart className={`w-5 h-5 ${post.is_liked ? 'fill-current' : ''}`} />
-                    <span>{post.likes_count}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <MessageCircle className="w-5 h-5" />
-                    <span>{post.comments_count}</span>
-                  </div>
+
+              {/* Post Image */}
+              {post.image_url && (
+                <div className="px-4 pb-3">
+                  <img
+                    src={post.image_url}
+                    alt="Post content"
+                    className="w-full rounded-lg object-cover max-h-96"
+                  />
                 </div>
+              )}
+
+              {/* Post Actions */}
+              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => handleLike(post.id)}
+                    className={`flex items-center space-x-1 transition-colors ${
+                      post.is_liked ? 'text-red-600' : 'text-gray-600 hover:text-red-600'
+                    }`}
+                  >
+                    <Heart className={`w-5 h-5 ${post.is_liked ? 'fill-current' : ''}`} />
+                    {!post.hide_like_count && <span className="text-sm">{post.likes_count}</span>}
+                  </button>
+                  
+                  {post.allow_comments && (
+                    <button className="flex items-center space-x-1 text-gray-600 hover:text-blue-600 transition-colors">
+                      <MessageCircle className="w-5 h-5" />
+                      <span className="text-sm">{post.comments_count}</span>
+                    </button>
+                  )}
+                  
+                  <button className="flex items-center space-x-1 text-gray-600 hover:text-green-600 transition-colors">
+                    <Share className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <button className="text-gray-600 hover:text-gray-900 transition-colors">
+                  <Bookmark className="w-5 h-5" />
+                </button>
               </div>
             </div>
           ))}
