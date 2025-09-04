@@ -154,7 +154,11 @@ const Feed: React.FC = () => {
   const loadComments = async (postId: number) => {
     if (loadingComments.has(postId)) return;
     
-    setLoadingComments(prev => new Set([...prev, postId]));
+    setLoadingComments(prev => {
+      const newSet = new Set(prev);
+      newSet.add(postId);
+      return newSet;
+    });
     
     try {
       const response = await fetch(`/api/social/posts/${postId}/comments`, {
@@ -187,7 +191,11 @@ const Feed: React.FC = () => {
         return newSet;
       });
     } else {
-      setExpandedComments(prev => new Set([...prev, postId]));
+      setExpandedComments(prev => {
+        const newSet = new Set(prev);
+        newSet.add(postId);
+        return newSet;
+      });
       if (!comments[postId]) {
         loadComments(postId);
       }
