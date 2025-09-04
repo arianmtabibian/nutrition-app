@@ -113,18 +113,22 @@ const SocialProfile: React.FC = () => {
       let currentStreak = 0;
       
       // Calculate streak from the most recent day backwards
+      // Count consecutive days that would show as yellow or green squares in diary
       for (const day of sortedDays) {
         console.log(`Checking day ${day.date}: calories_met=${day.calories_met}, protein_met=${day.protein_met}`);
         
-        // Check if either calorie goal OR protein goal was met
-        // For calories: under or at goal (calories_met = true)
-        // For protein: at or above goal (protein_met = true)
-        if (day.calories_met || day.protein_met) {
+        // A day counts toward streak if it would be yellow or green in diary
+        // Yellow: either goal met (calories_met OR protein_met)
+        // Green: both goals met (calories_met AND protein_met)
+        const isYellowOrGreen = day.calories_met || day.protein_met;
+        
+        if (isYellowOrGreen) {
           currentStreak++;
-          console.log(`Day ${day.date} met goal, streak now: ${currentStreak}`);
+          const color = (day.calories_met && day.protein_met) ? 'green' : 'yellow';
+          console.log(`Day ${day.date} is ${color} square, streak now: ${currentStreak}`);
         } else {
-          console.log(`Day ${day.date} did not meet goal, streak ends at: ${currentStreak}`);
-          break; // Streak ends when a day doesn't meet either goal
+          console.log(`Day ${day.date} would be red square, streak ends at: ${currentStreak}`);
+          break; // Streak ends when a day would show as red (no goals met)
         }
       }
       
