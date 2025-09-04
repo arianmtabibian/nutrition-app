@@ -730,3 +730,5 @@ const SocialProfile: React.FC = () => {
 };
 
 export default SocialProfile;
+
+// Minor update to trigger Vercel deployment
