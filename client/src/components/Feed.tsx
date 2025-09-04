@@ -483,7 +483,7 @@ const Feed: React.FC = () => {
 
   return (
     <div className="flex max-w-7xl mx-auto gap-6 p-4">
-      {/* Sidebar */}
+      {/* Left Sidebar */}
       <div className="w-80 flex-shrink-0 sticky top-4 self-start space-y-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
         {/* Profile Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -733,13 +733,13 @@ const Feed: React.FC = () => {
             <div className="p-4 space-y-4 flex-1 overflow-y-auto">
               {/* Text Input */}
               <div>
-                <textarea
-                  value={newPost.content}
-                  onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+            <textarea
+              value={newPost.content}
+              onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
                   placeholder="What's going on?"
                   className="w-full border border-gray-300 rounded-lg p-3 resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  rows={4}
-                />
+              rows={4}
+            />
               </div>
 
               {/* Image Preview */}
@@ -766,7 +766,7 @@ const Feed: React.FC = () => {
                   <label className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg cursor-pointer transition-colors">
                     <Image className="h-4 w-4" />
                     <span className="text-sm font-medium">Upload Photo</span>
-                    <input
+            <input
                       type="file"
                       accept="image/*"
                       onChange={(e) => {
@@ -811,7 +811,7 @@ const Feed: React.FC = () => {
                       <label className="text-sm font-medium text-gray-700">Hide like count</label>
                       <p className="text-xs text-gray-500">Only you will see the total number of likes</p>
                     </div>
-                    <button
+              <button
                       onClick={() => setNewPost({ ...newPost, hideLikeCount: !newPost.hideLikeCount })}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                         newPost.hideLikeCount ? 'bg-blue-600' : 'bg-gray-200'
@@ -822,7 +822,7 @@ const Feed: React.FC = () => {
                           newPost.hideLikeCount ? 'translate-x-6' : 'translate-x-1'
                         }`}
                       />
-                    </button>
+              </button>
                   </div>
                 </div>
               </div>
@@ -859,12 +859,12 @@ const Feed: React.FC = () => {
           <p className="mb-6">Follow some users to see their posts here, or create your own post!</p>
           
           <div className="space-y-4">
-            <button
-              onClick={() => setShowCreatePost(true)}
+          <button
+            onClick={() => setShowCreatePost(true)}
               className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors mr-4"
-            >
-              Create your first post
-            </button>
+          >
+            Create your first post
+          </button>
             
             <button
               onClick={() => setShowFollowSearch(true)}
@@ -889,8 +889,8 @@ const Feed: React.FC = () => {
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">
-                      {post.user.first_name?.charAt(0) || post.user.username?.charAt(0)}
-                    </div>
+                    {post.user.first_name?.charAt(0) || post.user.username?.charAt(0)}
+                  </div>
                   )}
                   <div>
                     <div className="font-semibold text-gray-900">
@@ -959,7 +959,7 @@ const Feed: React.FC = () => {
                     >
                       <Heart className={`w-6 h-6 ${post.is_liked ? 'fill-current' : ''}`} />
                       {!post.hide_like_count || post.user.id === user?.id ? (
-                        <span className="text-sm">{post.likes_count}</span>
+                      <span className="text-sm">{post.likes_count}</span>
                       ) : (
                         <span className="text-sm">•</span>
                       )}
@@ -969,9 +969,9 @@ const Feed: React.FC = () => {
                         onClick={() => handleToggleComments(post.id)}
                         className="flex items-center space-x-2 text-gray-400 hover:text-gray-600 transition-colors"
                       >
-                        <MessageCircle className="w-6 h-6" />
-                        <span className="text-sm">{post.comments_count}</span>
-                      </button>
+                      <MessageCircle className="w-6 h-6" />
+                      <span className="text-sm">{post.comments_count}</span>
+                    </button>
                     )}
                     <button className="text-gray-400 hover:text-gray-600 transition-colors">
                       <Share className="w-6 h-6" />
@@ -1157,6 +1157,75 @@ const Feed: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
+
+      {/* Right Sidebar - Groups */}
+      <div className="w-80 flex-shrink-0 sticky top-4 self-start space-y-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
+        {/* Groups Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <UserCircle className="w-5 h-5 mr-2" />
+            My Groups
+          </h3>
+          
+          {/* Mock Group Cards */}
+          <div className="space-y-3 mb-4">
+            {/* Group 1 */}
+            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">FG</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-semibold text-gray-900 truncate">Fitness Goals</h4>
+                <p className="text-xs text-gray-500">124 members</p>
+              </div>
+              <button className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full hover:bg-blue-700 transition-colors">
+                View
+              </button>
+            </div>
+
+            {/* Group 2 */}
+            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">HR</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-semibold text-gray-900 truncate">Healthy Recipes</h4>
+                <p className="text-xs text-gray-500">89 members</p>
+              </div>
+              <button className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full hover:bg-blue-700 transition-colors">
+                View
+              </button>
+            </div>
+
+            {/* Group 3 */}
+            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">WL</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-semibold text-gray-900 truncate">Weight Loss</h4>
+                <p className="text-xs text-gray-500">203 members</p>
+              </div>
+              <button className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full hover:bg-blue-700 transition-colors">
+                View
+              </button>
+            </div>
+          </div>
+
+          {/* Find More Groups Link */}
+          <div className="text-center border-t border-gray-200 pt-4">
+            <button 
+              onClick={() => {
+                // TODO: Navigate to groups discovery page
+                console.log('Find more groups clicked');
+              }}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline transition-colors"
+            >
+              Find more groups
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

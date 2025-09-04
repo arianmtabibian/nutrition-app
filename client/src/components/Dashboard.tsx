@@ -263,7 +263,7 @@ const Dashboard: React.FC = () => {
 
                 {/* Dropdown Menu */}
                 {showProfileDropdown && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-[9999]">
+                  <div className="fixed right-4 top-20 w-48 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[99999]" style={{ zIndex: 99999 }}>
                     <button
                       onClick={() => {
                         setShowProfileDropdown(false);
