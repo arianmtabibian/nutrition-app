@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useOnboardingProtection } from './hooks/useOnboardingProtection';
 
+// Test auto-deploy connection - 2025-01-05
+
 import Welcome from './components/Welcome';
 import EnhancedRegister from './components/EnhancedRegister';
 import Onboarding from './components/Onboarding';
