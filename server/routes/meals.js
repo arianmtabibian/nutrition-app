@@ -168,6 +168,25 @@ router.post('/', authenticateToken, async (req, res) => {
         // Update daily nutrition for this date
         await updateDailyNutrition(db, req.user.userId, meal_date);
         
+        console.log(`✅ Meal added for user ${req.user.userId}: ${description}`);
+        
+        // AUTO-BACKUP: Trigger backup after meal addition (but not too frequently)
+        const lastBackup = global.lastMealBackup || 0;
+        const now = Date.now();
+        if (now - lastBackup > 300000) { // Only backup every 5 minutes to avoid spam
+          global.lastMealBackup = now;
+          console.log('🔄 Triggering auto-backup after meal addition...');
+          setTimeout(async () => {
+            try {
+              const { simpleBackup } = require('../utils/realPersistence');
+              await simpleBackup();
+              console.log('✅ Auto-backup completed after meal addition');
+            } catch (backupErr) {
+              console.error('❌ Auto-backup failed after meal addition:', backupErr);
+            }
+          }, 3000); // Wait 3 seconds to ensure meal is fully processed
+        }
+        
         res.status(201).json({
           message: 'Meal added successfully',
           meal: {

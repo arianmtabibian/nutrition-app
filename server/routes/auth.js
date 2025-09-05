@@ -60,10 +60,16 @@ router.post('/register', async (req, res) => {
           
           console.log('Registration successful for:', email);
           
-          // BACKUP USERS after new registration
-          setTimeout(() => {
-            simpleBackup().catch(err => console.error('Backup failed:', err));
-          }, 1000);
+          // AUTO-BACKUP: Trigger backup after new user registration
+          console.log('🔄 Triggering auto-backup after user registration...');
+          setTimeout(async () => {
+            try {
+              await simpleBackup();
+              console.log('✅ Auto-backup completed after user registration');
+            } catch (err) {
+              console.error('❌ Auto-backup failed after registration:', err);
+            }
+          }, 2000); // Wait 2 seconds to ensure user is fully created
           
           res.status(201).json({
             message: 'User created successfully',

@@ -26,9 +26,13 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS configuration - Allow all origins
+// CORS configuration - Restrict to specific domain(s)
+const allowedOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',')
+  : ['https://nutryra.com', 'https://www.nutryra.com'];
+
 app.use(cors({
-  origin: true, // Allow all origins
+  origin: allowedOrigins,
   credentials: true
 }));
 
@@ -67,22 +71,42 @@ app.use('*', (req, res) => {
 async function startServer() {
   try {
     await initializeDatabase();
-    console.log('Database initialized successfully');
+    console.log('✅ Database initialized successfully');
     
-    // RESTORE USERS from environment backup
+    // CRITICAL: Always restore users on startup to prevent onboarding redirects
+    console.log('🔄 Restoring user data from environment backup...');
     await restoreFromEnv();
+    console.log('✅ User data restoration complete');
     
-    // BACKUP USERS on startup (so you can copy the backup)
-    setTimeout(() => {
-      simpleBackup().catch(console.error);
+    // BACKUP USERS on startup (for next deployment)
+    setTimeout(async () => {
+      try {
+        console.log('💾 Creating backup of current user data...');
+        await simpleBackup();
+        console.log('✅ Backup created successfully');
+      } catch (error) {
+        console.error('❌ Backup failed:', error);
+      }
     }, 5000); // Wait 5 seconds after startup
     
+    // BACKUP USERS every hour to prevent data loss
+    setInterval(async () => {
+      try {
+        console.log('🔄 Hourly backup starting...');
+        await simpleBackup();
+        console.log('✅ Hourly backup complete');
+      } catch (error) {
+        console.error('❌ Hourly backup failed:', error);
+      }
+    }, 60 * 60 * 1000); // Every hour
+    
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`📁 Database path: ${process.env.DB_PATH || 'default'}`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('❌ Failed to start server:', error);
     process.exit(1);
   }
 }

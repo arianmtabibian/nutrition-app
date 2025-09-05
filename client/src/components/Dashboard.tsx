@@ -118,40 +118,72 @@ const Dashboard: React.FC = () => {
 
   const currentTab = getCurrentTab();
 
-  // Check if user needs onboarding (new users only) - existing users never redirected back
+  // Check if user needs onboarding (new users only) - RENDER REDEPLOY PROTECTION
   useEffect(() => {
-    const checkProfileExists = async () => {
+    const checkProfileExists = async (retryCount = 0) => {
       try {
         const response = await profileAPI.get();
         if (!response.data.profile) {
-          // No profile exists - this is a new user who needs onboarding
+          // Check if this might be a temporary issue (Render redeploy)
+          const hasAccessedApp = localStorage.getItem('hasAccessedApp');
+          const lastAccess = localStorage.getItem('lastAccess');
+          
+          if (hasAccessedApp === 'true' && lastAccess) {
+            const lastAccessDate = new Date(lastAccess);
+            const hoursSinceAccess = (Date.now() - lastAccessDate.getTime()) / (1000 * 60 * 60);
+            
+            // If user accessed recently (within 24 hours), this is likely a Render redeploy
+            if (hoursSinceAccess < 24) {
+              console.log('🔄 Render redeploy detected - user accessed recently, waiting for database restore...');
+              
+              if (retryCount < 5) {
+                // Wait and retry - database might be restoring
+                setTimeout(() => checkProfileExists(retryCount + 1), 2000 * (retryCount + 1));
+                return;
+              } else {
+                console.log('⚠️ Database still not restored after retries, allowing dashboard access');
+                setCheckingProfile(false);
+                return;
+              }
+            }
+          }
+          
+          // Truly new user - redirect to onboarding
           console.log('New user with no profile, redirecting to onboarding');
           navigate('/onboarding');
           return;
         }
         
-        // User has a profile - mark them as having accessed the app to prevent future redirects
+        // User has a profile - mark them as having accessed the app
         localStorage.setItem('hasAccessedApp', 'true');
         localStorage.setItem('lastAccess', new Date().toISOString());
-        console.log('User has profile, allowing dashboard access');
+        console.log('✅ User has profile, allowing dashboard access');
         setCheckingProfile(false);
       } catch (error: any) {
-        console.error('Error checking profile:', error);
+        console.error('❌ Error checking profile:', error);
         
-        // Only redirect to onboarding for new users (404 = no profile exists)
+        // Enhanced error handling for Render redeploys
+        const hasAccessedApp = localStorage.getItem('hasAccessedApp');
+        
         if (error?.response?.status === 404) {
-          console.log('Profile not found (404), new user needs onboarding');
+          // Check if this is a returning user experiencing Render redeploy
+          if (hasAccessedApp === 'true' && retryCount < 3) {
+            console.log('🔄 Returning user, 404 might be temporary (Render redeploy), retrying...');
+            setTimeout(() => checkProfileExists(retryCount + 1), 3000);
+            return;
+          }
+          console.log('Profile not found (404), redirecting to onboarding');
           navigate('/onboarding');
         } else {
-          // For any other error, check if user has accessed app before
-          const hasAccessedApp = localStorage.getItem('hasAccessedApp');
+          // For network/server errors, be more lenient with existing users
           if (hasAccessedApp === 'true') {
-            // Existing user - never redirect to onboarding
-            console.log('Existing user (has accessed app before), allowing dashboard access despite error');
+            console.log('🔄 Existing user with network error, allowing dashboard access');
             setCheckingProfile(false);
+          } else if (retryCount < 2) {
+            console.log('🔄 Network error, retrying profile check...');
+            setTimeout(() => checkProfileExists(retryCount + 1), 2000);
           } else {
-            // Could be a new user with network issues - allow them to try onboarding
-            console.log('Uncertain status for potentially new user, allowing onboarding attempt');
+            console.log('⚠️ Network issues persist, allowing onboarding attempt');
             navigate('/onboarding');
           }
         }

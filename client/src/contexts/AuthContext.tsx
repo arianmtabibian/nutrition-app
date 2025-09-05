@@ -39,40 +39,47 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already logged in using the new persistence system
+    // Check if user is already logged in - DOMAIN FLEXIBLE
     const authData = getAuthData();
     const currentDomain = window.location.origin;
     
-    console.log('Auth check - Domain:', currentDomain);
-    console.log('Auth data exists:', !!authData);
+    console.log('🔐 Auth check - Domain:', currentDomain);
+    console.log('🔐 Auth data exists:', !!authData);
     
     if (authData && hasValidAuth()) {
-      console.log('Found valid auth data, verifying with backend...');
+      console.log('🔐 Found valid auth data, verifying with backend...');
       api.defaults.headers.common['Authorization'] = `Bearer ${authData.token}`;
       
       // Verify token and get user info from the auth verify endpoint
       api.get('/api/auth/verify')
         .then(response => {
-          console.log('Verify response in AuthContext:', response.data);
+          console.log('🔐 Verify response in AuthContext:', response.data);
           if (response.data.user) {
             setUser(response.data.user);
-            // Update auth data with current domain
+            // ALWAYS update auth data to current domain (domain migration)
             storeAuthData(authData.token, response.data.user);
-            console.log('User logged in successfully on domain:', currentDomain);
+            console.log('🔐 User logged in successfully on domain:', currentDomain);
+            console.log('🔐 Auth data migrated to current domain');
           }
         })
         .catch((error) => {
-          console.error('Error verifying user:', error);
-          // Token is invalid, clear all auth data
-          clearAuthData();
-          delete api.defaults.headers.common['Authorization'];
-          console.log('Token cleared due to verification failure');
+          console.error('🔐 Error verifying user:', error);
+          
+          // Only clear auth if it's a 401/403 (invalid token)
+          // Don't clear on network errors (domain change issues)
+          if (error.response?.status === 401 || error.response?.status === 403) {
+            console.log('🔐 Token invalid, clearing auth data');
+            clearAuthData();
+            delete api.defaults.headers.common['Authorization'];
+          } else {
+            console.log('🔐 Network error, keeping auth data for retry');
+          }
         })
         .finally(() => {
           setLoading(false);
         });
     } else {
-      console.log('No valid auth data found, user not logged in');
+      console.log('🔐 No valid auth data found, user not logged in');
       setLoading(false);
     }
   }, []);

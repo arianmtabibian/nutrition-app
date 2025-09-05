@@ -95,6 +95,21 @@ router.put('/', authenticateToken, async (req, res) => {
                 console.error('Database insert error:', err);
                 return res.status(500).json({ error: 'Failed to create profile' });
               }
+              
+              console.log(`✅ Profile created for user ${req.user.userId} (onboarding completed)`);
+              
+              // AUTO-BACKUP: Trigger backup after profile creation (onboarding completion)
+              console.log('🔄 Triggering auto-backup after profile creation...');
+              setTimeout(async () => {
+                try {
+                  const { simpleBackup } = require('../utils/realPersistence');
+                  await simpleBackup();
+                  console.log('✅ Auto-backup completed after profile creation');
+                } catch (backupErr) {
+                  console.error('❌ Auto-backup failed after profile creation:', backupErr);
+                }
+              }, 1000);
+              
               res.json({ message: 'Profile created successfully' });
             });
         }

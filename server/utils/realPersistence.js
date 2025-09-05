@@ -41,12 +41,13 @@ const backupToGist = async () => {
   }
 };
 
-// Simple file-based backup that persists across restarts
+// Enhanced backup that includes users, profiles, and recent meals
 const simpleBackup = async () => {
   try {
     const db = getDatabase();
     
     return new Promise((resolve, reject) => {
+      // Get all users first
       db.all('SELECT * FROM users', (err, users) => {
         if (err) {
           console.error('❌ Error getting users for backup:', err);
@@ -54,19 +55,48 @@ const simpleBackup = async () => {
           return;
         }
         
-        // Store in environment variable format
-        const backupString = JSON.stringify(users);
-        
-        console.log(`📦 BACKUP: ${users.length} users`);
-        console.log('🔑 To make users persistent, copy this to your Render environment:');
-        console.log('Variable name: USER_BACKUP');
-        console.log('Variable value:', backupString);
-        
-        resolve(users);
+        // Get all profiles
+        db.all('SELECT * FROM user_profiles', (profileErr, profiles) => {
+          if (profileErr) {
+            console.error('❌ Error getting profiles for backup:', profileErr);
+            reject(profileErr);
+            return;
+          }
+          
+          // Get recent meals (last 30 days to keep backup small)
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          const cutoffDate = thirtyDaysAgo.toISOString().split('T')[0];
+          
+          db.all('SELECT * FROM meals WHERE meal_date >= ?', [cutoffDate], (mealErr, meals) => {
+            if (mealErr) {
+              console.error('❌ Error getting meals for backup:', mealErr);
+              // Continue without meals if there's an error
+            }
+            
+            const backupData = {
+              users: users,
+              profiles: profiles,
+              meals: meals || [],
+              timestamp: new Date().toISOString()
+            };
+            
+            const backupString = JSON.stringify(backupData);
+            
+            console.log(`📦 ENHANCED BACKUP: ${users.length} users, ${profiles.length} profiles, ${(meals || []).length} recent meals`);
+            console.log('🔑 To make data persistent, copy this to your Render environment:');
+            console.log('Variable name: USER_BACKUP');
+            console.log('Variable value (first 100 chars):', backupString.substring(0, 100) + '...');
+            console.log('🔑 FULL BACKUP DATA:');
+            console.log(backupString);
+            
+            resolve(backupData);
+          });
+        });
       });
     });
   } catch (error) {
-    console.error('❌ Error in simpleBackup:', error);
+    console.error('❌ Error in enhanced backup:', error);
     throw error;
   }
 };
@@ -129,7 +159,7 @@ const restoreFromEnv = async () => {
     });
     
   } catch (error) {
-    console.error('❌ Error restoring from env:', error);
+    console.error('❌ Error restoring from environment:', error);
     return { restored: 0 };
   }
 };
