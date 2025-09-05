@@ -132,8 +132,13 @@ const Inputs: React.FC = () => {
       localStorage.setItem('mealAdded', Date.now().toString());
       
       // Also trigger custom events for the same tab
+      console.log('🍽️ Inputs: Dispatching meal added events');
       window.dispatchEvent(new CustomEvent('mealAdded'));
       window.dispatchEvent(new CustomEvent('mealDataChanged'));
+      
+      // Force sidebar and calendar refresh
+      window.dispatchEvent(new CustomEvent('sidebarRefresh'));
+      window.dispatchEvent(new CustomEvent('calendarRefresh'));
     } catch (error: any) {
       setMessage(error.response?.data?.error || 'Failed to add meal');
     } finally {
@@ -152,8 +157,13 @@ const Inputs: React.FC = () => {
       localStorage.setItem('mealDeleted', Date.now().toString());
       
       // Also trigger custom events for the same tab
+      console.log('🍽️ Inputs: Dispatching meal deleted events');
       window.dispatchEvent(new CustomEvent('mealDeleted'));
       window.dispatchEvent(new CustomEvent('mealDataChanged'));
+      
+      // Force sidebar and calendar refresh
+      window.dispatchEvent(new CustomEvent('sidebarRefresh'));
+      window.dispatchEvent(new CustomEvent('calendarRefresh'));
     } catch (error: any) {
       setMessage(error.response?.data?.error || 'Failed to delete meal');
     }
@@ -199,8 +209,13 @@ const Inputs: React.FC = () => {
       localStorage.setItem('mealUpdated', Date.now().toString());
       
       // Also trigger custom events for the same tab
+      console.log('🍽️ Inputs: Dispatching meal updated events');
       window.dispatchEvent(new CustomEvent('mealUpdated'));
       window.dispatchEvent(new CustomEvent('mealDataChanged'));
+      
+      // Force sidebar and calendar refresh
+      window.dispatchEvent(new CustomEvent('sidebarRefresh'));
+      window.dispatchEvent(new CustomEvent('calendarRefresh'));
     } catch (error: any) {
       setMessage(error.response?.data?.error || 'Failed to update meal');
     }

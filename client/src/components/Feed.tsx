@@ -90,7 +90,7 @@ const Feed: React.FC = () => {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1;
       
-      console.log('Loading calendar data for:', { year, month });
+      console.log('📅 Feed Calendar: Loading month data for:', { year, month });
       
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/diary/month/${year}/${month}`, {
         headers: {
@@ -98,14 +98,15 @@ const Feed: React.FC = () => {
         }
       });
       
-      console.log('Calendar response status:', response.status);
+      console.log('📅 Feed Calendar: Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Calendar data received:', data);
+        console.log('📅 Feed Calendar: Data received:', data);
+        console.log('📅 Feed Calendar: Days with data:', data.days?.filter((d: any) => d.has_data)?.length || 0);
         setMonthData(data);
       } else {
-        console.error('Calendar API error:', response.status, await response.text());
+        console.error('📅 Feed Calendar: API error:', response.status, await response.text());
         // Set empty data structure as fallback
         setMonthData({
           year,
@@ -114,7 +115,7 @@ const Feed: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Error loading month data:', error);
+      console.error('📅 Feed Calendar: Error loading month data:', error);
       // Set empty data structure as fallback
       setMonthData({
         year: currentDate.getFullYear(),
@@ -235,8 +236,17 @@ const Feed: React.FC = () => {
     if (user) {
       loadFeed();
       loadSidebarData();
+      loadMonthData(); // Ensure calendar loads initially
     }
-  }, [user, loadFeed, loadSidebarData]);
+  }, [user, loadFeed, loadSidebarData, loadMonthData]);
+
+  // Reload month data when current date changes (for calendar navigation)
+  useEffect(() => {
+    if (user) {
+      console.log('📅 Feed: Current date changed, reloading month data');
+      loadMonthData();
+    }
+  }, [currentDate, loadMonthData, user]);
 
   // Listen for post creation events to auto-update feed and sidebar
   useEffect(() => {
@@ -253,14 +263,27 @@ const Feed: React.FC = () => {
     };
   }, [loadFeed, loadSidebarData]);
 
-  // Listen for meal updates to refresh sidebar
+  // Listen for meal updates to refresh sidebar AND calendar
   useEffect(() => {
     const handleMealUpdate = (event: any) => {
-      console.log('Meal update event received:', event.type);
-      // Add a small delay to ensure backend has processed the meal update
+      console.log('🍽️ Feed: Meal update event received:', event.type);
+      // Force refresh both sidebar data AND month data for calendar
       setTimeout(() => {
+        console.log('🍽️ Feed: Refreshing sidebar and calendar data...');
         loadSidebarData();
+        loadMonthData(); // Explicitly reload calendar data
       }, 500);
+      
+      // Also do an immediate refresh for faster response
+      setTimeout(() => {
+        console.log('🍽️ Feed: Immediate calendar refresh...');
+        loadMonthData();
+      }, 100);
+    };
+
+    const handleCalendarRefresh = () => {
+      console.log('📅 Feed: Calendar refresh event received');
+      loadMonthData();
     };
 
     // Listen to various meal-related events
@@ -269,6 +292,7 @@ const Feed: React.FC = () => {
     window.addEventListener('mealDeleted', handleMealUpdate);
     window.addEventListener('mealUpdated', handleMealUpdate);
     window.addEventListener('sidebarRefresh', handleMealUpdate);
+    window.addEventListener('calendarRefresh', handleCalendarRefresh);
     
     return () => {
       window.removeEventListener('mealAdded', handleMealUpdate);
@@ -276,8 +300,9 @@ const Feed: React.FC = () => {
       window.removeEventListener('mealDeleted', handleMealUpdate);
       window.removeEventListener('mealUpdated', handleMealUpdate);
       window.removeEventListener('sidebarRefresh', handleMealUpdate);
+      window.removeEventListener('calendarRefresh', handleCalendarRefresh);
     };
-  }, [loadSidebarData]);
+  }, [loadSidebarData, loadMonthData]);
 
   const handleLike = async (postId: number) => {
     try {
@@ -747,6 +772,18 @@ const Feed: React.FC = () => {
                         const dateStr = format(day, 'yyyy-MM-dd');
                         const dayData = monthData.days?.find((d: any) => d.date === dateStr);
                         const isCurrentDay = isToday(day);
+                        
+                        // Debug logging for today's date
+                        if (isCurrentDay && dayData) {
+                          console.log('📅 Feed Calendar: Today\'s data:', {
+                            date: dateStr,
+                            hasData: dayData.has_data,
+                            calories: dayData.total_calories,
+                            caloriesMet: dayData.calories_met,
+                            proteinMet: dayData.protein_met,
+                            status: getDayStatus(dayData)
+                          });
+                        }
                         
                         return (
                           <div

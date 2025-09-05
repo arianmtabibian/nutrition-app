@@ -186,10 +186,13 @@ const Dashboard: React.FC = () => {
   // Listen for meal updates to refresh sidebar data globally
   useEffect(() => {
     const handleMealUpdate = (event: any) => {
-      console.log('Dashboard: Meal update event received:', event.type);
+      console.log('🏠 Dashboard: Meal update event received:', event.type);
       // Force refresh of any sidebar data if needed
       // This ensures sidebar updates across all tabs
-      window.dispatchEvent(new CustomEvent('sidebarRefresh'));
+      setTimeout(() => {
+        console.log('🏠 Dashboard: Dispatching sidebar refresh...');
+        window.dispatchEvent(new CustomEvent('sidebarRefresh'));
+      }, 100);
     };
 
     // Listen to various meal-related events
