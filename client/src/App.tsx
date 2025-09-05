@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useOnboardingProtection } from './hooks/useOnboardingProtection';
 
 import Welcome from './components/Welcome';
 import EnhancedRegister from './components/EnhancedRegister';
@@ -20,6 +21,28 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return user ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
+// Special protection for onboarding - extra safeguards
+const OnboardingProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  // Additional check: if user has been using the app, redirect to dashboard
+  const hasAccessedApp = localStorage.getItem('hasAccessedApp');
+  if (hasAccessedApp === 'true') {
+    console.log('Route-level protection: User has accessed app before, redirecting to dashboard');
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
 // Public route component (redirects if already logged in)
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -32,6 +55,9 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 function AppRoutes() {
+  // Global protection against onboarding access for existing users
+  useOnboardingProtection();
+  
   return (
     <Routes>
       <Route path="/" element={<Welcome />} />
@@ -46,9 +72,9 @@ function AppRoutes() {
         </PublicRoute>
       } />
       <Route path="/onboarding" element={
-        <ProtectedRoute>
+        <OnboardingProtectedRoute>
           <Onboarding />
-        </ProtectedRoute>
+        </OnboardingProtectedRoute>
       } />
       <Route path="/dashboard/*" element={
         <ProtectedRoute>

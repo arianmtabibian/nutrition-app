@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useUserSession } from '../hooks/useUserSession';
 import { LogOut, User, Calendar, Plus, BarChart3, Home, Target, PenTool, Image, X, ChevronDown, UserPlus, Settings } from 'lucide-react';
 import { profileAPI } from '../services/api';
 import Overview from './Overview';
@@ -17,6 +18,7 @@ const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { hasAccessedAppBefore } = useUserSession();
   const [loading, setLoading] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [showNewPostModal, setShowNewPostModal] = useState(false);
@@ -116,29 +118,17 @@ const Dashboard: React.FC = () => {
 
   const currentTab = getCurrentTab();
 
-  // Check if user has any profile at all - if not, redirect to onboarding
+  // NEVER redirect logged-in users to onboarding - they can always access the dashboard
   useEffect(() => {
-    const checkProfileExists = async () => {
-      try {
-        const response = await profileAPI.get();
-        if (!response.data.profile) {
-          // No profile exists, redirect to onboarding
-          navigate('/onboarding');
-          return;
-        }
-        
-        // User has a profile, they can access the dashboard
-        setCheckingProfile(false);
-      } catch (error) {
-        // Profile doesn't exist or error occurred, redirect to onboarding
-        navigate('/onboarding');
-      }
-    };
-    
     if (user) {
-      checkProfileExists();
+      console.log('User is authenticated, allowing full dashboard access');
+      // User is logged in, they can always access the dashboard
+      // We'll handle missing profile data gracefully in the UI instead of redirecting
+      setCheckingProfile(false);
+    } else {
+      setCheckingProfile(false);
     }
-  }, [user, navigate]);
+  }, [user]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

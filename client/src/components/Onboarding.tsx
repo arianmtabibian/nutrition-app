@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowRight, ArrowLeft, Target, User, Activity, Scale, Ruler, Calendar, CheckCircle, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { profileAPI } from '../services/api';
+import { useUserSession } from '../hooks/useUserSession';
 
 interface ProfileData {
   daily_calories: number;
@@ -20,6 +21,7 @@ interface ProfileData {
 
 const Onboarding: React.FC = () => {
   const navigate = useNavigate();
+  const { hasAccessedAppBefore } = useUserSession();
   const [currentStep, setCurrentStep] = useState(0);
   const [profileData, setProfileData] = useState<ProfileData>({
     daily_calories: 2000,
@@ -514,25 +516,43 @@ const Onboarding: React.FC = () => {
     }
   ];
 
-  // Check if user already has a profile - if so, redirect to dashboard
+  // ABSOLUTE PROTECTION: Multiple layers to prevent logged-in users from accessing onboarding
   useEffect(() => {
+    // First check: Has the user accessed the app before?
+    if (hasAccessedAppBefore()) {
+      console.log('User has accessed app before, redirecting to dashboard immediately');
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+
     const checkExistingProfile = async () => {
       try {
         const response = await profileAPI.get();
         if (response.data.profile) {
-          // User already has a profile, redirect to dashboard
-          navigate('/dashboard');
+          // User already has a profile, redirect to dashboard immediately
+          console.log('User has existing profile, redirecting to dashboard');
+          navigate('/dashboard', { replace: true });
           return;
         }
         setLoading(false);
-      } catch (error) {
-        // No profile exists, continue with onboarding
-        setLoading(false);
+      } catch (error: any) {
+        console.log('Profile check error in onboarding:', error);
+        
+        // If there's ANY doubt about whether the user should be here, send them to dashboard
+        // Only continue with onboarding if we get a clear 404 (profile doesn't exist)
+        if (error?.response?.status === 404) {
+          console.log('Confirmed no profile exists (404), continuing with onboarding');
+          setLoading(false);
+        } else {
+          // For any other error (network, auth, server), redirect to dashboard to be safe
+          console.log('Uncertain about profile status, redirecting to dashboard for safety');
+          navigate('/dashboard', { replace: true });
+        }
       }
     };
     
     checkExistingProfile();
-  }, [navigate]);
+  }, [navigate, hasAccessedAppBefore]);
 
   useEffect(() => {
     if (timeRemaining > 0 && currentStep < steps.length - 1) {

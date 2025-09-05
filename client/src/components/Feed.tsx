@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Heart, MessageCircle, Share, MoreHorizontal, PenTool, Bookmark, Image, X, Plus, UserCircle, Calendar, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
-import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday } from 'date-fns';
+import { Heart, MessageCircle, Share, MoreHorizontal, PenTool, Bookmark, Image, X, Plus, UserCircle, Calendar, TrendingUp, TrendingDown, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
+import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
 interface Post {
@@ -659,70 +659,129 @@ const Feed: React.FC = () => {
 
         {/* Calendar Streak Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Calendar className="w-5 h-5 mr-2" />
-            {format(currentDate, 'MMMM yyyy')}
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+              <Calendar className="w-5 h-5 mr-2" />
+              {format(currentDate, 'MMMM yyyy')}
+            </h3>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setCurrentDate(prev => subMonths(prev, 1))}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4 text-gray-600" />
+              </button>
+              <button
+                onClick={() => setCurrentDate(prev => addMonths(prev, 1))}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <ChevronRight className="w-4 h-4 text-gray-600" />
+              </button>
+            </div>
+          </div>
           
           {sidebarLoading ? (
             <div className="animate-pulse">
               <div className="grid grid-cols-7 gap-1">
-                {Array.from({ length: 35 }).map((_, i) => (
-                  <div key={i} className="h-8 bg-gray-200 rounded"></div>
+                {Array.from({ length: 42 }).map((_, i) => (
+                  <div key={i} className="h-12 bg-gray-200 rounded-lg"></div>
                 ))}
               </div>
             </div>
           ) : (
             <div className="space-y-3">
-              {/* Calendar Grid */}
-              <div className="grid grid-cols-7 gap-1 text-center text-xs">
+              {/* Calendar Grid - Exact match to Diary */}
+              <div className="grid grid-cols-7 gap-1">
                 {/* Day headers */}
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                  <div key={i} className="font-medium text-gray-500 py-2">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
                     {day}
                   </div>
                 ))}
                 
-                {/* Calendar days */}
-                {monthData && eachDayOfInterval({
-                  start: startOfMonth(currentDate),
-                  end: endOfMonth(currentDate)
-                }).map((date) => {
-                  const dateStr = format(date, 'yyyy-MM-dd');
-                  const dayData = monthData.days?.find((d: any) => d.date === dateStr);
-                  const hasData = dayData?.has_data;
-                  const metGoals = dayData?.calories_met && dayData?.protein_met;
+                {/* Padding days for proper calendar layout */}
+                {monthData && (() => {
+                  const start = startOfMonth(currentDate);
+                  const firstDayOfMonth = start.getDay();
+                  const paddingDays = Array.from({ length: firstDayOfMonth }, (_, i) => i);
+                  const days = eachDayOfInterval({
+                    start: startOfMonth(currentDate),
+                    end: endOfMonth(currentDate)
+                  });
                   
+                  const getDayStatus = (day: any) => {
+                    if (!day?.has_data) return 'no-data';
+                    if (day.calories_met && day.protein_met) return 'both-met';
+                    if (day.calories_met || day.protein_met) return 'partial';
+                    return 'none-met';
+                  };
+
+                  const getDayColor = (day: any) => {
+                    const status = getDayStatus(day);
+                    switch (status) {
+                      case 'both-met':
+                        return 'bg-green-500 text-white';
+                      case 'partial':
+                        return 'bg-yellow-500 text-white';
+                      case 'none-met':
+                        return 'bg-red-500 text-white';
+                      default:
+                        return 'bg-gray-100 text-gray-400';
+                    }
+                  };
+
                   return (
-                    <div
-                      key={dateStr}
-                      className={`
-                        h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium
-                        ${isToday(date) ? 'ring-2 ring-blue-500' : ''}
-                        ${!isSameMonth(date, currentDate) ? 'text-gray-300' : ''}
-                        ${hasData 
-                          ? metGoals 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-yellow-100 text-yellow-800'
-                          : 'text-gray-400 hover:bg-gray-100'
-                        }
-                      `}
-                    >
-                      {format(date, 'd')}
-                    </div>
+                    <>
+                      {/* Padding days */}
+                      {paddingDays.map((_, i) => (
+                        <div key={`padding-${i}`} className="p-2" />
+                      ))}
+                      
+                      {/* Calendar days */}
+                      {days.map(day => {
+                        const dateStr = format(day, 'yyyy-MM-dd');
+                        const dayData = monthData.days?.find((d: any) => d.date === dateStr);
+                        const isCurrentDay = isToday(day);
+                        
+                        return (
+                          <div
+                            key={day.toString()}
+                            className={`
+                              p-2 h-16 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer
+                              ${getDayColor(dayData || { has_data: false })}
+                              ${isCurrentDay ? 'ring-2 ring-blue-500 ring-offset-2' : ''}
+                              hover:opacity-80
+                            `}
+                          >
+                            <div className="text-center">
+                              <div className="font-semibold">{format(day, 'd')}</div>
+                              {dayData?.has_data && (
+                                <div className="text-xs opacity-75">
+                                  {dayData.total_calories} cal
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </>
                   );
-                })}
+                })()}
               </div>
               
-              {/* Legend */}
-              <div className="flex items-center justify-center space-x-4 text-xs">
+              {/* Legend - Match Diary colors */}
+              <div className="flex items-center justify-center space-x-3 text-xs">
                 <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-green-100 rounded-full"></div>
-                  <span className="text-gray-600">Goals met</span>
+                  <div className="w-3 h-3 bg-green-500 rounded"></div>
+                  <span className="text-gray-600">Both goals met</span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-yellow-100 rounded-full"></div>
+                  <div className="w-3 h-3 bg-yellow-500 rounded"></div>
                   <span className="text-gray-600">Partial</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 bg-red-500 rounded"></div>
+                  <span className="text-gray-600">Goals not met</span>
                 </div>
               </div>
             </div>
