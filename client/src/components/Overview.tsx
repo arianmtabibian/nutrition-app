@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Target, Flame, Beef, TrendingUp, Calendar, Zap, Plus } from 'lucide-react';
+import { Target, Flame, Beef, TrendingUp, Calendar, Zap, Plus, Utensils, Clock } from 'lucide-react';
 import { profileAPI, mealsAPI, diaryAPI } from '../services/api';
 
 interface UserProfile {
@@ -177,9 +177,39 @@ const WeightAnalysis: React.FC<{
   );
 };
 
+// Helper functions for meal display
+const getMealTypeIcon = (mealType: string) => {
+  const icons: { [key: string]: string } = {
+    breakfast: '🍳',
+    lunch: '🥗',
+    dinner: '🍽️',
+    snack: '🍎'
+  };
+  return icons[mealType.toLowerCase()] || '🍽️';
+};
+
+const getMealTypeColor = (mealType: string) => {
+  const colors: { [key: string]: string } = {
+    breakfast: 'bg-yellow-100 text-yellow-800',
+    lunch: 'bg-green-100 text-green-800',
+    dinner: 'bg-blue-100 text-blue-800',
+    snack: 'bg-purple-100 text-purple-800'
+  };
+  return colors[mealType.toLowerCase()] || 'bg-gray-100 text-gray-800';
+};
+
+const safeFormatDate = (dateString: string, formatStr: string) => {
+  try {
+    return format(new Date(dateString), formatStr);
+  } catch (error) {
+    return dateString;
+  }
+};
+
 const Overview: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [todayNutrition, setTodayNutrition] = useState<DailyNutrition | null>(null);
+  const [todayMeals, setTodayMeals] = useState<MealData[]>([]);
   const [loading, setLoading] = useState(true);
   const [today] = useState(format(new Date(), 'yyyy-MM-dd'));
 
@@ -203,6 +233,7 @@ const Overview: React.FC = () => {
       
              // Calculate totals from meals
        const meals: MealData[] = mealsResponse.data.meals || [];
+       setTodayMeals(meals); // Store meals for display
        const totalCalories = meals.reduce((sum: number, meal: MealData) => sum + (meal.calories || 0), 0);
        const totalProtein = meals.reduce((sum: number, meal: MealData) => sum + (meal.protein || 0), 0);
        const totalCarbs = meals.reduce((sum: number, meal: MealData) => sum + (meal.carbs || 0), 0);
@@ -708,6 +739,56 @@ const Overview: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Today's Meals */}
+      {todayMeals.length > 0 && (
+        <div className="card">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Today's Meals</h3>
+          <div className="space-y-3">
+            {todayMeals.map((meal) => (
+              <div key={meal.id} className="p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="text-2xl">{getMealTypeIcon(meal.meal_type)}</div>
+                    
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getMealTypeColor(meal.meal_type)}`}>
+                          {meal.meal_type.charAt(0).toUpperCase() + meal.meal_type.slice(1)}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          <Clock className="w-3 h-3 inline mr-1" />
+                          {safeFormatDate(meal.created_at, 'h:mm a')}
+                        </span>
+                      </div>
+                      <p className="text-gray-900 font-medium">{meal.description}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                    {/* Main focus - Calories and Protein */}
+                    <div className="flex items-center space-x-2 text-sm">
+                      <Zap className="h-4 w-4 text-yellow-600" />
+                      <span className="font-semibold text-lg">{meal.calories} cal</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-sm">
+                      <Beef className="h-4 w-4 text-red-600" />
+                      <span className="font-semibold text-lg">{meal.protein}g</span>
+                    </div>
+                    
+                    {/* Additional macros - smaller and less prominent */}
+                    <div className="flex items-center space-x-3 text-xs text-gray-500 mt-1">
+                      <span>Carbs: {meal.carbs}g</span>
+                      <span>Fat: {meal.fat}g</span>
+                      <span>Fiber: {meal.fiber}g</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

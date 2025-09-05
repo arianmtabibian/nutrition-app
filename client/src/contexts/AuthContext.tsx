@@ -37,52 +37,91 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    // Check if user is already logged in - DOMAIN FLEXIBLE
-    const authData = getAuthData();
-    const currentDomain = window.location.origin;
-    
-    console.log('🔐 Auth check - Domain:', currentDomain);
-    console.log('🔐 Auth data exists:', !!authData);
-    
-    if (authData && hasValidAuth()) {
-      console.log('🔐 Found valid auth data, verifying with backend...');
-      api.defaults.headers.common['Authorization'] = `Bearer ${authData.token}`;
+    const checkAuth = () => {
+      // Check if user is already logged in - DOMAIN FLEXIBLE
+      const authData = getAuthData();
+      const currentDomain = window.location.origin;
       
-      // Verify token and get user info from the auth verify endpoint
-      api.get('/api/auth/verify')
-        .then(response => {
-          console.log('🔐 Verify response in AuthContext:', response.data);
-          if (response.data.user) {
-            setUser(response.data.user);
-            // ALWAYS update auth data to current domain (domain migration)
-            storeAuthData(authData.token, response.data.user);
-            console.log('🔐 User logged in successfully on domain:', currentDomain);
-            console.log('🔐 Auth data migrated to current domain');
-          }
-        })
-        .catch((error) => {
-          console.error('🔐 Error verifying user:', error);
-          
-          // Only clear auth if it's a 401/403 (invalid token)
-          // Don't clear on network errors (domain change issues)
-          if (error.response?.status === 401 || error.response?.status === 403) {
-            console.log('🔐 Token invalid, clearing auth data');
-            clearAuthData();
-            delete api.defaults.headers.common['Authorization'];
-          } else {
-            console.log('🔐 Network error, keeping auth data for retry');
-          }
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
-      console.log('🔐 No valid auth data found, user not logged in');
-      setLoading(false);
-    }
-  }, []);
+      console.log('🔐 Auth check - Domain:', currentDomain);
+      console.log('🔐 Auth data exists:', !!authData);
+      
+      if (authData && hasValidAuth()) {
+        console.log('🔐 Found valid auth data, verifying with backend...');
+        api.defaults.headers.common['Authorization'] = `Bearer ${authData.token}`;
+        
+        // Add timeout to prevent hanging requests - Increased timeout for better reliability
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+        
+        // Verify token and get user info from the auth verify endpoint
+        api.get('/api/auth/verify', { signal: controller.signal })
+          .then(response => {
+            clearTimeout(timeoutId);
+            console.log('🔐 Verify response in AuthContext:', response.data);
+            if (response.data.user) {
+              setUser(response.data.user);
+              // ALWAYS update auth data to current domain (domain migration)
+              storeAuthData(authData.token, response.data.user);
+              console.log('🔐 User logged in successfully on domain:', currentDomain);
+              console.log('🔐 Auth data migrated to current domain');
+            }
+          })
+          .catch((error) => {
+            clearTimeout(timeoutId);
+            console.error('🔐 Error verifying user:', error);
+            
+            // Be more specific about what constitutes an auth failure vs network issue
+            if (error.response?.status === 401 || error.response?.status === 403) {
+              console.log('🔐 Token invalid, clearing auth data');
+              clearAuthData();
+              delete api.defaults.headers.common['Authorization'];
+            } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+              console.log('🔐 Network timeout during auth verification, keeping auth data');
+              // Keep user logged in during network issues
+              // Try to retry once after a delay
+              if (retryCount < 1) {
+                console.log('🔐 Retrying auth verification in 3 seconds...');
+                setTimeout(() => {
+                  setRetryCount(prev => prev + 1);
+                  // This will trigger useEffect to run again
+                  window.dispatchEvent(new CustomEvent('retryAuth'));
+                }, 3000);
+              }
+            } else if (error.response?.status >= 500) {
+              console.log('🔐 Server error during auth verification, keeping auth data');
+              // Server errors shouldn't log users out
+            } else {
+              console.log('🔐 Unknown error during auth verification:', error.message);
+              // For unknown errors, keep auth data but log the issue
+            }
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+      } else {
+        console.log('🔐 No valid auth data found, user not logged in');
+        setLoading(false);
+      }
+    };
+
+    // Initial check
+    checkAuth();
+
+    // Listen for retry events
+    const handleRetryAuth = () => {
+      console.log('🔐 Retry auth event received');
+      checkAuth();
+    };
+
+    window.addEventListener('retryAuth', handleRetryAuth);
+
+    return () => {
+      window.removeEventListener('retryAuth', handleRetryAuth);
+    };
+  }, [retryCount]);
 
   const login = async (email: string, password: string) => {
     try {

@@ -33,7 +33,7 @@ const ensureDefaultUsers = async () => {
             console.log(`🔄 Creating user: ${userData.email}`);
             
             try {
-              const saltRounds = 12;
+              const saltRounds = 10; // Reduced for better performance
               const passwordHash = await bcrypt.hash(userData.password, saltRounds);
               
               db.run('INSERT INTO users (email, password_hash, first_name, last_name, username) VALUES (?, ?, ?, ?, ?)', 

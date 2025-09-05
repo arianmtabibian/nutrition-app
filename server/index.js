@@ -86,7 +86,7 @@ async function startServer() {
     await restoreFromEnv();
     console.log('✅ User data restoration complete');
     
-    // BACKUP USERS on startup (for next deployment)
+    // BACKUP USERS on startup (for next deployment) - Non-blocking with longer delay
     setTimeout(async () => {
       try {
         console.log('💾 Creating backup of current user data...');
@@ -95,18 +95,18 @@ async function startServer() {
       } catch (error) {
         console.error('❌ Backup failed:', error);
       }
-    }, 5000); // Wait 5 seconds after startup
+    }, 30000); // Wait 30 seconds after startup to not block initial requests
     
-    // BACKUP USERS every hour to prevent data loss
+    // BACKUP USERS every 4 hours to prevent data loss (reduced frequency for better performance)
     setInterval(async () => {
       try {
-        console.log('🔄 Hourly backup starting...');
+        console.log('🔄 Periodic backup starting...');
         await simpleBackup();
-        console.log('✅ Hourly backup complete');
+        console.log('✅ Periodic backup complete');
       } catch (error) {
-        console.error('❌ Hourly backup failed:', error);
+        console.error('❌ Periodic backup failed:', error);
       }
-    }, 60 * 60 * 1000); // Every hour
+    }, 4 * 60 * 60 * 1000); // Every 4 hours
     
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);

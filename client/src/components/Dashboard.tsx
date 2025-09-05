@@ -292,7 +292,7 @@ const Dashboard: React.FC = () => {
                 className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
               >
                 <Plus className="h-4 w-4" />
-                <span>Add Meal</span>
+                <span>Meals</span>
               </button>
               <button
                 onClick={() => setShowNewPostModal(true)}

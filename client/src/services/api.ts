@@ -1,17 +1,33 @@
 import axios from 'axios';
 
-// Create axios instance
+// Create axios instance with timeout for better performance
 export const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com',
+  timeout: 25000, // 25 second timeout - more forgiving for slower connections
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor to add auth token
+// Request interceptor to add auth token - Use consistent auth system
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    // Try to get token from the new auth system first, fallback to old system
+    let token = localStorage.getItem('token');
+    
+    // Check if we have the newer auth data format
+    const authDataStr = localStorage.getItem('nutritrack_auth_data');
+    if (authDataStr) {
+      try {
+        const authData = JSON.parse(authDataStr);
+        if (authData.token) {
+          token = authData.token;
+        }
+      } catch (error) {
+        console.warn('Failed to parse auth data:', error);
+      }
+    }
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -22,14 +38,27 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle auth errors
+// Response interceptor to handle auth errors - More intelligent handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
+    // Only redirect to login on actual authentication failures, not network issues
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      console.log('🔐 Authentication failed, clearing auth data and redirecting to login');
+      
+      // Clear all auth data using both systems
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      localStorage.removeItem('user');
+      localStorage.removeItem('domain');
+      localStorage.removeItem('nutritrack_auth_data');
+      
+      // Only redirect if we're not already on the login page
+      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+        window.location.href = '/login';
+      }
+    } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      // Network timeout - don't log out, just let the error propagate
+      console.warn('🌐 Network timeout, keeping user logged in');
     }
     return Promise.reject(error);
   }

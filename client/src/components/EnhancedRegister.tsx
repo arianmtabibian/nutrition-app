@@ -27,7 +27,7 @@ const EnhancedRegister: React.FC = () => {
     confirmPassword: ''
   });
 
-  // Comprehensive form validation
+  // Simplified form validation - Only validate on submit for better performance
   const validateForm = useCallback(() => {
     const errors = {
       first_name: '',
@@ -38,63 +38,35 @@ const EnhancedRegister: React.FC = () => {
       confirmPassword: ''
     };
 
-    // First name validation
-    if (!formData.first_name.trim()) {
-      errors.first_name = 'First name is required';
-    } else if (formData.first_name.trim().length < 2) {
+    // Basic required field validation
+    if (!formData.first_name.trim()) errors.first_name = 'First name is required';
+    if (!formData.last_name.trim()) errors.last_name = 'Last name is required';
+    if (!formData.username.trim()) errors.username = 'Username is required';
+    if (!formData.email.trim()) errors.email = 'Email is required';
+    if (!formData.password) errors.password = 'Password is required';
+    if (!formData.confirmPassword) errors.confirmPassword = 'Please confirm your password';
+
+    // Simple length validation
+    if (formData.first_name.trim() && formData.first_name.trim().length < 2) {
       errors.first_name = 'First name must be at least 2 characters';
-    } else if (!/^[a-zA-Z\s'-]+$/.test(formData.first_name.trim())) {
-      errors.first_name = 'First name can only contain letters, spaces, hyphens, and apostrophes';
     }
-
-    // Last name validation
-    if (!formData.last_name.trim()) {
-      errors.last_name = 'Last name is required';
-    } else if (formData.last_name.trim().length < 2) {
+    if (formData.last_name.trim() && formData.last_name.trim().length < 2) {
       errors.last_name = 'Last name must be at least 2 characters';
-    } else if (!/^[a-zA-Z\s'-]+$/.test(formData.last_name.trim())) {
-      errors.last_name = 'Last name can only contain letters, spaces, hyphens, and apostrophes';
     }
-
-    // Username validation
-    if (!formData.username.trim()) {
-      errors.username = 'Username is required';
-    } else if (formData.username.trim().length < 3) {
+    if (formData.username.trim() && formData.username.trim().length < 3) {
       errors.username = 'Username must be at least 3 characters';
-    } else if (formData.username.trim().length > 20) {
-      errors.username = 'Username cannot exceed 20 characters';
-    } else if (!/^[a-zA-Z0-9_-]+$/.test(formData.username.trim())) {
-      errors.username = 'Username can only contain letters, numbers, underscores, and hyphens';
-    } else if (/^[0-9_-]/.test(formData.username.trim())) {
-      errors.username = 'Username must start with a letter';
+    }
+    if (formData.password && formData.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
     }
 
-    // Email validation
-    if (!formData.email.trim()) {
-      errors.email = 'Email address is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+    // Basic email validation
+    if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       errors.email = 'Please enter a valid email address';
     }
 
-    // Password validation
-    if (!formData.password) {
-      errors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      errors.password = 'Password must be at least 8 characters long';
-    } else if (!/(?=.*[a-z])/.test(formData.password)) {
-      errors.password = 'Password must contain at least one lowercase letter';
-    } else if (!/(?=.*[A-Z])/.test(formData.password)) {
-      errors.password = 'Password must contain at least one uppercase letter';
-    } else if (!/(?=.*\d)/.test(formData.password)) {
-      errors.password = 'Password must contain at least one number';
-    } else if (!/(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/.test(formData.password)) {
-      errors.password = 'Password must contain at least one special character';
-    }
-
-    // Confirm password validation
-    if (!formData.confirmPassword) {
-      errors.confirmPassword = 'Please confirm your password';
-    } else if (formData.password !== formData.confirmPassword) {
+    // Password match validation
+    if (formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword) {
       errors.confirmPassword = 'Passwords do not match';
     }
 

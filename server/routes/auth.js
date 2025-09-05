@@ -38,8 +38,8 @@ router.post('/register', async (req, res) => {
         return res.status(409).json({ error: 'User already exists' });
       }
 
-      // Hash password and create user
-      const saltRounds = 12;
+      // Hash password and create user - Reduced salt rounds for better performance
+      const saltRounds = 10; // Reduced from 12 to 10 for faster auth (still secure)
       const passwordHash = await bcrypt.hash(password, saltRounds);
       
       db.run('INSERT INTO users (email, password_hash, first_name, last_name, username) VALUES (?, ?, ?, ?, ?)', 
@@ -60,8 +60,8 @@ router.post('/register', async (req, res) => {
           
           console.log('Registration successful for:', email);
           
-          // AUTO-BACKUP: Trigger backup after new user registration
-          console.log('🔄 Triggering auto-backup after user registration...');
+          // AUTO-BACKUP: Trigger backup after new user registration (non-blocking)
+          console.log('🔄 Scheduling auto-backup after user registration...');
           setTimeout(async () => {
             try {
               await simpleBackup();
@@ -69,7 +69,7 @@ router.post('/register', async (req, res) => {
             } catch (err) {
               console.error('❌ Auto-backup failed after registration:', err);
             }
-          }, 2000); // Wait 2 seconds to ensure user is fully created
+          }, 10000); // Increased delay to 10 seconds to not block user experience
           
           res.status(201).json({
             message: 'User created successfully',
@@ -156,7 +156,7 @@ router.post('/login', (req, res) => {
 
         console.log('Login successful for user:', email);
 
-        // Generate JWT token
+        // Generate JWT token - Use consistent secret
         const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-key-for-development';
         const token = jwt.sign(
           { userId: row.id, email: row.email, first_name: row.first_name, last_name: row.last_name, username: row.username },
