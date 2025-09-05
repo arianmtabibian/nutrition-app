@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { Plus, Loader2, Trash2, Utensils, Calendar, Zap, Beef } from 'lucide-react';
 import { mealsAPI } from '../services/api';
+import { generateMealSummary } from '../utils/mealSummary';
 
 interface Meal {
   id: number;
@@ -40,6 +41,7 @@ const Inputs: React.FC = () => {
   const [message, setMessage] = useState('');
   const [editingMeal, setEditingMeal] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({
+    description: '',
     calories: 0,
     protein: 0,
     carbs: 0,
@@ -174,6 +176,7 @@ const Inputs: React.FC = () => {
   const startEditMeal = (meal: Meal) => {
     setEditingMeal(meal.id);
     setEditForm({
+      description: meal.description,
       calories: meal.calories,
       protein: meal.protein,
       carbs: meal.carbs || 0,
@@ -187,6 +190,7 @@ const Inputs: React.FC = () => {
   const cancelEditMeal = () => {
     setEditingMeal(null);
     setEditForm({
+      description: '',
       calories: 0,
       protein: 0,
       carbs: 0,
@@ -573,9 +577,20 @@ const Inputs: React.FC = () => {
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getMealTypeColor(meal.meal_type)}`}>
                             {meal.meal_type.charAt(0).toUpperCase() + meal.meal_type.slice(1)}
                           </span>
-                          <p className="text-gray-900 font-medium mt-1">{meal.description}</p>
                         </div>
                       </div>
+                    </div>
+                    
+                    {/* Description field for editing */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                      <input
+                        type="text"
+                        value={editForm.description}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                        className="input w-full"
+                        placeholder="Meal description"
+                      />
                     </div>
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -687,7 +702,10 @@ const Inputs: React.FC = () => {
                             {safeFormatDate(meal.created_at, 'h:mm a')}
                           </span>
                         </div>
-                        <p className="text-gray-900 font-medium">{meal.description}</p>
+                        <p className="text-gray-900 font-medium">{generateMealSummary(meal.description)}</p>
+                        <p className="text-xs text-gray-500 mt-1" title={meal.description}>
+                          {meal.description.length > 50 ? `${meal.description.substring(0, 50)}...` : meal.description}
+                        </p>
                       </div>
                     </div>
                     

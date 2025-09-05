@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Target, Flame, Beef, TrendingUp, Calendar, Zap, Plus, Utensils, Clock } from 'lucide-react';
 import { profileAPI, mealsAPI, diaryAPI } from '../services/api';
+import { generateMealSummary } from '../utils/mealSummary';
 
 interface UserProfile {
   daily_calories: number;
@@ -761,7 +762,10 @@ const Overview: React.FC = () => {
                           {safeFormatDate(meal.created_at, 'h:mm a')}
                         </span>
                       </div>
-                      <p className="text-gray-900 font-medium">{meal.description}</p>
+                      <p className="text-gray-900 font-medium">{generateMealSummary(meal.description)}</p>
+                      <p className="text-xs text-gray-500 mt-1" title={meal.description}>
+                        {meal.description.length > 40 ? `${meal.description.substring(0, 40)}...` : meal.description}
+                      </p>
                     </div>
                   </div>
                   

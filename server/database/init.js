@@ -49,6 +49,7 @@ function initializeDatabase() {
           user_id INTEGER NOT NULL,
           meal_date DATE NOT NULL,
           meal_type TEXT NOT NULL,
+          title TEXT,
           description TEXT NOT NULL,
           calories INTEGER NOT NULL,
           protein REAL NOT NULL,
@@ -61,6 +62,13 @@ function initializeDatabase() {
           FOREIGN KEY (user_id) REFERENCES users (id)
         )
       `);
+
+      // Add title column to existing meals table if it doesn't exist
+      db.run(`ALTER TABLE meals ADD COLUMN title TEXT`, (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('Error adding title column:', err);
+        }
+      });
 
       // Daily nutrition summary table
       db.run(`
