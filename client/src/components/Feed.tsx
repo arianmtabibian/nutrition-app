@@ -1053,8 +1053,9 @@ const Feed: React.FC = () => {
           </div>
         </div>
       ) : (
-        {/* Posts Feed - Instagram/TikTok Style */}
-        <div className="space-y-8">
+        <>
+          {/* Posts Feed - Instagram/TikTok Style */}
+          <div className="space-y-8">
           {posts.map((post) => (
               <div key={post.id} className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/50 overflow-hidden group hover:shadow-2xl transition-all duration-300">
                 {/* Post Header - Modern Profile Style */}
@@ -1287,10 +1288,10 @@ const Feed: React.FC = () => {
                   </div>
                 </div>
               )}
-                </div>
               </div>
             ))}
-        </div>
+          </div>
+        </>
       )}
         </div>
 
