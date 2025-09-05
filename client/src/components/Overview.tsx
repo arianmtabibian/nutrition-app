@@ -895,6 +895,26 @@ const Overview: React.FC = () => {
             <BarChart3 className="h-5 w-5 text-orange-600" />
             <h3 className="text-lg font-semibold text-orange-900">Weekly Progress</h3>
           </div>
+          
+          {/* Color Legend */}
+          <div className="flex items-center space-x-4 text-xs">
+            <div className="flex items-center space-x-1">
+              <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
+              <span className="text-gray-600">Goals Met</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-3 h-3 bg-orange-200 border border-orange-400 rounded"></div>
+              <span className="text-gray-600">Today</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-3 h-3 bg-yellow-100 border border-yellow-300 rounded"></div>
+              <span className="text-gray-600">Partial</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-3 h-3 bg-gray-100 border border-gray-300 rounded"></div>
+              <span className="text-gray-600">No Data</span>
+            </div>
+          </div>
           <div className="flex items-center space-x-2">
             <button
               onClick={() => navigateWeek('prev')}
@@ -968,10 +988,10 @@ const Overview: React.FC = () => {
 
       {/* Weight Loss/Gain Analysis */}
       {profile.weight && profile.target_weight && (
-        <div className="card bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+        <div className="card bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200">
           <div className="flex items-center space-x-2 mb-4">
-            <TrendingUp className="h-5 w-5 text-blue-600" />
-            <h3 className="text-lg font-semibold text-blue-900">Weight Progress Analysis</h3>
+            <TrendingUp className="h-5 w-5 text-orange-600" />
+            <h3 className="text-lg font-semibold text-orange-900">Weight Progress Analysis</h3>
           </div>
           
           <WeightAnalysis 

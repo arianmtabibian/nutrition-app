@@ -38,9 +38,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(false);
 
   useEffect(() => {
     const checkAuth = () => {
+      // Prevent multiple simultaneous auth checks
+      if (isCheckingAuth) {
+        console.log('🔐 Auth check already in progress, skipping...');
+        return;
+      }
+      
+      setIsCheckingAuth(true);
+      
       // Check if user is already logged in - DOMAIN FLEXIBLE
       const authData = getAuthData();
       const currentDomain = window.location.origin;
@@ -100,18 +109,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           })
           .finally(() => {
             setLoading(false);
+            setIsCheckingAuth(false);
           });
       } else {
         console.log('🔐 No valid auth data found, user not logged in');
         setLoading(false);
+        setIsCheckingAuth(false);
       }
     };
 
     // Initial check
     checkAuth();
 
+    // Listen for logout events from API interceptor
+    const handleLogoutEvent = () => {
+      console.log('🔐 Logout event received from API interceptor');
+      // Clear user state immediately
+      setUser(null);
+      setLoading(false);
+      // The ProtectedRoute component will automatically redirect to /login
+      // when user becomes null, using React Router properly
+    };
+
+    window.addEventListener('auth-logout', handleLogoutEvent);
+
     return () => {
-      // Cleanup if needed
+      window.removeEventListener('auth-logout', handleLogoutEvent);
     };
   }, []);
 

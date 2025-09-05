@@ -46,19 +46,26 @@ api.interceptors.response.use(
     if (error.response?.status === 401 || error.response?.status === 403) {
       console.log('🔐 Authentication failed, clearing auth data and redirecting to login');
       
-      // Clear all auth data using both systems
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('domain');
-      localStorage.removeItem('nutritrack_auth_data');
-      
-      // Only redirect if we're not already on the login page
-      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
-        window.location.href = '/login';
-      }
+      // Add a small delay to prevent race conditions with multiple API calls
+      setTimeout(() => {
+        // Clear all auth data using both systems
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('domain');
+        localStorage.removeItem('nutritrack_auth_data');
+        
+        // Use React Router navigation instead of hard redirect to prevent 404s
+        if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+          // Dispatch a custom event that the AuthContext can handle
+          window.dispatchEvent(new CustomEvent('auth-logout'));
+        }
+      }, 100); // Small delay to prevent race conditions
     } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
       // Network timeout - don't log out, just let the error propagate
       console.warn('🌐 Network timeout, keeping user logged in');
+    } else if (error.response?.status >= 500) {
+      // Server errors shouldn't cause logout
+      console.warn('🌐 Server error, keeping user logged in');
     }
     return Promise.reject(error);
   }
