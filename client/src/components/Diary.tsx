@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays } from 'date-fns';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, BarChart3, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { diaryAPI, mealsAPI, profileAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface DayData {
   date: string;
@@ -27,6 +28,7 @@ interface MonthData {
 }
 
 const Diary: React.FC = () => {
+  const { user, loading: authLoading } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [monthData, setMonthData] = useState<MonthData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -45,17 +47,33 @@ const Diary: React.FC = () => {
   });
 
   useEffect(() => {
-    loadMonthData();
-    loadWeeklyProgress();
-  }, [currentDate]);
+    // Only load data if user is authenticated and not loading
+    if (user && !authLoading) {
+      console.log('📅 Diary: User authenticated, loading data...');
+      loadMonthData();
+      loadWeeklyProgress();
+    } else {
+      console.log('📅 Diary: User not authenticated yet, skipping data load');
+    }
+  }, [currentDate, user, authLoading]);
 
   const loadWeeklyProgress = async (retryCount = 0) => {
+    // Don't proceed if user is not authenticated
+    if (!user) {
+      console.log('📅 Diary: No user, skipping weekly progress load');
+      return;
+    }
+    
     try {
       setWeeklyProgress(prev => ({ ...prev, loading: true }));
+      
+      console.log('📅 Diary: Loading weekly progress...');
       
       // Get the past 7 days
       const endDate = format(new Date(), 'yyyy-MM-dd');
       const startDate = format(subDays(new Date(), 6), 'yyyy-MM-dd');
+      
+      console.log(`📅 Diary: Weekly range: ${startDate} to ${endDate}`);
       
       // Get meals for the past week
       const response = await mealsAPI.getByRange(startDate, endDate);
@@ -105,34 +123,57 @@ const Diary: React.FC = () => {
          loading: false,
          userWantsToLoseWeight
        });
-    } catch (error) {
-      console.error('Failed to load weekly progress:', error);
+    } catch (error: any) {
+      console.error('📅 Diary: Failed to load weekly progress:', error);
       
-      // Retry logic for network errors
-      if (retryCount < 3 && (error instanceof Error && (error.message?.includes('Failed to fetch') || error.message?.includes('Network Error')))) {
-        console.log(`Retrying weekly progress load (attempt ${retryCount + 1})...`);
-        setTimeout(() => loadWeeklyProgress(retryCount + 1), 1000 * (retryCount + 1));
+      // Don't retry if user is no longer authenticated
+      if (!user) {
+        console.log('📅 Diary: User no longer authenticated, stopping retries');
         return;
       }
       
-      setWeeklyProgress(prev => ({ ...prev, loading: false }));
+      // Retry logic for network errors only
+      if (retryCount < 2 && (error instanceof Error && (error.message?.includes('Failed to fetch') || error.message?.includes('Network Error') || error.code === 'ECONNABORTED'))) {
+        console.log(`📅 Diary: Retrying weekly progress load (attempt ${retryCount + 1})...`);
+        setTimeout(() => loadWeeklyProgress(retryCount + 1), 2000 * (retryCount + 1));
+        return;
+      }
+      
+      // Set default values on persistent errors
+      setWeeklyProgress({
+        averageDeficit: 0,
+        weeklyWeightChange: 0,
+        loading: false,
+        userWantsToLoseWeight: true
+      });
     }
   };
 
   const loadMonthData = async (retryCount = 0) => {
+    // Don't proceed if user is not authenticated
+    if (!user) {
+      console.log('📅 Diary: No user, skipping month data load');
+      return;
+    }
+    
     setLoading(true);
     try {
       const year: number = currentDate.getFullYear();
       const month: number = currentDate.getMonth() + 1;
+      
+      console.log(`📅 Diary: Loading month data for ${year}-${month}`);
       
       // Get the first and last day of the month
       const startDate: string = `${year}-${month.toString().padStart(2, '0')}-01`;
       const lastDay: number = new Date(year, month, 0).getDate();
       const endDate: string = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
       
+      console.log(`📅 Diary: Date range: ${startDate} to ${endDate}`);
+      
       // Get meals for the entire month
       const response = await mealsAPI.getByRange(startDate, endDate);
       const meals = response.data.meals || [];
+      console.log(`📅 Diary: Loaded ${meals.length} meals`);
       
       // Get user's profile for goals
       let dailyCalorieGoal: number = 2000;
@@ -230,15 +271,28 @@ const Diary: React.FC = () => {
       }
       
       setMonthData(monthData);
-    } catch (error) {
-      console.error('Failed to load month data:', error);
+    } catch (error: any) {
+      console.error('📅 Diary: Failed to load month data:', error);
       
-      // Retry logic for network errors
-      if (retryCount < 3 && (error instanceof Error && (error.message?.includes('Failed to fetch') || error.message?.includes('Network Error')))) {
-        console.log(`Retrying month data load (attempt ${retryCount + 1})...`);
-        setTimeout(() => loadMonthData(retryCount + 1), 1000 * (retryCount + 1));
+      // Don't retry if user is no longer authenticated
+      if (!user) {
+        console.log('📅 Diary: User no longer authenticated, stopping retries');
         return;
       }
+      
+      // Retry logic for network errors only
+      if (retryCount < 2 && (error instanceof Error && (error.message?.includes('Failed to fetch') || error.message?.includes('Network Error') || error.code === 'ECONNABORTED'))) {
+        console.log(`📅 Diary: Retrying month data load (attempt ${retryCount + 1})...`);
+        setTimeout(() => loadMonthData(retryCount + 1), 2000 * (retryCount + 1));
+        return;
+      }
+      
+      // Set empty month data on persistent errors
+      setMonthData({
+        year: currentDate.getFullYear(),
+        month: currentDate.getMonth() + 1,
+        days: []
+      });
     } finally {
       setLoading(false);
     }
@@ -398,6 +452,27 @@ const Diary: React.FC = () => {
       </div>
     );
   };
+
+  // Show loading spinner while authentication is in progress
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-gray-600">Loading...</span>
+      </div>
+    );
+  }
+
+  // Redirect to login if no user (this shouldn't happen due to ProtectedRoute, but just in case)
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Please log in to view your nutrition diary.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

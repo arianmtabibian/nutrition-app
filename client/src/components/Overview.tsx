@@ -889,11 +889,11 @@ const Overview: React.FC = () => {
       </div>
 
       {/* Compact Weekly Progress */}
-      <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-xl p-4 shadow-sm">
+      <div className="card">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
-            <BarChart3 className="h-5 w-5 text-orange-600" />
-            <h3 className="text-lg font-semibold text-orange-900">Weekly Progress</h3>
+            <BarChart3 className="h-5 w-5 text-blue-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Weekly Progress</h3>
           </div>
           
           {/* Color Legend */}
@@ -918,18 +918,18 @@ const Overview: React.FC = () => {
           <div className="flex items-center space-x-2">
             <button
               onClick={() => navigateWeek('prev')}
-              className="p-1 hover:bg-orange-100 rounded transition-colors"
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
             >
-              <ChevronLeft className="h-4 w-4 text-orange-600" />
+              <ChevronLeft className="h-4 w-4 text-gray-600" />
             </button>
-            <span className="text-sm font-medium text-orange-800">
+            <span className="text-sm font-medium text-gray-700">
               {format(startOfWeek(weekStartDate, { weekStartsOn: 0 }), 'MMM d')} - {format(endOfWeek(weekStartDate, { weekStartsOn: 0 }), 'MMM d')}
             </span>
             <button
               onClick={() => navigateWeek('next')}
-              className="p-1 hover:bg-orange-100 rounded transition-colors"
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
             >
-              <ChevronRight className="h-4 w-4 text-orange-600" />
+              <ChevronRight className="h-4 w-4 text-gray-600" />
             </button>
           </div>
         </div>
@@ -964,7 +964,7 @@ const Overview: React.FC = () => {
           {/* Weekly Stats */}
           <div className="text-right">
             {weeklyStats.loading ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 mx-auto"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mx-auto"></div>
             ) : (
               <>
                 <div className={`text-lg font-bold ${
@@ -988,10 +988,10 @@ const Overview: React.FC = () => {
 
       {/* Weight Loss/Gain Analysis */}
       {profile.weight && profile.target_weight && (
-        <div className="card bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200">
+        <div className="card">
           <div className="flex items-center space-x-2 mb-4">
-            <TrendingUp className="h-5 w-5 text-orange-600" />
-            <h3 className="text-lg font-semibold text-orange-900">Weight Progress Analysis</h3>
+            <TrendingUp className="h-5 w-5 text-blue-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Weight Progress Analysis</h3>
           </div>
           
           <WeightAnalysis 
@@ -1122,78 +1122,7 @@ const Overview: React.FC = () => {
          </div>
        </div>
 
-       {/* Quick Actions */}
-      <div className="card bg-gradient-to-r from-primary-50 to-blue-50 border-primary-200">
-        <h3 className="text-lg font-semibold text-primary-800 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button
-            onClick={() => window.location.href = '/dashboard/inputs'}
-            className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-primary-200 hover:border-primary-300 transition-colors"
-          >
-            <Plus className="w-6 h-6 text-primary-600" />
-            <div className="text-left">
-              <div className="font-medium text-gray-900">Add Meal</div>
-              <div className="text-sm text-gray-500">Log your nutrition</div>
-            </div>
-          </button>
 
-          <button
-            onClick={() => window.location.href = '/dashboard/profile'}
-            className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-primary-200 hover:border-primary-300 transition-colors"
-          >
-            <Target className="w-6 h-6 text-primary-600" />
-            <div className="text-left">
-              <div className="font-medium text-gray-900">Update Goals</div>
-              <div className="text-sm text-gray-500">Adjust targets</div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => window.location.href = '/dashboard/diary'}
-            className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-primary-200 hover:border-primary-300 transition-colors"
-          >
-            <Calendar className="w-6 h-6 text-primary-600" />
-            <div className="text-left">
-              <div className="font-medium text-gray-900">View History</div>
-              <div className="text-sm text-gray-500">Track progress</div>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* Today's Summary */}
-      <div className="card">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Today's Summary</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
-                     <div className="p-4 bg-gray-50 rounded-lg">
-             <div className="text-2xl font-bold text-gray-900">
-               {currentCalories}
-             </div>
-             <div className="text-sm text-gray-600">Calories</div>
-           </div>
-           
-           <div className="p-4 bg-gray-50 rounded-lg">
-             <div className="text-2xl font-bold text-gray-900">
-               {currentProtein}g
-             </div>
-             <div className="text-sm text-gray-600">Protein</div>
-           </div>
-          
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <div className="text-2xl font-bold text-gray-900">
-              {caloriesRemaining}
-            </div>
-            <div className="text-sm text-gray-600">Calories Left</div>
-          </div>
-          
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <div className="text-2xl font-bold text-gray-900">
-              {proteinRemaining}g
-            </div>
-            <div className="text-sm text-gray-600">Protein Left</div>
-          </div>
-        </div>
-      </div>
 
       {/* Today's Meals */}
       {todayMeals.length > 0 && (
