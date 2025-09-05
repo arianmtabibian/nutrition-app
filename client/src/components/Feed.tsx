@@ -527,173 +527,242 @@ const Feed: React.FC = () => {
   }
 
   return (
-    <div className="flex max-w-7xl mx-auto gap-6 p-4">
-      {/* Left Sidebar */}
-      <div className="w-80 flex-shrink-0 sticky top-4 self-start space-y-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
-        {/* Profile Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          {sidebarLoading ? (
-            <div className="animate-pulse">
-              <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-4"></div>
-              <div className="flex justify-between mb-4">
-                <div className="h-4 bg-gray-200 rounded w-16"></div>
-                <div className="h-4 bg-gray-200 rounded w-16"></div>
-                <div className="h-4 bg-gray-200 rounded w-16"></div>
-              </div>
-            </div>
-          ) : profileData ? (
-            <>
-              {/* Profile Image */}
-              <div className="text-center mb-4">
-                {profileData.profile?.profile_picture ? (
-                  <img
-                    src={profileData.profile.profile_picture}
-                    alt={`${user?.first_name} ${user?.last_name}`}
-                    className="w-20 h-20 rounded-full mx-auto object-cover border-4 border-blue-100"
-                  />
-                ) : (
-                  <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto flex items-center justify-center border-4 border-blue-100">
-                    <UserCircle className="w-12 h-12 text-gray-400" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <div className="flex max-w-7xl mx-auto gap-6 p-6">
+        {/* Left Sidebar - Modern Social Media Style */}
+        <div className="w-80 flex-shrink-0 sticky top-6 self-start space-y-6 max-h-[calc(100vh-3rem)] overflow-y-auto">
+          {/* Profile Card - Instagram/TikTok Style */}
+          <div className="bg-gradient-to-br from-white to-blue-50/30 backdrop-blur-xl rounded-3xl shadow-xl border border-white/50 p-8 relative overflow-hidden">
+            {/* Decorative background elements */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full -translate-y-16 translate-x-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-pink-400/10 to-orange-400/10 rounded-full translate-y-12 -translate-x-12"></div>
+            <div className="relative z-10">
+              {sidebarLoading ? (
+                <div className="animate-pulse">
+                  <div className="w-24 h-24 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full mx-auto mb-6"></div>
+                  <div className="h-5 bg-gray-200 rounded-full mb-3"></div>
+                  <div className="h-4 bg-gray-200 rounded-full w-3/4 mx-auto mb-6"></div>
+                  <div className="flex justify-between mb-6">
+                    <div className="h-8 bg-gray-200 rounded-xl w-16"></div>
+                    <div className="h-8 bg-gray-200 rounded-xl w-16"></div>
+                    <div className="h-8 bg-gray-200 rounded-xl w-16"></div>
                   </div>
-                )}
-              </div>
-              
-              {/* Name */}
-              <h2 className="text-xl font-semibold text-gray-900 text-center mb-1">
-                {user?.first_name} {user?.last_name}
-              </h2>
-              <p className="text-gray-500 text-center text-sm mb-4">@{user?.username}</p>
-              
-              {/* Stats */}
-              <div className="flex justify-between text-center mb-4">
-                <div>
-                  <div className="font-semibold text-lg text-gray-900">{profileData.stats?.posts || 0}</div>
-                  <div className="text-xs text-gray-500">Posts</div>
                 </div>
-                <div>
-                  <div className="font-semibold text-lg text-gray-900">{profileData.stats?.followers || 0}</div>
-                  <div className="text-xs text-gray-500">Followers</div>
+              ) : profileData ? (
+                <>
+                  {/* Profile Image - Instagram Story Style */}
+                  <div className="text-center mb-6">
+                    <div className="relative inline-block">
+                      <div className="absolute inset-0 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-full p-1 animate-pulse">
+                        <div className="bg-white rounded-full p-1">
+                          {profileData.profile?.profile_picture ? (
+                            <img
+                              src={profileData.profile.profile_picture}
+                              alt={`${user?.first_name} ${user?.last_name}`}
+                              className="w-20 h-20 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
+                              <UserCircle className="w-12 h-12 text-blue-500" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Name - Modern Typography */}
+                  <div className="text-center mb-6">
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-1">
+                      {user?.first_name} {user?.last_name}
+                    </h2>
+                    <p className="text-blue-500 font-medium">@{user?.username}</p>
+                  </div>
+                  
+                  {/* Stats - TikTok Style */}
+                  <div className="flex justify-between mb-8">
+                    <div className="text-center group cursor-pointer">
+                      <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-2xl group-hover:scale-105 transition-transform">
+                        <div className="font-bold text-lg">{profileData.stats?.posts || 0}</div>
+                      </div>
+                      <div className="text-xs text-gray-600 mt-2 font-medium">Posts</div>
+                    </div>
+                    <div className="text-center group cursor-pointer">
+                      <div className="bg-gradient-to-r from-pink-500 to-red-500 text-white px-4 py-2 rounded-2xl group-hover:scale-105 transition-transform">
+                        <div className="font-bold text-lg">{profileData.stats?.followers || 0}</div>
+                      </div>
+                      <div className="text-xs text-gray-600 mt-2 font-medium">Followers</div>
+                    </div>
+                    <div className="text-center group cursor-pointer">
+                      <div className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white px-4 py-2 rounded-2xl group-hover:scale-105 transition-transform">
+                        <div className="font-bold text-lg">{profileData.stats?.following || 0}</div>
+                      </div>
+                      <div className="text-xs text-gray-600 mt-2 font-medium">Following</div>
+                    </div>
+                  </div>
+                  
+                  {/* CTA Button - Modern Gradient */}
+                  <button
+                    onClick={() => navigate('/dashboard/inputs')}
+                    className="w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white py-4 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center space-x-3 font-semibold text-lg shadow-lg hover:shadow-xl hover:scale-[1.02] group"
+                  >
+                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center group-hover:rotate-90 transition-transform duration-300">
+                      <Plus className="w-4 h-4" />
+                    </div>
+                    <span>Share Your Meal</span>
+                  </button>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <UserCircle className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <div className="text-gray-500 font-medium">Unable to load profile</div>
                 </div>
-                <div>
-                  <div className="font-semibold text-lg text-gray-900">{profileData.stats?.following || 0}</div>
-                  <div className="text-xs text-gray-500">Following</div>
-                </div>
-              </div>
-              
-              {/* Section Break */}
-              <div className="border-t border-gray-200 pt-4">
-                <button
-                  onClick={() => navigate('/dashboard/inputs')}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Meal</span>
-                </button>
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-4">
-              <div className="text-gray-500">Unable to load profile</div>
+              )}
             </div>
-          )}
         </div>
 
-        {/* Overview Summary Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <BarChart3 className="w-5 h-5 mr-2" />
-            Today's Overview
-          </h3>
+          {/* Today's Nutrition Card - Modern Dashboard Style */}
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 backdrop-blur-xl rounded-3xl shadow-xl border border-emerald-200/50 p-6 relative overflow-hidden">
+            {/* Decorative elements */}
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-emerald-400/10 to-teal-400/10 rounded-full -translate-y-10 translate-x-10"></div>
+            
+            <div className="relative z-10">
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mr-4 shadow-lg">
+                  <BarChart3 className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Today's Stats</h3>
+                  <p className="text-emerald-600 text-sm font-medium">Your nutrition journey</p>
+                </div>
+              </div>
           
-          {sidebarLoading ? (
-            <div className="animate-pulse space-y-3">
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            </div>
-          ) : todayNutrition ? (
-            <div className="space-y-3">
-              {/* Calorie Deficit */}
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Calorie Deficit:</span>
-                <div className="flex items-center">
-                  {todayNutrition.calorieDeficit > 0 ? (
-                    <TrendingDown className="w-4 h-4 text-green-600 mr-1" />
-                  ) : (
-                    <TrendingUp className="w-4 h-4 text-red-600 mr-1" />
-                  )}
-                  <span className={`font-semibold ${todayNutrition.calorieDeficit > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {Math.abs(todayNutrition.calorieDeficit)} cal
-                  </span>
+              {sidebarLoading ? (
+                <div className="animate-pulse space-y-4">
+                  <div className="h-16 bg-gradient-to-r from-gray-200 to-gray-300 rounded-2xl"></div>
+                  <div className="h-16 bg-gradient-to-r from-gray-200 to-gray-300 rounded-2xl"></div>
                 </div>
-              </div>
-              
-              {/* Protein */}
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Protein:</span>
-                <span className="font-semibold text-gray-900">
-                  {Math.round(todayNutrition.totalProtein)}g / {todayNutrition.proteinGoal}g
-                </span>
-              </div>
-              
-              {/* Progress Bars */}
-              <div className="space-y-2">
-                <div>
-                  <div className="flex justify-between text-xs text-gray-500 mb-1">
-                    <span>Calories</span>
-                    <span>{todayNutrition.totalCalories} / {todayNutrition.calorieGoal}</span>
+              ) : todayNutrition ? (
+                <div className="space-y-4">
+                  {/* Calorie Deficit - Modern Card Style */}
+                  <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-white/50 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                          todayNutrition.calorieDeficit > 0 
+                            ? 'bg-gradient-to-br from-green-400 to-emerald-500' 
+                            : 'bg-gradient-to-br from-red-400 to-pink-500'
+                        }`}>
+                          {todayNutrition.calorieDeficit > 0 ? (
+                            <TrendingDown className="w-5 h-5 text-white" />
+                          ) : (
+                            <TrendingUp className="w-5 h-5 text-white" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-600 font-medium">Calorie Balance</div>
+                          <div className={`font-bold text-lg ${
+                            todayNutrition.calorieDeficit > 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {todayNutrition.calorieDeficit > 0 ? '-' : '+'}{Math.abs(todayNutrition.calorieDeficit)} cal
+                          </div>
+                        </div>
+                      </div>
+                      <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        todayNutrition.calorieDeficit > 0 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-red-100 text-red-700'
+                      }`}>
+                        {todayNutrition.calorieDeficit > 0 ? 'Deficit' : 'Surplus'}
+                      </div>
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full"
-                      style={{ width: `${Math.min((todayNutrition.totalCalories / todayNutrition.calorieGoal) * 100, 100)}%` }}
-                    ></div>
+                  
+                  {/* Progress Overview - Compact Cards */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Calories Progress */}
+                    <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-3 border border-white/50 shadow-sm">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <div className="w-6 h-6 bg-gradient-to-br from-orange-400 to-red-500 rounded-lg flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">C</span>
+                        </div>
+                        <div className="text-xs text-gray-600 font-medium">Calories</div>
+                      </div>
+                      <div className="text-sm font-bold text-gray-900 mb-2">
+                        {todayNutrition.totalCalories} / {todayNutrition.calorieGoal}
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-gradient-to-r from-orange-400 to-red-500 h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min((todayNutrition.totalCalories / todayNutrition.calorieGoal) * 100, 100)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    
+                    {/* Protein Progress */}
+                    <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-3 border border-white/50 shadow-sm">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">P</span>
+                        </div>
+                        <div className="text-xs text-gray-600 font-medium">Protein</div>
+                      </div>
+                      <div className="text-sm font-bold text-gray-900 mb-2">
+                        {Math.round(todayNutrition.totalProtein)}g / {todayNutrition.proteinGoal}g
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-gradient-to-r from-blue-400 to-purple-500 h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min((todayNutrition.totalProtein / todayNutrition.proteinGoal) * 100, 100)}%` }}
+                        ></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                
-                <div>
-                  <div className="flex justify-between text-xs text-gray-500 mb-1">
-                    <span>Protein</span>
-                    <span>{Math.round(todayNutrition.totalProtein)} / {todayNutrition.proteinGoal}g</span>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <BarChart3 className="w-8 h-8 text-gray-400" />
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-green-600 h-2 rounded-full"
-                      style={{ width: `${Math.min((todayNutrition.totalProtein / todayNutrition.proteinGoal) * 100, 100)}%` }}
-                    ></div>
-                  </div>
+                  <div className="text-gray-500 font-medium">No data available</div>
                 </div>
-              </div>
+              )}
             </div>
-          ) : (
-            <div className="text-center py-4">
-              <div className="text-gray-500">No data available</div>
-            </div>
-          )}
-        </div>
+          </div>
 
-        {/* Calendar Streak Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-              <Calendar className="w-5 h-5 mr-2" />
-              {format(currentDate, 'MMMM yyyy')}
-            </h3>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setCurrentDate(prev => subMonths(prev, 1))}
-                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4 text-gray-600" />
-              </button>
-              <button
-                onClick={() => setCurrentDate(prev => addMonths(prev, 1))}
-                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <ChevronRight className="w-4 h-4 text-gray-600" />
-              </button>
-            </div>
+          {/* Calendar Streak Card - Gamified Style */}
+          <div className="bg-gradient-to-br from-violet-50 to-purple-50 backdrop-blur-xl rounded-3xl shadow-xl border border-violet-200/50 p-6 relative overflow-hidden">
+            {/* Decorative elements */}
+            <div className="absolute top-0 left-0 w-24 h-24 bg-gradient-to-br from-violet-400/10 to-purple-400/10 rounded-full -translate-y-12 -translate-x-12"></div>
+            
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
+                    <Calendar className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">{format(currentDate, 'MMMM yyyy')}</h3>
+                    <p className="text-violet-600 text-sm font-medium">Your nutrition streak</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setCurrentDate(prev => subMonths(prev, 1))}
+                    className="w-10 h-10 bg-white/60 backdrop-blur-sm hover:bg-white/80 rounded-2xl border border-white/50 transition-all duration-200 flex items-center justify-center group"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-violet-600 group-hover:scale-110 transition-transform" />
+                  </button>
+                  <button
+                    onClick={() => setCurrentDate(prev => addMonths(prev, 1))}
+                    className="w-10 h-10 bg-white/60 backdrop-blur-sm hover:bg-white/80 rounded-2xl border border-white/50 transition-all duration-200 flex items-center justify-center group"
+                  >
+                    <ChevronRight className="w-5 h-5 text-violet-600 group-hover:scale-110 transition-transform" />
+                  </button>
+                </div>
+              </div>
           </div>
           
           {sidebarLoading ? (
@@ -801,18 +870,27 @@ const Feed: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Feed Content */}
-      <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200">
-      {/* Create Post Button */}
-      <div className="sticky top-0 bg-white border-b border-gray-200 p-4 z-10">
-        <button
-          onClick={() => setShowCreatePost(true)}
-          className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
-        >
-          <PenTool className="w-5 h-5" />
-          <span>Create a new post</span>
-        </button>
-      </div>
+        {/* Main Feed Content - Modern Social Media Style */}
+        <div className="flex-1 space-y-6">
+          {/* Create Post Button - Instagram Style */}
+          <div className="sticky top-6 z-20">
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/50 p-6 relative overflow-hidden">
+              {/* Decorative gradient */}
+              <div className="absolute inset-0 bg-gradient-to-r from-pink-500/5 via-purple-500/5 to-blue-500/5"></div>
+              
+              <div className="relative z-10">
+                <button
+                  onClick={() => setShowCreatePost(true)}
+                  className="w-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 hover:from-pink-600 hover:via-purple-600 hover:to-blue-600 text-white py-4 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center space-x-3 font-semibold text-lg shadow-lg hover:shadow-xl hover:scale-[1.02] group"
+                >
+                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
+                    <PenTool className="w-5 h-5" />
+                  </div>
+                  <span>Share Your Journey</span>
+                </button>
+              </div>
+            </div>
+          </div>
 
       {/* Create Post Modal */}
       {showCreatePost && (
@@ -975,118 +1053,157 @@ const Feed: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
+        {/* Posts Feed - Instagram/TikTok Style */}
+        <div className="space-y-8">
           {posts.map((post) => (
-            <div key={post.id} className="border border-gray-200 rounded-lg">
-              {/* Post Header */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                <div className="flex items-center space-x-3">
-                  {post.user.profile_picture ? (
-                    <img
-                      src={post.user.profile_picture}
-                      alt={`${post.user.first_name} ${post.user.last_name}`}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">
-                    {post.user.first_name?.charAt(0) || post.user.username?.charAt(0)}
-                  </div>
-                  )}
-                  <div>
-                    <div className="font-semibold text-gray-900">
-                      {post.user.first_name} {post.user.last_name}
-                    </div>
-                    <div className="text-sm text-gray-500">{formatPostDate(post.created_at)}</div>
-                  </div>
-                </div>
-                <button className="text-gray-400 hover:text-gray-600">
-                  <MoreHorizontal className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Post Content */}
-              {post.content && (
-                <div className="p-4">
-                  <p className="text-gray-900">{post.content}</p>
-                </div>
-              )}
-
-              {/* Post Image */}
-              {post.image_url && (
-                <div className="w-full">
-                  <img 
-                    src={post.image_url} 
-                    alt="Post" 
-                    className="w-full object-cover"
-                  />
-                </div>
-              )}
-
-              {/* Meal Data */}
-              {post.meal_data && (
-                <div className="p-4 bg-gray-50 border-t border-gray-200">
-                  <h4 className="font-semibold text-gray-800 mb-2">Meal Breakdown</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">Calories:</span>
-                      <span className="ml-2 font-medium">{post.meal_data.calories}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Protein:</span>
-                      <span className="ml-2 font-medium">{post.meal_data.protein}g</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Carbs:</span>
-                      <span className="ml-2 font-medium">{post.meal_data.carbs}g</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Fat:</span>
-                      <span className="ml-2 font-medium">{post.meal_data.fat}g</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Post Actions */}
-              <div className="p-4 border-t border-gray-200">
-                <div className="flex items-center justify-between">
+              <div key={post.id} className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/50 overflow-hidden group hover:shadow-2xl transition-all duration-300">
+                {/* Post Header - Modern Profile Style */}
+                <div className="flex items-center justify-between p-6">
                   <div className="flex items-center space-x-4">
-                    <button
-                      onClick={() => handleLike(post.id)}
-                      className={`flex items-center space-x-2 transition-colors ${
-                        post.is_liked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'
-                      }`}
-                    >
-                      <Heart className={`w-6 h-6 ${post.is_liked ? 'fill-current' : ''}`} />
-                      {!post.hide_like_count || post.user.id === user?.id ? (
-                      <span className="text-sm">{post.likes_count}</span>
-                      ) : (
-                        <span className="text-sm">•</span>
-                      )}
-                    </button>
-                    {post.allow_comments !== false && (
-                      <button 
-                        onClick={() => handleToggleComments(post.id)}
-                        className="flex items-center space-x-2 text-gray-400 hover:text-gray-600 transition-colors"
-                      >
-                      <MessageCircle className="w-6 h-6" />
-                      <span className="text-sm">{post.comments_count}</span>
-                    </button>
-                    )}
-                    <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                      <Share className="w-6 h-6" />
-                    </button>
+                    <div className="relative">
+                      {/* Instagram-style story ring */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-full p-0.5">
+                        <div className="bg-white rounded-full p-0.5">
+                          {post.user.profile_picture ? (
+                            <img
+                              src={post.user.profile_picture}
+                              alt={`${post.user.first_name} ${post.user.last_name}`}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">
+                              {post.user.first_name?.charAt(0) || post.user.username?.charAt(0)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-bold text-gray-900 text-lg">
+                        {post.user.first_name} {post.user.last_name}
+                      </div>
+                      <div className="text-sm text-gray-500 font-medium">{formatPostDate(post.created_at)}</div>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => handleBookmark(post.id)}
-                    className={`flex items-center space-x-2 transition-colors ${
-                      post.is_bookmarked ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'
-                    }`}
-                  >
-                    <Bookmark className={`w-6 h-6 ${post.is_bookmarked ? 'fill-current' : ''}`} />
+                  <button className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-2xl flex items-center justify-center transition-all duration-200 group-hover:scale-110">
+                    <MoreHorizontal className="w-5 h-5 text-gray-600" />
                   </button>
                 </div>
-              </div>
+
+                {/* Post Content - Modern Typography */}
+                {post.content && (
+                  <div className="px-6 pb-4">
+                    <p className="text-gray-800 text-lg leading-relaxed">{post.content}</p>
+                  </div>
+                )}
+
+                {/* Post Image - Instagram Style */}
+                {post.image_url && (
+                  <div className="px-6 pb-4">
+                    <div className="rounded-2xl overflow-hidden shadow-lg">
+                      <img 
+                        src={post.image_url} 
+                        alt="Post" 
+                        className="w-full h-80 object-cover hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Meal Data - Modern Nutrition Cards */}
+                {post.meal_data && (
+                  <div className="px-6 pb-4">
+                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl p-4 border border-emerald-200/50">
+                      <div className="flex items-center mb-3">
+                        <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mr-3">
+                          <span className="text-white text-sm font-bold">🍽️</span>
+                        </div>
+                        <h4 className="font-bold text-gray-800">Nutrition Facts</h4>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3 text-center">
+                          <div className="text-lg font-bold text-orange-600">{post.meal_data.calories}</div>
+                          <div className="text-xs text-gray-600 font-medium">Calories</div>
+                        </div>
+                        <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3 text-center">
+                          <div className="text-lg font-bold text-blue-600">{post.meal_data.protein}g</div>
+                          <div className="text-xs text-gray-600 font-medium">Protein</div>
+                        </div>
+                        <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3 text-center">
+                          <div className="text-lg font-bold text-purple-600">{post.meal_data.carbs}g</div>
+                          <div className="text-xs text-gray-600 font-medium">Carbs</div>
+                        </div>
+                        <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3 text-center">
+                          <div className="text-lg font-bold text-yellow-600">{post.meal_data.fat}g</div>
+                          <div className="text-xs text-gray-600 font-medium">Fat</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Post Actions - Modern Social Media Style */}
+                <div className="px-6 py-4 border-t border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-6">
+                      {/* Like Button - Instagram Style */}
+                      <button
+                        onClick={() => handleLike(post.id)}
+                        className={`group flex items-center space-x-2 transition-all duration-300 ${
+                          post.is_liked ? 'text-red-500' : 'text-gray-500 hover:text-red-500'
+                        }`}
+                      >
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                          post.is_liked 
+                            ? 'bg-red-50 scale-110' 
+                            : 'bg-gray-50 group-hover:bg-red-50 group-hover:scale-110'
+                        }`}>
+                          <Heart className={`w-5 h-5 ${post.is_liked ? 'fill-current' : ''} transition-all duration-300`} />
+                        </div>
+                        {!post.hide_like_count || post.user.id === user?.id ? (
+                          <span className="font-semibold">{post.likes_count}</span>
+                        ) : (
+                          <span className="font-semibold">•</span>
+                        )}
+                      </button>
+
+                      {/* Comment Button */}
+                      {post.allow_comments !== false && (
+                        <button 
+                          onClick={() => handleToggleComments(post.id)}
+                          className="group flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-all duration-300"
+                        >
+                          <div className="w-10 h-10 bg-gray-50 group-hover:bg-blue-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-300">
+                            <MessageCircle className="w-5 h-5" />
+                          </div>
+                          <span className="font-semibold">{post.comments_count}</span>
+                        </button>
+                      )}
+
+                      {/* Share Button */}
+                      <button className="group text-gray-500 hover:text-green-500 transition-all duration-300">
+                        <div className="w-10 h-10 bg-gray-50 group-hover:bg-green-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-300">
+                          <Share className="w-5 h-5" />
+                        </div>
+                      </button>
+                    </div>
+                    {/* Bookmark Button */}
+                    <button
+                      onClick={() => handleBookmark(post.id)}
+                      className={`group transition-all duration-300 ${
+                        post.is_bookmarked ? 'text-purple-500' : 'text-gray-500 hover:text-purple-500'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                        post.is_bookmarked 
+                          ? 'bg-purple-50 scale-110' 
+                          : 'bg-gray-50 group-hover:bg-purple-50 group-hover:scale-110'
+                      }`}>
+                        <Bookmark className={`w-5 h-5 ${post.is_bookmarked ? 'fill-current' : ''} transition-all duration-300`} />
+                      </div>
+                    </button>
+                  </div>
+                </div>
 
               {/* Comments Section */}
               {post.allow_comments !== false && expandedComments.has(post.id) && (
@@ -1170,10 +1287,12 @@ const Feed: React.FC = () => {
                   </div>
                 </div>
               )}
-            </div>
-          ))}
+                </div>
+              </div>
+            ))}
         </div>
       )}
+        </div>
 
       {/* Follow People Search Modal */}
       {showFollowSearch && (
