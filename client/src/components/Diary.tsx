@@ -133,7 +133,7 @@ const Diary: React.FC = () => {
       }
       
       // Retry logic for network errors only
-      if (retryCount < 2 && (error instanceof Error && (error.message?.includes('Failed to fetch') || error.message?.includes('Network Error') || error.code === 'ECONNABORTED'))) {
+      if (retryCount < 2 && (error instanceof Error && (error.message?.includes('Failed to fetch') || error.message?.includes('Network Error') || (error as any).code === 'ECONNABORTED'))) {
         console.log(`📅 Diary: Retrying weekly progress load (attempt ${retryCount + 1})...`);
         setTimeout(() => loadWeeklyProgress(retryCount + 1), 2000 * (retryCount + 1));
         return;
@@ -281,7 +281,7 @@ const Diary: React.FC = () => {
       }
       
       // Retry logic for network errors only
-      if (retryCount < 2 && (error instanceof Error && (error.message?.includes('Failed to fetch') || error.message?.includes('Network Error') || error.code === 'ECONNABORTED'))) {
+      if (retryCount < 2 && (error instanceof Error && (error.message?.includes('Failed to fetch') || error.message?.includes('Network Error') || (error as any).code === 'ECONNABORTED'))) {
         console.log(`📅 Diary: Retrying month data load (attempt ${retryCount + 1})...`);
         setTimeout(() => loadMonthData(retryCount + 1), 2000 * (retryCount + 1));
         return;
