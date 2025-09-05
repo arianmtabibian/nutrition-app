@@ -225,6 +225,21 @@ const Overview: React.FC = () => {
     sodium: 0
   });
   const [updatingMeal, setUpdatingMeal] = useState(false);
+  const [showAddMealForm, setShowAddMealForm] = useState(false);
+  const [newMeal, setNewMeal] = useState({
+    meal_type: 'breakfast',
+    description: ''
+  });
+  const [manualMacros, setManualMacros] = useState({
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+    fiber: 0,
+    sugar: 0,
+    sodium: 0
+  });
+  const [addingMeal, setAddingMeal] = useState(false);
 
   useEffect(() => {
     loadOverviewData();
@@ -346,6 +361,74 @@ const Overview: React.FC = () => {
     } finally {
       setUpdatingMeal(false);
     }
+  };
+
+  // Meal creation functions
+  const handleAddMeal = async (isManual: boolean) => {
+    if (!newMeal.description.trim()) {
+      alert('Please enter a meal description');
+      return;
+    }
+
+    setAddingMeal(true);
+    try {
+      const mealData = {
+        meal_date: today,
+        meal_type: newMeal.meal_type,
+        description: newMeal.description,
+        ...(isManual ? manualMacros : {})
+      };
+
+      await mealsAPI.add(mealData);
+      
+      // Reset form
+      setNewMeal({
+        meal_type: 'breakfast',
+        description: ''
+      });
+      setManualMacros({
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        fiber: 0,
+        sugar: 0,
+        sodium: 0
+      });
+      setShowAddMealForm(false);
+      
+      // Refresh data
+      await loadOverviewData();
+      
+      // Notify other components
+      window.dispatchEvent(new CustomEvent('mealAdded'));
+      window.dispatchEvent(new CustomEvent('mealDataChanged'));
+      window.dispatchEvent(new CustomEvent('sidebarRefresh'));
+      window.dispatchEvent(new CustomEvent('calendarRefresh'));
+      
+    } catch (error: any) {
+      console.error('Failed to add meal:', error);
+      alert(error.response?.data?.error || 'Failed to add meal');
+    } finally {
+      setAddingMeal(false);
+    }
+  };
+
+  const cancelAddMeal = () => {
+    setShowAddMealForm(false);
+    setNewMeal({
+      meal_type: 'breakfast',
+      description: ''
+    });
+    setManualMacros({
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+      fiber: 0,
+      sugar: 0,
+      sodium: 0
+    });
   };
 
   // Set up interval to refresh data every 30 seconds
@@ -816,13 +899,195 @@ const Overview: React.FC = () => {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Today's Meals</h3>
             <button
-              onClick={() => window.dispatchEvent(new CustomEvent('navigateToMeals'))}
+              onClick={() => setShowAddMealForm(!showAddMealForm)}
               className="flex items-center space-x-2 px-3 py-1 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
             >
               <Plus className="h-4 w-4" />
-              <span>Add Meals</span>
+              <span>{showAddMealForm ? 'Cancel' : 'Add Meal'}</span>
             </button>
           </div>
+          
+          {/* Add Meal Form */}
+          {showAddMealForm && (
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Add New Meal</h4>
+              
+              <form className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Meal Type
+                    </label>
+                    <select
+                      value={newMeal.meal_type}
+                      onChange={(e) => setNewMeal(prev => ({ ...prev, meal_type: e.target.value }))}
+                      className="input"
+                    >
+                      <option value="breakfast">Breakfast</option>
+                      <option value="lunch">Lunch</option>
+                      <option value="dinner">Dinner</option>
+                      <option value="snack">Snack</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Meal Description
+                    </label>
+                    <input
+                      type="text"
+                      value={newMeal.description}
+                      onChange={(e) => setNewMeal(prev => ({ ...prev, description: e.target.value }))}
+                      className="input"
+                      placeholder="e.g., Grilled chicken breast with brown rice and vegetables"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                {/* AI Analysis Info */}
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <Zap className="h-4 w-4" />
+                  <span>AI will analyze your meal and calculate all nutrition values</span>
+                </div>
+                
+                {/* Two buttons side by side */}
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => handleAddMeal(false)}
+                    disabled={addingMeal}
+                    className="btn-primary flex items-center space-x-2 flex-1"
+                  >
+                    {addingMeal ? (
+                      <>
+                        <Loader2 className="animate-spin h-4 w-4" />
+                        <span>Analyzing meal...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="h-4 w-4" />
+                        <span>Add Meal Using AI</span>
+                      </>
+                    )}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => handleAddMeal(true)}
+                    disabled={addingMeal}
+                    className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {addingMeal ? (
+                      <>
+                        <Loader2 className="animate-spin h-4 w-4" />
+                        <span>Adding meal...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4" />
+                        <span>Add Manual Entry</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                
+                {/* Manual Macros Section */}
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                  <h5 className="text-sm font-medium text-gray-700 mb-3">Manual Nutrition Values (Optional)</h5>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Calories</label>
+                      <input
+                        type="number"
+                        value={manualMacros.calories}
+                        onChange={(e) => setManualMacros(prev => ({ ...prev, calories: Number(e.target.value) }))}
+                        className="input text-sm w-full"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Protein (g)</label>
+                      <input
+                        type="number"
+                        value={manualMacros.protein}
+                        onChange={(e) => setManualMacros(prev => ({ ...prev, protein: Number(e.target.value) }))}
+                        className="input text-sm w-full"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Carbs (g)</label>
+                      <input
+                        type="number"
+                        value={manualMacros.carbs}
+                        onChange={(e) => setManualMacros(prev => ({ ...prev, carbs: Number(e.target.value) }))}
+                        className="input text-sm w-full"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Fat (g)</label>
+                      <input
+                        type="number"
+                        value={manualMacros.fat}
+                        onChange={(e) => setManualMacros(prev => ({ ...prev, fat: Number(e.target.value) }))}
+                        className="input text-sm w-full"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Fiber (g)</label>
+                      <input
+                        type="number"
+                        value={manualMacros.fiber}
+                        onChange={(e) => setManualMacros(prev => ({ ...prev, fiber: Number(e.target.value) }))}
+                        className="input text-sm w-full"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Sugar (g)</label>
+                      <input
+                        type="number"
+                        value={manualMacros.sugar}
+                        onChange={(e) => setManualMacros(prev => ({ ...prev, sugar: Number(e.target.value) }))}
+                        className="input text-sm w-full"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Sodium (mg)</label>
+                      <input
+                        type="number"
+                        value={manualMacros.sodium}
+                        onChange={(e) => setManualMacros(prev => ({ ...prev, sodium: Number(e.target.value) }))}
+                        className="input text-sm w-full"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={cancelAddMeal}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+          
           <div className="space-y-3">
             {todayMeals.map((meal) => (
               <div key={meal.id} className="p-4 bg-gray-50 rounded-lg">
@@ -1009,16 +1274,211 @@ const Overview: React.FC = () => {
             ))}
           </div>
           
-          {/* Add Meals Button */}
-          <div className="mt-4 pt-4 border-t border-gray-200">
+        </div>
+      )}
+
+      {/* Add Meal Section when no meals exist */}
+      {todayMeals.length === 0 && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Add Your First Meal Today</h3>
             <button
-              onClick={() => window.dispatchEvent(new CustomEvent('navigateToMeals'))}
-              className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 transition-colors border-2 border-dashed border-primary-300"
+              onClick={() => setShowAddMealForm(!showAddMealForm)}
+              className="flex items-center space-x-2 px-3 py-1 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
             >
-              <Plus className="h-5 w-5" />
-              <span className="font-medium">Go to Add Meals Page</span>
+              <Plus className="h-4 w-4" />
+              <span>{showAddMealForm ? 'Cancel' : 'Add Meal'}</span>
             </button>
           </div>
+          
+          {/* Add Meal Form */}
+          {showAddMealForm && (
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Add New Meal</h4>
+              
+              <form className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Meal Type
+                    </label>
+                    <select
+                      value={newMeal.meal_type}
+                      onChange={(e) => setNewMeal(prev => ({ ...prev, meal_type: e.target.value }))}
+                      className="input"
+                    >
+                      <option value="breakfast">Breakfast</option>
+                      <option value="lunch">Lunch</option>
+                      <option value="dinner">Dinner</option>
+                      <option value="snack">Snack</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Meal Description
+                    </label>
+                    <input
+                      type="text"
+                      value={newMeal.description}
+                      onChange={(e) => setNewMeal(prev => ({ ...prev, description: e.target.value }))}
+                      className="input"
+                      placeholder="e.g., Grilled chicken breast with brown rice and vegetables"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                {/* AI Analysis Info */}
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <Zap className="h-4 w-4" />
+                  <span>AI will analyze your meal and calculate all nutrition values</span>
+                </div>
+                
+                {/* Two buttons side by side */}
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => handleAddMeal(false)}
+                    disabled={addingMeal}
+                    className="btn-primary flex items-center space-x-2 flex-1"
+                  >
+                    {addingMeal ? (
+                      <>
+                        <Loader2 className="animate-spin h-4 w-4" />
+                        <span>Analyzing meal...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="h-4 w-4" />
+                        <span>Add Meal Using AI</span>
+                      </>
+                    )}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => handleAddMeal(true)}
+                    disabled={addingMeal}
+                    className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {addingMeal ? (
+                      <>
+                        <Loader2 className="animate-spin h-4 w-4" />
+                        <span>Adding meal...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4" />
+                        <span>Add Manual Entry</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                
+                {/* Manual Macros Section */}
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                  <h5 className="text-sm font-medium text-gray-700 mb-3">Manual Nutrition Values (Optional)</h5>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Calories</label>
+                      <input
+                        type="number"
+                        value={manualMacros.calories}
+                        onChange={(e) => setManualMacros(prev => ({ ...prev, calories: Number(e.target.value) }))}
+                        className="input text-sm w-full"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Protein (g)</label>
+                      <input
+                        type="number"
+                        value={manualMacros.protein}
+                        onChange={(e) => setManualMacros(prev => ({ ...prev, protein: Number(e.target.value) }))}
+                        className="input text-sm w-full"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Carbs (g)</label>
+                      <input
+                        type="number"
+                        value={manualMacros.carbs}
+                        onChange={(e) => setManualMacros(prev => ({ ...prev, carbs: Number(e.target.value) }))}
+                        className="input text-sm w-full"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Fat (g)</label>
+                      <input
+                        type="number"
+                        value={manualMacros.fat}
+                        onChange={(e) => setManualMacros(prev => ({ ...prev, fat: Number(e.target.value) }))}
+                        className="input text-sm w-full"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Fiber (g)</label>
+                      <input
+                        type="number"
+                        value={manualMacros.fiber}
+                        onChange={(e) => setManualMacros(prev => ({ ...prev, fiber: Number(e.target.value) }))}
+                        className="input text-sm w-full"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Sugar (g)</label>
+                      <input
+                        type="number"
+                        value={manualMacros.sugar}
+                        onChange={(e) => setManualMacros(prev => ({ ...prev, sugar: Number(e.target.value) }))}
+                        className="input text-sm w-full"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Sodium (mg)</label>
+                      <input
+                        type="number"
+                        value={manualMacros.sodium}
+                        onChange={(e) => setManualMacros(prev => ({ ...prev, sodium: Number(e.target.value) }))}
+                        className="input text-sm w-full"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={cancelAddMeal}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {!showAddMealForm && (
+            <div className="text-center py-8 text-gray-500">
+              <Utensils className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p className="text-lg font-medium mb-2">No meals logged today</p>
+              <p className="text-sm">Click "Add Meal" to start tracking your nutrition</p>
+            </div>
+          )}
         </div>
       )}
     </div>
