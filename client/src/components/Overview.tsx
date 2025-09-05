@@ -254,6 +254,7 @@ const Overview: React.FC = () => {
     daysWithData: 0,
     loading: false
   });
+  const [lastRefresh, setLastRefresh] = useState(0);
 
   useEffect(() => {
     loadOverviewData();
@@ -629,14 +630,7 @@ const Overview: React.FC = () => {
     );
   };
 
-  // Set up interval to refresh data every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      loadOverviewData();
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(interval);
-  }, []);
+  // Remove aggressive auto-refresh - only refresh on user actions or events
 
   // Refresh data when the tab becomes visible (user switches back to this tab)
   useEffect(() => {
@@ -662,8 +656,14 @@ const Overview: React.FC = () => {
 
     // Also listen for custom events that can be triggered from the same tab
     const handleCustomEvent = () => {
-      console.log('Custom event detected, refreshing data...');
-      loadOverviewData();
+      const now = Date.now();
+      // Throttle refreshing to prevent excessive calls (max once every 2 seconds)
+      if (now - lastRefresh > 2000) {
+        console.log('Custom event detected, refreshing data...');
+        setLastRefresh(now);
+        loadOverviewData();
+        loadWeekData();
+      }
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -870,8 +870,8 @@ const Overview: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Daily Overview</h2>
-          <p className="text-gray-600">Track your nutrition progress for today</p>
+          <h2 className="text-2xl font-bold text-gray-900">Nutrition Overview</h2>
+          <p className="text-gray-600">Track your daily and weekly nutrition progress</p>
         </div>
         <div className="flex items-center space-x-4">
           <button
@@ -916,11 +916,11 @@ const Overview: React.FC = () => {
         
         <div className="flex items-center justify-between">
           {/* Week Calendar */}
-          <div className="flex space-x-2">
+          <div className="flex space-x-3 flex-1 mr-6">
             {weekData.map((day) => (
               <div
                 key={day.date}
-                className={`flex flex-col items-center p-2 rounded-lg text-xs font-medium transition-colors ${
+                className={`flex flex-col items-center p-3 rounded-lg text-xs font-medium transition-colors flex-1 ${
                   day.isToday 
                     ? 'bg-orange-200 text-orange-900 ring-2 ring-orange-400' 
                     : day.bothMet 
@@ -981,6 +981,12 @@ const Overview: React.FC = () => {
           />
         </div>
       )}
+
+      {/* Today's Summary */}
+      <div className="mb-4">
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">Today's Summary</h3>
+        <p className="text-gray-600 text-sm">Your nutrition progress for {format(new Date(), 'EEEE, MMMM d')}</p>
+      </div>
 
       {/* Daily Goals Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

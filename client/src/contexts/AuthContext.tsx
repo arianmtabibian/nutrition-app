@@ -86,8 +86,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 console.log('🔐 Retrying auth verification in 3 seconds...');
                 setTimeout(() => {
                   setRetryCount(prev => prev + 1);
-                  // This will trigger useEffect to run again
-                  window.dispatchEvent(new CustomEvent('retryAuth'));
+                  // Direct retry instead of triggering useEffect loop
+                  checkAuth();
                 }, 3000);
               }
             } else if (error.response?.status >= 500) {
@@ -110,18 +110,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Initial check
     checkAuth();
 
-    // Listen for retry events
-    const handleRetryAuth = () => {
-      console.log('🔐 Retry auth event received');
-      checkAuth();
-    };
-
-    window.addEventListener('retryAuth', handleRetryAuth);
-
     return () => {
-      window.removeEventListener('retryAuth', handleRetryAuth);
+      // Cleanup if needed
     };
-  }, [retryCount]);
+  }, []);
 
   const login = async (email: string, password: string) => {
     try {
