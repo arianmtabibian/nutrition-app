@@ -111,16 +111,26 @@ const restoreFromEnv = async () => {
       return { restored: 0 };
     }
     
-    let users;
+    let backupObject;
     try {
-      users = JSON.parse(backupData);
+      backupObject = JSON.parse(backupData);
     } catch (parseError) {
       console.error('❌ Failed to parse USER_BACKUP data:', parseError);
       return { restored: 0 };
     }
     
-    if (!Array.isArray(users)) {
-      console.error('❌ USER_BACKUP data is not an array:', typeof users);
+    // Handle both formats: array of users OR object with users property
+    let users;
+    if (Array.isArray(backupObject)) {
+      // Old format: direct array of users
+      users = backupObject;
+      console.log('📦 Using legacy backup format (direct user array)');
+    } else if (backupObject && Array.isArray(backupObject.users)) {
+      // New format: object with users, profiles, meals
+      users = backupObject.users;
+      console.log('📦 Using enhanced backup format (users + profiles + meals)');
+    } else {
+      console.error('❌ Invalid backup format. Expected array of users or object with users property');
       return { restored: 0 };
     }
     
