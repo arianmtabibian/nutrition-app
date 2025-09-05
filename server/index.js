@@ -26,13 +26,21 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS configuration - Restrict to specific domain(s)
-const allowedOrigins = process.env.CORS_ORIGIN 
-  ? process.env.CORS_ORIGIN.split(',')
-  : ['https://nutryra.com', 'https://www.nutryra.com'];
+// CORS configuration - Handle both specific domains and wildcard
+let corsOrigin;
+if (process.env.CORS_ORIGIN === '*') {
+  corsOrigin = true; // Allow all origins
+  console.log('🌐 CORS: Allowing all origins (*)');
+} else if (process.env.CORS_ORIGIN) {
+  corsOrigin = process.env.CORS_ORIGIN.split(',');
+  console.log('🌐 CORS: Allowing specific origins:', corsOrigin);
+} else {
+  corsOrigin = ['https://nutryra.com', 'https://www.nutryra.com'];
+  console.log('🌐 CORS: Using default origins:', corsOrigin);
+}
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: corsOrigin,
   credentials: true
 }));
 

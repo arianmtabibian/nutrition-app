@@ -4,5 +4,5 @@ module.exports = {
   JWT_SECRET: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production',
   OPENAI_API_KEY: process.env.OPENAI_API_KEY || 'your-openai-api-key-here',
   DB_PATH: process.env.DB_PATH || '/tmp/nutrition.db',
-  CORS_ORIGIN: process.env.CORS_ORIGIN || 'https://nutryra.com' // Only allow your domain
+  CORS_ORIGIN: process.env.CORS_ORIGIN || 'https://nutryra.com,https://www.nutryra.com' // Allow both with and without www
 };
