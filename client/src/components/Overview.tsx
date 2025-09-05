@@ -211,6 +211,14 @@ const Overview: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [todayNutrition, setTodayNutrition] = useState<DailyNutrition | null>(null);
   const [todayMeals, setTodayMeals] = useState<MealData[]>([]);
+
+  // Helper function for greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Morning';
+    if (hour < 17) return 'Afternoon';
+    return 'Evening';
+  };
   const [loading, setLoading] = useState(true);
   const [today] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [editingMeal, setEditingMeal] = useState<number | null>(null);
@@ -867,33 +875,36 @@ const Overview: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Nutrition Overview</h2>
-          <p className="text-gray-600">Track your daily and weekly nutrition progress</p>
-        </div>
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={refreshData}
-            className="btn-secondary flex items-center space-x-2"
-          >
-            <Zap className="h-4 w-4" />
-            <span>Refresh</span>
-          </button>
-          <div className="flex items-center space-x-2 text-sm text-gray-500">
-            <Calendar className="h-4 w-4" />
-            <span>{format(new Date(), 'EEEE, MMMM d, yyyy')}</span>
+      {/* Modern Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 text-white shadow-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Good {getGreeting()}! 👋</h1>
+            <p className="text-blue-100 text-lg">Here's your nutrition snapshot for {format(new Date(), 'MMMM d')}</p>
+          </div>
+          <div className="text-right">
+            <button
+              onClick={refreshData}
+              className="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 text-white px-4 py-2 rounded-xl transition-all duration-200 flex items-center space-x-2"
+            >
+              <Zap className="h-4 w-4" />
+              <span>Refresh</span>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Compact Weekly Progress */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <BarChart3 className="h-5 w-5 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Weekly Progress</h3>
+      {/* Weekly Progress - Modern */}
+      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl p-6 border border-emerald-200">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-emerald-500 rounded-2xl flex items-center justify-center">
+              <BarChart3 className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900">Weekly Progress</h3>
+              <p className="text-sm text-emerald-600">Your 7-day nutrition journey</p>
+            </div>
           </div>
           
           {/* Color Legend */}
@@ -1002,149 +1013,153 @@ const Overview: React.FC = () => {
         </div>
       )}
 
-      {/* Today's Summary */}
-      <div className="mb-4">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Today's Summary</h3>
-        <p className="text-gray-600 text-sm">Your nutrition progress for {format(new Date(), 'EEEE, MMMM d')}</p>
-      </div>
-
-      {/* Daily Goals Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Today's Progress Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Calories Card */}
-        <div className="card">
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 border border-orange-200">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                <Flame className="w-6 h-6 text-orange-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Calories</h3>
-                <p className="text-sm text-gray-500">Daily Goal</p>
-              </div>
+            <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center">
+              <Flame className="w-6 h-6 text-white" />
             </div>
             {getStatusIcon(todayNutrition?.calories_met || false)}
           </div>
-
-          <div className="space-y-4">
-                         <div className="flex justify-between items-center">
-               <span className="text-2xl font-bold text-gray-900">
-                 {currentCalories}
-               </span>
-               <span className="text-lg text-gray-500">/ {caloriesGoal}</span>
-             </div>
-
-            {/* Progress Bar */}
-            <div className="w-full bg-gray-200 rounded-full h-3">
-              <div
-                className={`h-3 rounded-full transition-all duration-300 ${getProgressColor(caloriesProgress)}`}
-                style={{ width: `${caloriesProgress}%` }}
-              ></div>
+          <div className="space-y-3">
+            <div>
+              <div className="text-2xl font-bold text-gray-900">{currentCalories}</div>
+              <div className="text-sm text-orange-600 font-medium">of {caloriesGoal} calories</div>
             </div>
-
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-600">
-                {caloriesRemaining > 0 ? `${caloriesRemaining} left` : 'Goal achieved! 🎉'}
-              </span>
-              <span className="font-medium text-gray-900">
-                {Math.round(caloriesProgress)}%
-              </span>
+            <div className="w-full bg-orange-200 rounded-full h-2">
+              <div
+                className="bg-orange-500 h-2 rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(caloriesProgress, 100)}%` }}
+              ></div>
             </div>
           </div>
         </div>
 
         {/* Protein Card */}
-        <div className="card">
+        <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-6 border border-red-200">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                <Beef className="w-6 h-6 text-red-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Protein</h3>
-                <p className="text-sm text-gray-500">Daily Goal</p>
-              </div>
+            <div className="w-12 h-12 bg-red-500 rounded-2xl flex items-center justify-center">
+              <Beef className="w-6 h-6 text-white" />
             </div>
             {getStatusIcon(todayNutrition?.protein_met || false)}
           </div>
-
-          <div className="space-y-4">
-                         <div className="flex justify-between items-center">
-               <span className="text-2xl font-bold text-gray-900">
-                 {currentProtein}g
-               </span>
-               <span className="text-lg text-gray-500">/ {proteinGoal}g</span>
-             </div>
-
-            {/* Progress Bar */}
-            <div className="w-full bg-gray-200 rounded-full h-3">
-              <div
-                className={`h-3 rounded-full transition-all duration-300 ${getProgressColor(proteinProgress)}`}
-                style={{ width: `${proteinProgress}%` }}
-              ></div>
+          <div className="space-y-3">
+            <div>
+              <div className="text-2xl font-bold text-gray-900">{currentProtein}g</div>
+              <div className="text-sm text-red-600 font-medium">of {proteinGoal}g protein</div>
             </div>
-
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-600">
-                {proteinRemaining > 0 ? `${proteinRemaining}g left` : 'Goal achieved! 🎉'}
-              </span>
-              <span className="font-medium text-gray-900">
-                {Math.round(proteinProgress)}%
-              </span>
+            <div className="w-full bg-red-200 rounded-full h-2">
+              <div
+                className="bg-red-500 h-2 rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(proteinProgress, 100)}%` }}
+              ></div>
             </div>
           </div>
         </div>
-             </div>
 
-       {/* Additional Macros - Secondary Focus */}
-       <div className="card">
-         <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Nutrients</h3>
-         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-           <div className="text-center p-3 bg-gray-50 rounded-lg">
-             <div className="text-lg font-bold text-gray-900">{todayNutrition?.total_carbs || 0}g</div>
-             <div className="text-xs text-gray-600">Carbs</div>
+        {/* Calories Left Card */}
+        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border border-green-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center">
+              <Target className="w-6 h-6 text-white" />
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <div className="text-2xl font-bold text-gray-900">{caloriesRemaining}</div>
+              <div className="text-sm text-green-600 font-medium">calories remaining</div>
+            </div>
+            <div className="text-xs text-green-700 bg-green-200 px-2 py-1 rounded-full inline-block">
+              {Math.round(caloriesProgress)}% complete
+            </div>
+          </div>
+        </div>
+
+        {/* Protein Left Card */}
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center">
+              <Zap className="w-6 h-6 text-white" />
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <div className="text-2xl font-bold text-gray-900">{proteinRemaining}g</div>
+              <div className="text-sm text-blue-600 font-medium">protein remaining</div>
+            </div>
+            <div className="text-xs text-blue-700 bg-blue-200 px-2 py-1 rounded-full inline-block">
+              {Math.round(proteinProgress)}% complete
+            </div>
+          </div>
+        </div>
+      </div>
+
+       {/* Additional Nutrients - Simplified */}
+       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+         <div className="flex items-center mb-4">
+           <div className="w-8 h-8 bg-purple-100 rounded-xl flex items-center justify-center mr-3">
+             <BarChart3 className="w-4 h-4 text-purple-600" />
            </div>
-           <div className="text-center p-3 bg-gray-50 rounded-lg">
-             <div className="text-lg font-bold text-gray-900">{todayNutrition?.total_fat || 0}g</div>
-             <div className="text-xs text-gray-600">Fat</div>
+           <h3 className="text-lg font-semibold text-gray-900">Other Nutrients</h3>
+         </div>
+         <div className="grid grid-cols-5 gap-4">
+           <div className="text-center">
+             <div className="text-xl font-bold text-purple-600">{todayNutrition?.total_carbs || 0}g</div>
+             <div className="text-xs text-gray-500 mt-1">Carbs</div>
            </div>
-           <div className="text-center p-3 bg-gray-50 rounded-lg">
-             <div className="text-lg font-bold text-gray-900">{todayNutrition?.total_fiber || 0}g</div>
-             <div className="text-xs text-gray-600">Fiber</div>
+           <div className="text-center">
+             <div className="text-xl font-bold text-yellow-600">{todayNutrition?.total_fat || 0}g</div>
+             <div className="text-xs text-gray-500 mt-1">Fat</div>
            </div>
-           <div className="text-center p-3 bg-gray-50 rounded-lg">
-             <div className="text-lg font-bold text-gray-900">{todayNutrition?.total_sugar || 0}g</div>
-             <div className="text-xs text-gray-600">Sugar</div>
+           <div className="text-center">
+             <div className="text-xl font-bold text-green-600">{todayNutrition?.total_fiber || 0}g</div>
+             <div className="text-xs text-gray-500 mt-1">Fiber</div>
            </div>
-           <div className="text-center p-3 bg-gray-50 rounded-lg">
-             <div className="text-lg font-bold text-gray-900">{todayNutrition?.total_sodium || 0}mg</div>
-             <div className="text-xs text-gray-600">Sodium</div>
+           <div className="text-center">
+             <div className="text-xl font-bold text-pink-600">{todayNutrition?.total_sugar || 0}g</div>
+             <div className="text-xs text-gray-500 mt-1">Sugar</div>
+           </div>
+           <div className="text-center">
+             <div className="text-xl font-bold text-indigo-600">{todayNutrition?.total_sodium || 0}mg</div>
+             <div className="text-xs text-gray-500 mt-1">Sodium</div>
            </div>
          </div>
        </div>
 
-      {/* Quick Actions */}
-      <div className="card bg-gradient-to-r from-primary-50 to-blue-50 border-primary-200">
-        <h3 className="text-lg font-semibold text-primary-800 mb-4">Quick Actions</h3>
+      {/* Quick Actions - Modern Style */}
+      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg">
+        <div className="flex items-center mb-6">
+          <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center mr-3">
+            <Zap className="w-4 h-4 text-white" />
+          </div>
+          <h3 className="text-xl font-semibold">Quick Actions</h3>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button
             onClick={() => window.location.href = '/dashboard/inputs'}
-            className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-primary-200 hover:border-primary-300 transition-colors"
+            className="flex items-center space-x-4 p-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-2xl border border-white/20 transition-all duration-200 group"
           >
-            <Plus className="w-6 h-6 text-primary-600" />
+            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Plus className="w-6 h-6 text-white" />
+            </div>
             <div className="text-left">
-              <div className="font-medium text-gray-900">Add Meal</div>
-              <div className="text-sm text-gray-500">Log your nutrition</div>
+              <div className="font-semibold text-white">Add Meal</div>
+              <div className="text-sm text-white/70">Log your nutrition</div>
             </div>
           </button>
 
           <button
             onClick={() => window.location.href = '/dashboard/profile'}
-            className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-primary-200 hover:border-primary-300 transition-colors"
+            className="flex items-center space-x-4 p-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-2xl border border-white/20 transition-all duration-200 group"
           >
-            <Target className="w-6 h-6 text-primary-600" />
+            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Target className="w-6 h-6 text-white" />
+            </div>
             <div className="text-left">
-              <div className="font-medium text-gray-900">Update Goals</div>
-              <div className="text-sm text-gray-500">Adjust targets</div>
+              <div className="font-semibold text-white">Update Goals</div>
+              <div className="text-sm text-white/70">Adjust your targets</div>
             </div>
           </button>
         </div>
