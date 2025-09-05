@@ -988,10 +988,10 @@ const Overview: React.FC = () => {
 
       {/* Weight Loss/Gain Analysis */}
       {profile.weight && profile.target_weight && (
-        <div className="card">
+        <div className="card bg-gray-50">
           <div className="flex items-center space-x-2 mb-4">
-            <TrendingUp className="h-5 w-5 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Weight Progress Analysis</h3>
+            <TrendingUp className="h-5 w-5 text-gray-600" />
+            <h3 className="text-lg font-semibold text-gray-700">Weight Progress Analysis</h3>
           </div>
           
           <WeightAnalysis 
@@ -1122,7 +1122,33 @@ const Overview: React.FC = () => {
          </div>
        </div>
 
+      {/* Quick Actions */}
+      <div className="card bg-gradient-to-r from-primary-50 to-blue-50 border-primary-200">
+        <h3 className="text-lg font-semibold text-primary-800 mb-4">Quick Actions</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button
+            onClick={() => window.location.href = '/dashboard/inputs'}
+            className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-primary-200 hover:border-primary-300 transition-colors"
+          >
+            <Plus className="w-6 h-6 text-primary-600" />
+            <div className="text-left">
+              <div className="font-medium text-gray-900">Add Meal</div>
+              <div className="text-sm text-gray-500">Log your nutrition</div>
+            </div>
+          </button>
 
+          <button
+            onClick={() => window.location.href = '/dashboard/profile'}
+            className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-primary-200 hover:border-primary-300 transition-colors"
+          >
+            <Target className="w-6 h-6 text-primary-600" />
+            <div className="text-left">
+              <div className="font-medium text-gray-900">Update Goals</div>
+              <div className="text-sm text-gray-500">Adjust targets</div>
+            </div>
+          </button>
+        </div>
+      </div>
 
       {/* Today's Meals */}
       {todayMeals.length > 0 && (
