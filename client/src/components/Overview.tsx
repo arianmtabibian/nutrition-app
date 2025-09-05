@@ -241,9 +241,16 @@ const Overview: React.FC = () => {
   });
   const [addingMeal, setAddingMeal] = useState(false);
   const [favoritingMeal, setFavoritingMeal] = useState<number | null>(null);
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [loadingFavorites, setLoadingFavorites] = useState(false);
+  const [showFavorites, setShowFavorites] = useState(false);
+  const [showMealTypeSelector, setShowMealTypeSelector] = useState(false);
+  const [selectedSavedMeal, setSelectedSavedMeal] = useState<any>(null);
+  const [quickAddMealType, setQuickAddMealType] = useState('breakfast');
 
   useEffect(() => {
     loadOverviewData();
+    loadFavorites();
   }, []);
 
   const loadOverviewData = async () => {
@@ -447,6 +454,72 @@ const Overview: React.FC = () => {
     } finally {
       setFavoritingMeal(null);
     }
+  };
+
+  const loadFavorites = async () => {
+    setLoadingFavorites(true);
+    try {
+      const response = await favoritesAPI.getAll();
+      setFavorites(response.data.favorites || []);
+    } catch (error) {
+      console.error('Failed to load favorites:', error);
+    } finally {
+      setLoadingFavorites(false);
+    }
+  };
+
+  const handleSelectFromFavorites = (favorite: any) => {
+    setSelectedSavedMeal(favorite);
+    setQuickAddMealType(favorite.meal_type); // Default to the saved meal type
+    setShowMealTypeSelector(true);
+  };
+
+  const handleQuickAddMeal = async () => {
+    if (!selectedSavedMeal) return;
+
+    setAddingMeal(true);
+    try {
+      const mealData = {
+        meal_date: today,
+        meal_type: quickAddMealType,
+        description: selectedSavedMeal.description,
+        calories: selectedSavedMeal.calories || 0,
+        protein: selectedSavedMeal.protein || 0,
+        carbs: selectedSavedMeal.carbs || 0,
+        fat: selectedSavedMeal.fat || 0,
+        fiber: selectedSavedMeal.fiber || 0,
+        sugar: selectedSavedMeal.sugar || 0,
+        sodium: selectedSavedMeal.sodium || 0
+      };
+
+      await mealsAPI.add(mealData);
+      
+      // Close modal and reset
+      setShowMealTypeSelector(false);
+      setSelectedSavedMeal(null);
+      setShowAddMealForm(false); // Also close the add meal form if open
+      
+      // Refresh data
+      await loadOverviewData();
+      
+      // Notify other components
+      window.dispatchEvent(new CustomEvent('mealAdded'));
+      window.dispatchEvent(new CustomEvent('mealDataChanged'));
+      window.dispatchEvent(new CustomEvent('sidebarRefresh'));
+      window.dispatchEvent(new CustomEvent('calendarRefresh'));
+      
+    } catch (error: any) {
+      console.error('Failed to add meal:', error);
+      alert(error.response?.data?.error || 'Failed to add meal');
+    } finally {
+      setAddingMeal(false);
+    }
+  };
+
+  const cancelQuickAdd = () => {
+    setShowMealTypeSelector(false);
+    setSelectedSavedMeal(null);
+    setQuickAddMealType('breakfast');
   };
 
   // Set up interval to refresh data every 30 seconds

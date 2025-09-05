@@ -22,7 +22,12 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     return <LoadingSpinner />;
   }
   
-  return user ? <>{children}</> : <Navigate to="/login" replace />;
+  // Add a small delay to prevent flash of login page during auth verification
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
 };
 
 // Smart protection for onboarding - only blocks users who have completed onboarding

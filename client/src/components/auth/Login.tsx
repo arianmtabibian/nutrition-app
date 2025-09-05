@@ -20,7 +20,8 @@ const Login: React.FC = () => {
 
     try {
       await login(email, password);
-      navigate('/dashboard');
+      // Use replace to prevent back button issues
+      navigate('/dashboard', { replace: true });
     } catch (err: any) {
       setError(err.message);
     } finally {

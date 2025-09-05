@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
-import { Plus, Loader2, Trash2, Utensils, Calendar, Zap, Beef, Heart, HeartOff } from 'lucide-react';
+import { Plus, Loader2, Trash2, Utensils, Calendar, Zap, Beef, Heart, HeartOff, X } from 'lucide-react';
 import { mealsAPI, favoritesAPI } from '../services/api';
 import { generateMealSummary } from '../utils/mealSummary';
 
@@ -54,6 +54,9 @@ const Inputs: React.FC = () => {
   const [favorites, setFavorites] = useState<any[]>([]);
   const [loadingFavorites, setLoadingFavorites] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
+  const [showMealTypeSelector, setShowMealTypeSelector] = useState(false);
+  const [selectedSavedMeal, setSelectedSavedMeal] = useState<any>(null);
+  const [quickAddMealType, setQuickAddMealType] = useState('breakfast');
 
   // Helper function to safely format dates
   const safeFormatDate = (dateString: string, formatString: string) => {
@@ -101,22 +104,57 @@ const Inputs: React.FC = () => {
   };
 
   const handleSelectFromFavorites = (favorite: any) => {
-    setNewMeal({
-      meal_type: favorite.meal_type,
-      description: favorite.description
-    });
-    setManualMacros({
-      calories: favorite.calories || 0,
-      protein: favorite.protein || 0,
-      carbs: favorite.carbs || 0,
-      fat: favorite.fat || 0,
-      fiber: favorite.fiber || 0,
-      sugar: favorite.sugar || 0,
-      sodium: favorite.sodium || 0
-    });
-    setShowFavorites(false);
-    setMessage(`Selected "${favorite.name}" from saved meals!`);
-    setTimeout(() => setMessage(''), 3000);
+    setSelectedSavedMeal(favorite);
+    setQuickAddMealType(favorite.meal_type); // Default to the saved meal type
+    setShowMealTypeSelector(true);
+  };
+
+  const handleQuickAddMeal = async () => {
+    if (!selectedSavedMeal) return;
+
+    setAddingMeal(true);
+    try {
+      const mealData = {
+        meal_date: selectedDate,
+        meal_type: quickAddMealType,
+        description: selectedSavedMeal.description,
+        calories: selectedSavedMeal.calories || 0,
+        protein: selectedSavedMeal.protein || 0,
+        carbs: selectedSavedMeal.carbs || 0,
+        fat: selectedSavedMeal.fat || 0,
+        fiber: selectedSavedMeal.fiber || 0,
+        sugar: selectedSavedMeal.sugar || 0,
+        sodium: selectedSavedMeal.sodium || 0
+      };
+
+      await mealsAPI.add(mealData);
+      await loadMeals(); // Reload meals after adding
+      
+      // Close modal and reset
+      setShowMealTypeSelector(false);
+      setSelectedSavedMeal(null);
+      
+      setMessage(`Added "${selectedSavedMeal.name}" as ${quickAddMealType}!`);
+      setTimeout(() => setMessage(''), 3000);
+      
+      // Notify other components
+      window.dispatchEvent(new CustomEvent('mealAdded'));
+      window.dispatchEvent(new CustomEvent('mealDataChanged'));
+      window.dispatchEvent(new CustomEvent('sidebarRefresh'));
+      window.dispatchEvent(new CustomEvent('calendarRefresh'));
+      
+    } catch (error: any) {
+      setMessage(error.response?.data?.error || 'Failed to add meal');
+      setTimeout(() => setMessage(''), 3000);
+    } finally {
+      setAddingMeal(false);
+    }
+  };
+
+  const cancelQuickAdd = () => {
+    setShowMealTypeSelector(false);
+    setSelectedSavedMeal(null);
+    setQuickAddMealType('breakfast');
   };
 
   const handleAddMeal = async (isManual: boolean) => {
@@ -894,6 +932,81 @@ const Inputs: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Meal Type Selector Modal */}
+      {showMealTypeSelector && selectedSavedMeal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Add Saved Meal</h3>
+              <button
+                onClick={cancelQuickAdd}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                <div className="text-2xl">
+                  {selectedSavedMeal.meal_type === 'breakfast' ? '🍳' : 
+                   selectedSavedMeal.meal_type === 'lunch' ? '🥗' : 
+                   selectedSavedMeal.meal_type === 'dinner' ? '🍽️' : '🍎'}
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">{selectedSavedMeal.name}</p>
+                  <p className="text-sm text-gray-500">
+                    {selectedSavedMeal.calories} cal • {selectedSavedMeal.protein}g protein
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select meal type for today:
+              </label>
+              <select
+                value={quickAddMealType}
+                onChange={(e) => setQuickAddMealType(e.target.value)}
+                className="input w-full"
+              >
+                <option value="breakfast">🍳 Breakfast</option>
+                <option value="lunch">🥗 Lunch</option>
+                <option value="dinner">🍽️ Dinner</option>
+                <option value="snack">🍎 Snack</option>
+              </select>
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={cancelQuickAdd}
+                className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleQuickAddMeal}
+                disabled={addingMeal}
+                className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+              >
+                {addingMeal ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Adding...</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4" />
+                    <span>Add Meal</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

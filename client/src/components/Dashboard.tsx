@@ -3,7 +3,7 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserSession } from '../hooks/useUserSession';
-import { LogOut, User, Calendar, Plus, BarChart3, Home, Target, PenTool, Image, X, ChevronDown, UserPlus, Settings } from 'lucide-react';
+import { LogOut, User, Calendar, Plus, BarChart3, Home, Target, PenTool, Image, X, ChevronDown, UserPlus, Settings, Utensils } from 'lucide-react';
 import { profileAPI } from '../services/api';
 import Overview from './Overview';
 import SocialProfile from './SocialProfile';
@@ -106,6 +106,7 @@ const Dashboard: React.FC = () => {
   const tabs = [
     { id: 'feed', name: 'Feed', icon: Home, path: '/dashboard/feed' },
     { id: 'overview', name: 'Overview', icon: BarChart3, path: '/dashboard/overview' },
+    { id: 'inputs', name: 'Meals', icon: Utensils, path: '/dashboard/inputs' },
     { id: 'diary', name: 'Diary', icon: Calendar, path: '/dashboard/diary' },
     { id: 'groups', name: 'Groups', icon: User, path: '/dashboard/groups' },
     { id: 'profile', name: 'Profile', icon: User, path: '/dashboard/profile' },
@@ -228,7 +229,7 @@ const Dashboard: React.FC = () => {
     };
 
     const handleNavigateToMeals = () => {
-      navigate('/dashboard/meals');
+      navigate('/dashboard/inputs');
     };
 
     // Listen to various meal-related events
@@ -383,11 +384,12 @@ const Dashboard: React.FC = () => {
           <Route path="/" element={<Navigate to="/dashboard/feed" replace />} />
           <Route path="/overview" element={<Overview />} />
           <Route path="/feed" element={<Feed />} />
+          <Route path="/inputs" element={<Inputs />} />
           <Route path="/diary" element={<Diary />} />
           <Route path="/groups" element={<Groups />} />
           <Route path="/profile" element={<SocialProfile />} />
-          <Route path="/inputs" element={<Inputs />} />
-
+          {/* Catch-all route for any invalid dashboard paths */}
+          <Route path="*" element={<Navigate to="/dashboard/feed" replace />} />
         </Routes>
       </main>
 
