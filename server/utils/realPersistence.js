@@ -111,7 +111,19 @@ const restoreFromEnv = async () => {
       return { restored: 0 };
     }
     
-    const users = JSON.parse(backupData);
+    let users;
+    try {
+      users = JSON.parse(backupData);
+    } catch (parseError) {
+      console.error('❌ Failed to parse USER_BACKUP data:', parseError);
+      return { restored: 0 };
+    }
+    
+    if (!Array.isArray(users)) {
+      console.error('❌ USER_BACKUP data is not an array:', typeof users);
+      return { restored: 0 };
+    }
+    
     console.log(`🔄 Restoring ${users.length} users from environment backup`);
     
     const db = getDatabase();
@@ -126,6 +138,13 @@ const restoreFromEnv = async () => {
         }
         
         const user = users[index];
+        
+        // Validate user object
+        if (!user || !user.email) {
+          console.warn(`⚠️ Invalid user at index ${index}:`, user);
+          restoreUser(index + 1);
+          return;
+        }
         
         // Check if user exists
         db.get('SELECT id FROM users WHERE email = ?', [user.email], (err, row) => {
