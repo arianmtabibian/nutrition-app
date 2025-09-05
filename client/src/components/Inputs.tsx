@@ -173,7 +173,6 @@ const Inputs: React.FC = () => {
       
       // Also trigger custom events for the same tab
       console.log('🍽️ Inputs: Dispatching meal added events IMMEDIATELY');
-      console.log('🍽️ Inputs: Meal data:', addedMeal);
       
       window.dispatchEvent(new CustomEvent('mealAdded'));
       window.dispatchEvent(new CustomEvent('mealDataChanged'));
