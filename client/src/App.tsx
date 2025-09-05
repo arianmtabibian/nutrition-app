@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useOnboardingProtection } from './hooks/useOnboardingProtection';
 
 // Test auto-deploy connection - 2025-01-05
+// Second test after config fix
 
 import Welcome from './components/Welcome';
 import EnhancedRegister from './components/EnhancedRegister';
