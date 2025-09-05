@@ -227,19 +227,25 @@ const Dashboard: React.FC = () => {
       }, 100);
     };
 
+    const handleNavigateToMeals = () => {
+      navigate('/dashboard/meals');
+    };
+
     // Listen to various meal-related events
     window.addEventListener('mealAdded', handleMealUpdate);
     window.addEventListener('mealDataChanged', handleMealUpdate);
     window.addEventListener('mealDeleted', handleMealUpdate);
     window.addEventListener('mealUpdated', handleMealUpdate);
+    window.addEventListener('navigateToMeals', handleNavigateToMeals);
     
     return () => {
       window.removeEventListener('mealAdded', handleMealUpdate);
       window.removeEventListener('mealDataChanged', handleMealUpdate);
       window.removeEventListener('mealDeleted', handleMealUpdate);
       window.removeEventListener('mealUpdated', handleMealUpdate);
+      window.removeEventListener('navigateToMeals', handleNavigateToMeals);
     };
-  }, []);
+  }, [navigate]);
 
   if (checkingProfile) {
     return (

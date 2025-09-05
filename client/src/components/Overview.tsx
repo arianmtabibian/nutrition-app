@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Target, Flame, Beef, TrendingUp, Calendar, Zap, Plus, Utensils, Clock } from 'lucide-react';
+import { Target, Flame, Beef, TrendingUp, Calendar, Zap, Plus, Utensils, Clock, Edit2, Save, X, Loader2 } from 'lucide-react';
 import { profileAPI, mealsAPI, diaryAPI } from '../services/api';
 import { generateMealSummary } from '../utils/mealSummary';
 
@@ -213,6 +213,18 @@ const Overview: React.FC = () => {
   const [todayMeals, setTodayMeals] = useState<MealData[]>([]);
   const [loading, setLoading] = useState(true);
   const [today] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [editingMeal, setEditingMeal] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({
+    description: '',
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+    fiber: 0,
+    sugar: 0,
+    sodium: 0
+  });
+  const [updatingMeal, setUpdatingMeal] = useState(false);
 
   useEffect(() => {
     loadOverviewData();
@@ -277,6 +289,63 @@ const Overview: React.FC = () => {
   // Add a manual refresh function
   const refreshData = () => {
     loadOverviewData();
+  };
+
+  // Meal editing functions
+  const startEditMeal = (meal: MealData) => {
+    setEditingMeal(meal.id);
+    setEditForm({
+      description: meal.description,
+      calories: meal.calories,
+      protein: meal.protein,
+      carbs: meal.carbs,
+      fat: meal.fat,
+      fiber: meal.fiber,
+      sugar: meal.sugar,
+      sodium: meal.sodium
+    });
+  };
+
+  const cancelEditMeal = () => {
+    setEditingMeal(null);
+    setEditForm({
+      description: '',
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+      fiber: 0,
+      sugar: 0,
+      sodium: 0
+    });
+  };
+
+  const handleEditMeal = async (mealId: number) => {
+    setUpdatingMeal(true);
+    try {
+      await mealsAPI.update(mealId, editForm);
+      
+      // Update the local state
+      setTodayMeals(prev => prev.map(meal => 
+        meal.id === mealId ? { ...meal, ...editForm } : meal
+      ));
+      
+      // Refresh overview data to update totals
+      await loadOverviewData();
+      
+      setEditingMeal(null);
+      
+      // Notify other components about the meal update
+      window.dispatchEvent(new CustomEvent('mealDataChanged'));
+      window.dispatchEvent(new CustomEvent('sidebarRefresh'));
+      window.dispatchEvent(new CustomEvent('calendarRefresh'));
+      
+    } catch (error: any) {
+      console.error('Failed to update meal:', error);
+      alert(error.response?.data?.error || 'Failed to update meal');
+    } finally {
+      setUpdatingMeal(false);
+    }
   };
 
   // Set up interval to refresh data every 30 seconds
@@ -744,52 +813,211 @@ const Overview: React.FC = () => {
       {/* Today's Meals */}
       {todayMeals.length > 0 && (
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Today's Meals</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Today's Meals</h3>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('navigateToMeals'))}
+              className="flex items-center space-x-2 px-3 py-1 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Meals</span>
+            </button>
+          </div>
           <div className="space-y-3">
             {todayMeals.map((meal) => (
               <div key={meal.id} className="p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="text-2xl">{getMealTypeIcon(meal.meal_type)}</div>
+                {editingMeal === meal.id ? (
+                  // Edit Mode
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-gray-900">Edit Meal</h4>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleEditMeal(meal.id)}
+                          disabled={updatingMeal}
+                          className="flex items-center space-x-1 px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors disabled:opacity-50"
+                        >
+                          {updatingMeal ? (
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              <span>Saving...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-3 w-3" />
+                              <span>Save</span>
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={cancelEditMeal}
+                          disabled={updatingMeal}
+                          className="flex items-center space-x-1 px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600 transition-colors disabled:opacity-50"
+                        >
+                          <X className="h-3 w-3" />
+                          <span>Cancel</span>
+                        </button>
+                      </div>
+                    </div>
                     
                     <div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getMealTypeColor(meal.meal_type)}`}>
-                          {meal.meal_type.charAt(0).toUpperCase() + meal.meal_type.slice(1)}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          <Clock className="w-3 h-3 inline mr-1" />
-                          {safeFormatDate(meal.created_at, 'h:mm a')}
-                        </span>
-                      </div>
-                      <p className="text-gray-900 font-medium">{generateMealSummary(meal.description)}</p>
-                      <p className="text-xs text-gray-500 mt-1" title={meal.description}>
-                        {meal.description.length > 40 ? `${meal.description.substring(0, 40)}...` : meal.description}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="text-right">
-                    {/* Main focus - Calories and Protein */}
-                    <div className="flex items-center space-x-2 text-sm">
-                      <Zap className="h-4 w-4 text-yellow-600" />
-                      <span className="font-semibold text-lg">{meal.calories} cal</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-sm">
-                      <Beef className="h-4 w-4 text-red-600" />
-                      <span className="font-semibold text-lg">{meal.protein}g</span>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                      <input
+                        type="text"
+                        value={editForm.description}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                        className="input w-full"
+                        placeholder="Meal description"
+                      />
                     </div>
                     
-                    {/* Additional macros - smaller and less prominent */}
-                    <div className="flex items-center space-x-3 text-xs text-gray-500 mt-1">
-                      <span>Carbs: {meal.carbs}g</span>
-                      <span>Fat: {meal.fat}g</span>
-                      <span>Fiber: {meal.fiber}g</span>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Calories</label>
+                        <input
+                          type="number"
+                          value={editForm.calories}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, calories: Number(e.target.value) }))}
+                          className="input text-sm w-full"
+                          min="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Protein (g)</label>
+                        <input
+                          type="number"
+                          value={editForm.protein}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, protein: Number(e.target.value) }))}
+                          className="input text-sm w-full"
+                          min="0"
+                          step="0.1"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Carbs (g)</label>
+                        <input
+                          type="number"
+                          value={editForm.carbs}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, carbs: Number(e.target.value) }))}
+                          className="input text-sm w-full"
+                          min="0"
+                          step="0.1"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Fat (g)</label>
+                        <input
+                          type="number"
+                          value={editForm.fat}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, fat: Number(e.target.value) }))}
+                          className="input text-sm w-full"
+                          min="0"
+                          step="0.1"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Fiber (g)</label>
+                        <input
+                          type="number"
+                          value={editForm.fiber}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, fiber: Number(e.target.value) }))}
+                          className="input text-sm w-full"
+                          min="0"
+                          step="0.1"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Sugar (g)</label>
+                        <input
+                          type="number"
+                          value={editForm.sugar}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, sugar: Number(e.target.value) }))}
+                          className="input text-sm w-full"
+                          min="0"
+                          step="0.1"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Sodium (mg)</label>
+                        <input
+                          type="number"
+                          value={editForm.sodium}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, sodium: Number(e.target.value) }))}
+                          className="input text-sm w-full"
+                          min="0"
+                          step="0.1"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  // View Mode
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="text-2xl">{getMealTypeIcon(meal.meal_type)}</div>
+                      
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getMealTypeColor(meal.meal_type)}`}>
+                            {meal.meal_type.charAt(0).toUpperCase() + meal.meal_type.slice(1)}
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            <Clock className="w-3 h-3 inline mr-1" />
+                            {safeFormatDate(meal.created_at, 'h:mm a')}
+                          </span>
+                        </div>
+                        <p className="text-gray-900 font-medium">{generateMealSummary(meal.description)}</p>
+                        <p className="text-xs text-gray-500 mt-1" title={meal.description}>
+                          {meal.description.length > 40 ? `${meal.description.substring(0, 40)}...` : meal.description}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        {/* Main focus - Calories and Protein */}
+                        <div className="flex items-center space-x-2 text-sm">
+                          <Zap className="h-4 w-4 text-yellow-600" />
+                          <span className="font-semibold text-lg">{meal.calories} cal</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-sm">
+                          <Beef className="h-4 w-4 text-red-600" />
+                          <span className="font-semibold text-lg">{meal.protein}g</span>
+                        </div>
+                        
+                        {/* Additional macros - smaller and less prominent */}
+                        <div className="flex items-center space-x-3 text-xs text-gray-500 mt-1">
+                          <span>Carbs: {meal.carbs}g</span>
+                          <span>Fat: {meal.fat}g</span>
+                          <span>Fiber: {meal.fiber}g</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center">
+                        <button
+                          onClick={() => startEditMeal(meal)}
+                          className="text-gray-400 hover:text-primary-600 transition-colors p-1"
+                          title="Edit meal"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
+          </div>
+          
+          {/* Add Meals Button */}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('navigateToMeals'))}
+              className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 transition-colors border-2 border-dashed border-primary-300"
+            >
+              <Plus className="h-5 w-5" />
+              <span className="font-medium">Go to Add Meals Page</span>
+            </button>
           </div>
         </div>
       )}
