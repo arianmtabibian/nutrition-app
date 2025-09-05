@@ -120,7 +120,7 @@ const restoreFromEnv = async () => {
     }
     
     // Handle both formats: array of users OR object with users property
-    let users;
+    let users, profiles = [], meals = [];
     if (Array.isArray(backupObject)) {
       // Old format: direct array of users
       users = backupObject;
@@ -128,7 +128,10 @@ const restoreFromEnv = async () => {
     } else if (backupObject && Array.isArray(backupObject.users)) {
       // New format: object with users, profiles, meals
       users = backupObject.users;
+      profiles = backupObject.profiles || [];
+      meals = backupObject.meals || [];
       console.log('📦 Using enhanced backup format (users + profiles + meals)');
+      console.log(`📋 Found ${profiles.length} profiles and ${meals.length} meals to restore`);
     } else {
       console.error('❌ Invalid backup format. Expected array of users or object with users property');
       return { restored: 0 };
@@ -140,10 +143,122 @@ const restoreFromEnv = async () => {
     let restored = 0;
     
     return new Promise((resolve, reject) => {
+      let restoredProfiles = 0;
+      
+      const restoreMeals = () => {
+        if (meals.length === 0) {
+          console.log('ℹ️  No meals to restore');
+          resolve({ restored, restoredProfiles, restoredMeals: 0 });
+          return;
+        }
+        
+        let restoredMeals = 0;
+        
+        const restoreMeal = (mealIndex) => {
+          if (mealIndex >= meals.length) {
+            console.log(`✅ Restored ${restoredMeals} meals from backup`);
+            resolve({ restored, restoredProfiles, restoredMeals });
+            return;
+          }
+          
+          const meal = meals[mealIndex];
+          
+          if (!meal || !meal.user_id || !meal.meal_date) {
+            console.warn(`⚠️ Invalid meal at index ${mealIndex}:`, meal);
+            restoreMeal(mealIndex + 1);
+            return;
+          }
+          
+          // Check if meal exists (by user_id, meal_date, meal_type, and description)
+          db.get('SELECT id FROM meals WHERE user_id = ? AND meal_date = ? AND meal_type = ? AND description = ?', 
+            [meal.user_id, meal.meal_date, meal.meal_type, meal.description], (err, row) => {
+            if (err) {
+              console.error(`❌ Error checking meal for user ${meal.user_id}:`, err);
+              restoreMeal(mealIndex + 1);
+              return;
+            }
+            
+            if (!row) {
+              // Meal doesn't exist, restore it
+              db.run('INSERT INTO meals (user_id, meal_date, meal_type, description, calories, protein, carbs, fat, fiber, sugar, sodium, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [meal.user_id, meal.meal_date, meal.meal_type, meal.description, meal.calories, meal.protein, meal.carbs, meal.fat, meal.fiber, meal.sugar, meal.sodium, meal.created_at],
+                function(err) {
+                  if (err) {
+                    console.error(`❌ Error restoring meal for user ${meal.user_id}:`, err);
+                  } else {
+                    console.log(`✅ Restored meal: ${meal.description} (${meal.meal_date})`);
+                    restoredMeals++;
+                  }
+                  restoreMeal(mealIndex + 1);
+                });
+            } else {
+              console.log(`ℹ️  Meal "${meal.description}" already exists, skipping`);
+              restoreMeal(mealIndex + 1);
+            }
+          });
+        };
+        
+        restoreMeal(0);
+      };
+      
+      const restoreProfiles = () => {
+        if (profiles.length === 0) {
+          console.log('ℹ️  No profiles to restore');
+          restoreMeals();
+          return;
+        }
+        
+        const restoreProfile = (profileIndex) => {
+          if (profileIndex >= profiles.length) {
+            console.log(`✅ Restored ${restoredProfiles} profiles from backup`);
+            restoreMeals();
+            return;
+          }
+          
+          const profile = profiles[profileIndex];
+          
+          if (!profile || !profile.user_id) {
+            console.warn(`⚠️ Invalid profile at index ${profileIndex}:`, profile);
+            restoreProfile(profileIndex + 1);
+            return;
+          }
+          
+          // Check if profile exists
+          db.get('SELECT id FROM user_profiles WHERE user_id = ?', [profile.user_id], (err, row) => {
+            if (err) {
+              console.error(`❌ Error checking profile for user ${profile.user_id}:`, err);
+              restoreProfile(profileIndex + 1);
+              return;
+            }
+            
+            if (!row) {
+              // Profile doesn't exist, restore it
+              db.run('INSERT INTO user_profiles (user_id, profile_picture, bio, daily_calories, daily_protein, weight, target_weight, height, age, activity_level, gender, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [profile.user_id, profile.profile_picture, profile.bio, profile.daily_calories, profile.daily_protein, profile.weight, profile.target_weight, profile.height, profile.age, profile.activity_level, profile.gender, profile.created_at, profile.updated_at],
+                function(err) {
+                  if (err) {
+                    console.error(`❌ Error restoring profile for user ${profile.user_id}:`, err);
+                  } else {
+                    console.log(`✅ Restored profile for user ${profile.user_id}`);
+                    restoredProfiles++;
+                  }
+                  restoreProfile(profileIndex + 1);
+                });
+            } else {
+              console.log(`ℹ️  Profile for user ${profile.user_id} already exists, skipping`);
+              restoreProfile(profileIndex + 1);
+            }
+          });
+        };
+        
+        restoreProfile(0);
+      };
+      
       const restoreUser = (index) => {
         if (index >= users.length) {
           console.log(`✅ Restored ${restored} users from backup`);
-          resolve({ restored });
+          // Now restore profiles
+          restoreProfiles();
           return;
         }
         
