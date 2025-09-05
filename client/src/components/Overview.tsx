@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Target, Flame, Beef, TrendingUp, Calendar, Zap, Plus, Utensils, Clock, Edit2, Save, X, Loader2 } from 'lucide-react';
-import { profileAPI, mealsAPI, diaryAPI } from '../services/api';
+import { Target, Flame, Beef, TrendingUp, Calendar, Zap, Plus, Utensils, Clock, Edit2, Save, X, Loader2, Heart } from 'lucide-react';
+import { profileAPI, mealsAPI, diaryAPI, favoritesAPI } from '../services/api';
 import { generateMealSummary } from '../utils/mealSummary';
 
 interface UserProfile {
@@ -240,6 +240,7 @@ const Overview: React.FC = () => {
     sodium: 0
   });
   const [addingMeal, setAddingMeal] = useState(false);
+  const [favoritingMeal, setFavoritingMeal] = useState<number | null>(null);
 
   useEffect(() => {
     loadOverviewData();
@@ -429,6 +430,23 @@ const Overview: React.FC = () => {
       sugar: 0,
       sodium: 0
     });
+  };
+
+  // Save meal function
+  const handleAddToFavorites = async (meal: MealData) => {
+    setFavoritingMeal(meal.id);
+    try {
+      await favoritesAPI.createFromMeal(meal.id);
+      // Could add a toast notification here if desired
+    } catch (error: any) {
+      if (error.response?.status === 409) {
+        alert('This meal is already saved');
+      } else {
+        alert('Failed to save meal');
+      }
+    } finally {
+      setFavoritingMeal(null);
+    }
   };
 
   // Set up interval to refresh data every 30 seconds
@@ -1258,7 +1276,25 @@ const Overview: React.FC = () => {
                         </div>
                       </div>
                       
-                      <div className="flex items-center">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleAddToFavorites(meal)}
+                          disabled={favoritingMeal === meal.id}
+                          className="flex items-center space-x-1 px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors disabled:opacity-50"
+                          title="Save meal for quick access later"
+                        >
+                          {favoritingMeal === meal.id ? (
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              <span>Saving...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Heart className="h-3 w-3" />
+                              <span>Save</span>
+                            </>
+                          )}
+                        </button>
                         <button
                           onClick={() => startEditMeal(meal)}
                           className="text-gray-400 hover:text-primary-600 transition-colors p-1"

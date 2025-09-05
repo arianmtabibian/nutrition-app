@@ -115,7 +115,7 @@ const Inputs: React.FC = () => {
       sodium: favorite.sodium || 0
     });
     setShowFavorites(false);
-    setMessage(`Selected "${favorite.name}" from favorites!`);
+    setMessage(`Selected "${favorite.name}" from saved meals!`);
     setTimeout(() => setMessage(''), 3000);
   };
 
@@ -214,15 +214,15 @@ const Inputs: React.FC = () => {
     setFavoritingMeal(meal.id);
     try {
       await favoritesAPI.createFromMeal(meal.id);
-      setMessage('Meal added to favorites!');
+      setMessage('Meal saved successfully!');
       setTimeout(() => setMessage(''), 3000);
       // Reload favorites to update the count and list
       await loadFavorites();
     } catch (error: any) {
       if (error.response?.status === 409) {
-        setMessage('This meal is already in your favorites');
+        setMessage('This meal is already saved');
       } else {
-        setMessage(error.response?.data?.error || 'Failed to add to favorites');
+        setMessage(error.response?.data?.error || 'Failed to save meal');
       }
       setTimeout(() => setMessage(''), 3000);
     } finally {
@@ -403,18 +403,18 @@ const Inputs: React.FC = () => {
             </div>
           </div>
           
-          {/* Favorites Selection */}
+          {/* Saved Meals Selection */}
           <div className="border-t border-gray-200 pt-4">
             <div className="flex items-center justify-between mb-3">
               <label className="block text-sm font-medium text-gray-700">
-                Or select from favorites
+                Or select from saved meals
               </label>
               <button
                 type="button"
                 onClick={() => setShowFavorites(!showFavorites)}
                 className="text-sm text-primary-600 hover:text-primary-700 transition-colors"
               >
-                {showFavorites ? 'Hide' : 'Show'} Favorites ({favorites.length})
+                {showFavorites ? 'Hide' : 'Show'} Saved Meals ({favorites.length})
               </button>
             </div>
             
@@ -423,13 +423,13 @@ const Inputs: React.FC = () => {
                 {loadingFavorites ? (
                   <div className="flex items-center justify-center py-4">
                     <Loader2 className="h-5 w-5 animate-spin text-primary-600" />
-                    <span className="ml-2 text-sm text-gray-600">Loading favorites...</span>
+                    <span className="ml-2 text-sm text-gray-600">Loading saved meals...</span>
                   </div>
                 ) : favorites.length === 0 ? (
                   <div className="text-center py-4 text-gray-500 text-sm">
                     <Heart className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                    <p>No favorite meals yet</p>
-                    <p>Add meals to favorites to quickly select them here</p>
+                    <p>No saved meals yet</p>
+                    <p>Save meals using the "Save" button to quickly select them here</p>
                   </div>
                 ) : (
                   favorites.map((favorite) => (
@@ -854,13 +854,19 @@ const Inputs: React.FC = () => {
                         <button
                           onClick={() => handleAddToFavorites(meal)}
                           disabled={favoritingMeal === meal.id}
-                          className="text-gray-400 hover:text-pink-600 transition-colors disabled:opacity-50"
-                          title="Add to favorites"
+                          className="flex items-center space-x-1 px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors disabled:opacity-50"
+                          title="Save meal for quick access later"
                         >
                           {favoritingMeal === meal.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              <span>Saving...</span>
+                            </>
                           ) : (
-                            <Heart className="h-4 w-4" />
+                            <>
+                              <Heart className="h-3 w-3" />
+                              <span>Save</span>
+                            </>
                           )}
                         </button>
                         <button
