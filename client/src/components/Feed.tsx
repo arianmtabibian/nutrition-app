@@ -796,24 +796,6 @@ const Feed: React.FC = () => {
                   );
                 })()}
               </div>
-              
-              {/* Legend - Exact match to Diary colors */}
-              <div className="mt-4 pt-3 border-t border-gray-100">
-                <div className="grid grid-cols-1 gap-2 text-xs">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-green-500 rounded-sm flex-shrink-0"></div>
-                    <span className="text-gray-700 font-medium whitespace-nowrap">Both goals met</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-yellow-500 rounded-sm flex-shrink-0"></div>
-                    <span className="text-gray-700 font-medium whitespace-nowrap">Partial goals</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-red-500 rounded-sm flex-shrink-0"></div>
-                    <span className="text-gray-700 font-medium whitespace-nowrap">Goals not met</span>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
         </div>
