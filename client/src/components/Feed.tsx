@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Heart, MessageCircle, Share, MoreHorizontal, PenTool, Bookmark, Image, X, Plus, UserCircle, Calendar, TrendingUp, TrendingDown, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { diaryAPI } from '../services/api';
 
 interface Post {
   id: number;
@@ -92,28 +93,13 @@ const Feed: React.FC = () => {
       
       console.log('📅 Feed Calendar: Loading month data for:', { year, month });
       
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/diary/month/${year}/${month}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      // Use the EXACT same API call as Diary component
+      const response = await diaryAPI.getMonth(year, month);
       
-      console.log('📅 Feed Calendar: Response status:', response.status);
+      console.log('📅 Feed Calendar: Response received:', response.data);
+      console.log('📅 Feed Calendar: Days with data:', response.data.days?.filter((d: any) => d.has_data)?.length || 0);
       
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📅 Feed Calendar: Data received:', data);
-        console.log('📅 Feed Calendar: Days with data:', data.days?.filter((d: any) => d.has_data)?.length || 0);
-        setMonthData(data);
-      } else {
-        console.error('📅 Feed Calendar: API error:', response.status, await response.text());
-        // Set empty data structure as fallback
-        setMonthData({
-          year,
-          month,
-          days: []
-        });
-      }
+      setMonthData(response.data);
     } catch (error) {
       console.error('📅 Feed Calendar: Error loading month data:', error);
       // Set empty data structure as fallback
@@ -267,22 +253,27 @@ const Feed: React.FC = () => {
   useEffect(() => {
     const handleMealUpdate = (event: any) => {
       console.log('🍽️ Feed: Meal update event received:', event.type);
-      // Force refresh both sidebar data AND month data for calendar
+      console.log('🍽️ Feed: IMMEDIATELY refreshing calendar...');
+      
+      // Immediate refresh - no timeout
+      loadMonthData();
+      loadSidebarData();
+      
+      // Also do delayed refreshes as backup
       setTimeout(() => {
-        console.log('🍽️ Feed: Refreshing sidebar and calendar data...');
+        console.log('🍽️ Feed: Backup refresh 1 (500ms)...');
+        loadMonthData();
         loadSidebarData();
-        loadMonthData(); // Explicitly reload calendar data
       }, 500);
       
-      // Also do an immediate refresh for faster response
       setTimeout(() => {
-        console.log('🍽️ Feed: Immediate calendar refresh...');
+        console.log('🍽️ Feed: Backup refresh 2 (1000ms)...');
         loadMonthData();
-      }, 100);
+      }, 1000);
     };
 
     const handleCalendarRefresh = () => {
-      console.log('📅 Feed: Calendar refresh event received');
+      console.log('📅 Feed: Calendar refresh event received - IMMEDIATE refresh');
       loadMonthData();
     };
 
@@ -750,13 +741,13 @@ const Feed: React.FC = () => {
                     const status = getDayStatus(day);
                     switch (status) {
                       case 'both-met':
-                        return 'bg-gradient-to-br from-green-400 to-green-600 text-white shadow-sm';
+                        return 'bg-green-500 text-white'; // EXACT match to Diary
                       case 'partial':
-                        return 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm';
+                        return 'bg-yellow-500 text-white'; // EXACT match to Diary  
                       case 'none-met':
-                        return 'bg-gradient-to-br from-red-400 to-red-600 text-white shadow-sm';
+                        return 'bg-red-500 text-white'; // EXACT match to Diary
                       default:
-                        return 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50';
+                        return 'bg-gray-100 text-gray-400'; // EXACT match to Diary
                     }
                   };
 
@@ -773,15 +764,16 @@ const Feed: React.FC = () => {
                         const dayData = monthData.days?.find((d: any) => d.date === dateStr);
                         const isCurrentDay = isToday(day);
                         
-                        // Debug logging for today's date
-                        if (isCurrentDay && dayData) {
-                          console.log('📅 Feed Calendar: Today\'s data:', {
+                        // Debug logging for ALL days with data
+                        if (dayData?.has_data) {
+                          console.log(`📅 Feed Calendar: Day ${format(day, 'd')} data:`, {
                             date: dateStr,
                             hasData: dayData.has_data,
                             calories: dayData.total_calories,
                             caloriesMet: dayData.calories_met,
                             proteinMet: dayData.protein_met,
-                            status: getDayStatus(dayData)
+                            status: getDayStatus(dayData),
+                            color: getDayColor(dayData)
                           });
                         }
                         
@@ -810,19 +802,19 @@ const Feed: React.FC = () => {
                 })()}
               </div>
               
-              {/* Legend - Beautiful and compact */}
+              {/* Legend - Exact match to Diary colors */}
               <div className="mt-4 pt-3 border-t border-gray-100">
                 <div className="grid grid-cols-1 gap-2 text-xs">
                   <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-gradient-to-br from-green-400 to-green-600 rounded-sm flex-shrink-0 shadow-sm"></div>
+                    <div className="w-4 h-4 bg-green-500 rounded-sm flex-shrink-0"></div>
                     <span className="text-gray-700 font-medium whitespace-nowrap">Both goals met</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-gradient-to-br from-amber-400 to-orange-500 rounded-sm flex-shrink-0 shadow-sm"></div>
+                    <div className="w-4 h-4 bg-yellow-500 rounded-sm flex-shrink-0"></div>
                     <span className="text-gray-700 font-medium whitespace-nowrap">Partial goals</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-gradient-to-br from-red-400 to-red-600 rounded-sm flex-shrink-0 shadow-sm"></div>
+                    <div className="w-4 h-4 bg-red-500 rounded-sm flex-shrink-0"></div>
                     <span className="text-gray-700 font-medium whitespace-nowrap">Goals not met</span>
                   </div>
                 </div>

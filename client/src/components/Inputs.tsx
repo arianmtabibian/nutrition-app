@@ -132,13 +132,15 @@ const Inputs: React.FC = () => {
       localStorage.setItem('mealAdded', Date.now().toString());
       
       // Also trigger custom events for the same tab
-      console.log('🍽️ Inputs: Dispatching meal added events');
+      console.log('🍽️ Inputs: Dispatching meal added events IMMEDIATELY');
+      console.log('🍽️ Inputs: Meal data:', addedMeal);
+      
       window.dispatchEvent(new CustomEvent('mealAdded'));
       window.dispatchEvent(new CustomEvent('mealDataChanged'));
-      
-      // Force sidebar and calendar refresh
       window.dispatchEvent(new CustomEvent('sidebarRefresh'));
       window.dispatchEvent(new CustomEvent('calendarRefresh'));
+      
+      console.log('🍽️ Inputs: All events dispatched!');
     } catch (error: any) {
       setMessage(error.response?.data?.error || 'Failed to add meal');
     } finally {
