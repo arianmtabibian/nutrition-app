@@ -106,7 +106,6 @@ const Dashboard: React.FC = () => {
   const tabs = [
     { id: 'feed', name: 'Feed', icon: Home, path: '/dashboard/feed' },
     { id: 'overview', name: 'Overview', icon: BarChart3, path: '/dashboard/overview' },
-    { id: 'inputs', name: 'Meals', icon: Utensils, path: '/dashboard/inputs' },
     { id: 'diary', name: 'Diary', icon: Calendar, path: '/dashboard/diary' },
     { id: 'groups', name: 'Groups', icon: User, path: '/dashboard/groups' },
     { id: 'profile', name: 'Profile', icon: User, path: '/dashboard/profile' },

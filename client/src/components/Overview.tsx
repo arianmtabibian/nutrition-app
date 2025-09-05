@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { format } from 'date-fns';
-import { Target, Flame, Beef, TrendingUp, Calendar, Zap, Plus, Utensils, Clock, Edit2, Save, X, Loader2, Heart } from 'lucide-react';
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, addDays, subDays, isToday } from 'date-fns';
+import { Target, Flame, Beef, TrendingUp, Calendar, Zap, Plus, Utensils, Clock, Edit2, Save, X, Loader2, Heart, ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
 import { profileAPI, mealsAPI, diaryAPI, favoritesAPI } from '../services/api';
 import { generateMealSummary } from '../utils/mealSummary';
 
@@ -247,11 +247,23 @@ const Overview: React.FC = () => {
   const [showMealTypeSelector, setShowMealTypeSelector] = useState(false);
   const [selectedSavedMeal, setSelectedSavedMeal] = useState<any>(null);
   const [quickAddMealType, setQuickAddMealType] = useState('breakfast');
+  const [weekData, setWeekData] = useState<any[]>([]);
+  const [weekStartDate, setWeekStartDate] = useState(new Date());
+  const [weeklyStats, setWeeklyStats] = useState({
+    averageDeficit: 0,
+    daysWithData: 0,
+    loading: false
+  });
 
   useEffect(() => {
     loadOverviewData();
     loadFavorites();
+    loadWeekData();
   }, []);
+
+  useEffect(() => {
+    loadWeekData();
+  }, [weekStartDate]);
 
   const loadOverviewData = async () => {
     try {
@@ -522,6 +534,101 @@ const Overview: React.FC = () => {
     setQuickAddMealType('breakfast');
   };
 
+  const loadWeekData = async () => {
+    setWeeklyStats(prev => ({ ...prev, loading: true }));
+    try {
+      const currentWeekStart = startOfWeek(weekStartDate, { weekStartsOn: 0 });
+      const weekDays = eachDayOfInterval({
+        start: currentWeekStart,
+        end: endOfWeek(currentWeekStart, { weekStartsOn: 0 })
+      });
+
+      // Get user's profile for goals
+      let dailyCalorieGoal = 2000;
+      let dailyProteinGoal = 150;
+      try {
+        const profileResponse = await profileAPI.get();
+        if (profileResponse.data.profile?.daily_calories) {
+          dailyCalorieGoal = profileResponse.data.profile.daily_calories;
+        }
+        if (profileResponse.data.profile?.daily_protein) {
+          dailyProteinGoal = profileResponse.data.profile.daily_protein;
+        }
+      } catch (error) {
+        console.error('Failed to get profile for goals:', error);
+      }
+
+      const weekDataPromises = weekDays.map(async (day) => {
+        const dateStr = format(day, 'yyyy-MM-dd');
+        try {
+          const response = await mealsAPI.getByDate(dateStr);
+          const meals = response.data.meals || [];
+          
+          const dayTotals = meals.reduce((acc: any, meal: any) => {
+            acc.calories += meal.calories || 0;
+            acc.protein += meal.protein || 0;
+            return acc;
+          }, { calories: 0, protein: 0 });
+
+          return {
+            date: dateStr,
+            dayOfWeek: format(day, 'EEE'),
+            dayNumber: format(day, 'd'),
+            calories: dayTotals.calories,
+            protein: dayTotals.protein,
+            caloriesGoal: dailyCalorieGoal,
+            proteinGoal: dailyProteinGoal,
+            caloriesMet: dayTotals.calories <= dailyCalorieGoal,
+            proteinMet: dayTotals.protein >= dailyProteinGoal,
+            bothMet: dayTotals.calories <= dailyCalorieGoal && dayTotals.protein >= dailyProteinGoal,
+            hasData: meals.length > 0,
+            isToday: isToday(day)
+          };
+        } catch (error) {
+          return {
+            date: dateStr,
+            dayOfWeek: format(day, 'EEE'),
+            dayNumber: format(day, 'd'),
+            calories: 0,
+            protein: 0,
+            caloriesGoal: dailyCalorieGoal,
+            proteinGoal: dailyProteinGoal,
+            caloriesMet: false,
+            proteinMet: false,
+            bothMet: false,
+            hasData: false,
+            isToday: isToday(day)
+          };
+        }
+      });
+
+      const weekResults = await Promise.all(weekDataPromises);
+      setWeekData(weekResults);
+
+      // Calculate weekly stats
+      const daysWithData = weekResults.filter(day => day.hasData);
+      const averageDeficit = daysWithData.length > 0 
+        ? daysWithData.reduce((sum, day) => sum + (day.caloriesGoal - day.calories), 0) / daysWithData.length
+        : 0;
+
+      setWeeklyStats({
+        averageDeficit: Math.round(averageDeficit),
+        daysWithData: daysWithData.length,
+        loading: false
+      });
+
+    } catch (error) {
+      console.error('Failed to load week data:', error);
+      setWeeklyStats(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const navigateWeek = (direction: 'prev' | 'next') => {
+    setWeekStartDate(prev => 
+      direction === 'prev' ? subDays(prev, 7) : addDays(prev, 7)
+    );
+  };
+
   // Set up interval to refresh data every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
@@ -761,25 +868,103 @@ const Overview: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-             <div className="flex items-center justify-between">
-         <div>
-           <h2 className="text-2xl font-bold text-gray-900">Daily Overview</h2>
-           <p className="text-gray-600">Track your nutrition progress for today</p>
-         </div>
-         <div className="flex items-center space-x-4">
-           <button
-             onClick={refreshData}
-             className="btn-secondary flex items-center space-x-2"
-           >
-             <Zap className="h-4 w-4" />
-             <span>Refresh</span>
-           </button>
-           <div className="flex items-center space-x-2 text-sm text-gray-500">
-             <Calendar className="h-4 w-4" />
-             <span>{format(new Date(), 'EEEE, MMMM d, yyyy')}</span>
-           </div>
-         </div>
-       </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Daily Overview</h2>
+          <p className="text-gray-600">Track your nutrition progress for today</p>
+        </div>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={refreshData}
+            className="btn-secondary flex items-center space-x-2"
+          >
+            <Zap className="h-4 w-4" />
+            <span>Refresh</span>
+          </button>
+          <div className="flex items-center space-x-2 text-sm text-gray-500">
+            <Calendar className="h-4 w-4" />
+            <span>{format(new Date(), 'EEEE, MMMM d, yyyy')}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Compact Weekly Progress */}
+      <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-xl p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center space-x-2">
+            <BarChart3 className="h-5 w-5 text-orange-600" />
+            <h3 className="text-lg font-semibold text-orange-900">Weekly Progress</h3>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => navigateWeek('prev')}
+              className="p-1 hover:bg-orange-100 rounded transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4 text-orange-600" />
+            </button>
+            <span className="text-sm font-medium text-orange-800">
+              {format(startOfWeek(weekStartDate, { weekStartsOn: 0 }), 'MMM d')} - {format(endOfWeek(weekStartDate, { weekStartsOn: 0 }), 'MMM d')}
+            </span>
+            <button
+              onClick={() => navigateWeek('next')}
+              className="p-1 hover:bg-orange-100 rounded transition-colors"
+            >
+              <ChevronRight className="h-4 w-4 text-orange-600" />
+            </button>
+          </div>
+        </div>
+        
+        <div className="flex items-center justify-between">
+          {/* Week Calendar */}
+          <div className="flex space-x-2">
+            {weekData.map((day) => (
+              <div
+                key={day.date}
+                className={`flex flex-col items-center p-2 rounded-lg text-xs font-medium transition-colors ${
+                  day.isToday 
+                    ? 'bg-orange-200 text-orange-900 ring-2 ring-orange-400' 
+                    : day.bothMet 
+                      ? 'bg-green-100 text-green-800' 
+                      : day.hasData 
+                        ? 'bg-yellow-100 text-yellow-800' 
+                        : 'bg-gray-100 text-gray-500'
+                }`}
+              >
+                <span className="text-xs">{day.dayOfWeek}</span>
+                <span className="text-sm font-bold">{day.dayNumber}</span>
+                {day.hasData && (
+                  <div className="text-xs mt-1">
+                    <div>{day.calories}cal</div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          
+          {/* Weekly Stats */}
+          <div className="text-right">
+            {weeklyStats.loading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 mx-auto"></div>
+            ) : (
+              <>
+                <div className={`text-lg font-bold ${
+                  weeklyStats.averageDeficit > 0 ? 'text-green-600' : 
+                  weeklyStats.averageDeficit < 0 ? 'text-orange-600' : 'text-gray-600'
+                }`}>
+                  {weeklyStats.averageDeficit > 0 ? '-' : weeklyStats.averageDeficit < 0 ? '+' : ''}
+                  {Math.abs(weeklyStats.averageDeficit)}
+                </div>
+                <div className="text-xs text-gray-600">
+                  {weeklyStats.averageDeficit > 0 ? 'Deficit' : weeklyStats.averageDeficit < 0 ? 'Surplus' : 'Maintenance'} avg
+                </div>
+                <div className="text-xs text-gray-500">
+                  {weeklyStats.daysWithData}/7 days logged
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Weight Loss/Gain Analysis */}
       {profile.weight && profile.target_weight && (
