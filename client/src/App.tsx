@@ -5,6 +5,7 @@ import { useOnboardingProtection } from './hooks/useOnboardingProtection';
 
 // Test auto-deploy connection - 2025-01-05
 // Second test after config fix
+// Fresh project test - should auto-deploy
 
 import Welcome from './components/Welcome';
 import EnhancedRegister from './components/EnhancedRegister';
