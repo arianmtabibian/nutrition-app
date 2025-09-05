@@ -32,16 +32,25 @@ if (process.env.CORS_ORIGIN === '*') {
   corsOrigin = true; // Allow all origins
   console.log('🌐 CORS: Allowing all origins (*)');
 } else if (process.env.CORS_ORIGIN) {
-  corsOrigin = process.env.CORS_ORIGIN.split(',');
+  corsOrigin = process.env.CORS_ORIGIN.split(',').map(origin => origin.trim());
   console.log('🌐 CORS: Allowing specific origins:', corsOrigin);
 } else {
-  corsOrigin = ['https://nutryra.com', 'https://www.nutryra.com'];
+  // Default to allow both www and non-www versions of nutryra.com
+  corsOrigin = [
+    'https://nutryra.com', 
+    'https://www.nutryra.com',
+    'http://localhost:3000', // For development
+    'http://localhost:3001'  // For development
+  ];
   console.log('🌐 CORS: Using default origins:', corsOrigin);
 }
 
 app.use(cors({
   origin: corsOrigin,
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200 // For legacy browser support
 }));
 
 // Body parsing middleware
