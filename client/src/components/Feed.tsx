@@ -782,18 +782,13 @@ const Feed: React.FC = () => {
                             key={day.toString()}
                             className={`
                               aspect-square p-1 text-xs font-medium rounded-lg transition-all duration-200 cursor-pointer
-                              flex flex-col items-center justify-center
+                              flex items-center justify-center
                               ${getDayColor(dayData || { has_data: false })}
                               ${isCurrentDay ? 'ring-2 ring-blue-500 ring-offset-1' : ''}
                               hover:opacity-80 hover:scale-105
                             `}
                           >
                             <div className="font-bold text-sm">{format(day, 'd')}</div>
-                            {dayData?.has_data && (
-                              <div className="text-xs opacity-90 font-medium leading-tight">
-                                {dayData.total_calories}
-                              </div>
-                            )}
                           </div>
                         );
                       })}
