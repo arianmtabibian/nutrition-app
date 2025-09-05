@@ -10,6 +10,7 @@
     "build": "node vercel-build.js",
     "build:vercel": "node vercel-build.js",
     "deploy": "node deploy-vercel.js",
+    "deploy:prod": "vercel --prod",
     "install-all": "npm install && cd client && npm install",
     "install:vercel": "npm install && cd client && npm install",
     "start": "node server/index.js"
