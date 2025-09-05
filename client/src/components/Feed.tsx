@@ -682,20 +682,25 @@ const Feed: React.FC = () => {
           
           {sidebarLoading ? (
             <div className="animate-pulse">
-              <div className="grid grid-cols-7 gap-1">
-                {Array.from({ length: 42 }).map((_, i) => (
-                  <div key={i} className="h-12 bg-gray-200 rounded-lg"></div>
+              <div className="grid grid-cols-7 gap-2 p-2 bg-gray-50 rounded-lg">
+                {/* Day headers skeleton */}
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <div key={`header-${i}`} className="h-6 bg-gray-200 rounded"></div>
+                ))}
+                {/* Calendar days skeleton */}
+                {Array.from({ length: 35 }).map((_, i) => (
+                  <div key={i} className="aspect-square bg-gray-200 rounded-lg"></div>
                 ))}
               </div>
             </div>
           ) : (
             <div className="space-y-3">
-              {/* Calendar Grid - Exact match to Diary */}
-              <div className="grid grid-cols-7 gap-1">
+              {/* Calendar Grid - Compact and beautiful */}
+              <div className="grid grid-cols-7 gap-2 p-2 bg-gray-50 rounded-lg">
                 {/* Day headers */}
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                  <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
-                    {day}
+                  <div key={day} className="p-2 text-center text-xs font-bold text-gray-600 uppercase tracking-wide">
+                    {day.substring(0, 1)}
                   </div>
                 ))}
                 
@@ -720,13 +725,13 @@ const Feed: React.FC = () => {
                     const status = getDayStatus(day);
                     switch (status) {
                       case 'both-met':
-                        return 'bg-green-500 text-white';
+                        return 'bg-gradient-to-br from-green-400 to-green-600 text-white shadow-sm';
                       case 'partial':
-                        return 'bg-yellow-500 text-white';
+                        return 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm';
                       case 'none-met':
-                        return 'bg-red-500 text-white';
+                        return 'bg-gradient-to-br from-red-400 to-red-600 text-white shadow-sm';
                       default:
-                        return 'bg-gray-100 text-gray-400';
+                        return 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50';
                     }
                   };
 
@@ -734,7 +739,7 @@ const Feed: React.FC = () => {
                     <>
                       {/* Padding days */}
                       {paddingDays.map((_, i) => (
-                        <div key={`padding-${i}`} className="p-2" />
+                        <div key={`padding-${i}`} className="aspect-square" />
                       ))}
                       
                       {/* Calendar days */}
@@ -747,20 +752,19 @@ const Feed: React.FC = () => {
                           <div
                             key={day.toString()}
                             className={`
-                              p-2 h-16 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer
+                              aspect-square p-1 text-xs font-medium rounded-lg transition-all duration-200 cursor-pointer
+                              flex flex-col items-center justify-center
                               ${getDayColor(dayData || { has_data: false })}
-                              ${isCurrentDay ? 'ring-2 ring-blue-500 ring-offset-2' : ''}
-                              hover:opacity-80
+                              ${isCurrentDay ? 'ring-2 ring-blue-500 ring-offset-1' : ''}
+                              hover:opacity-80 hover:scale-105
                             `}
                           >
-                            <div className="text-center">
-                              <div className="font-semibold">{format(day, 'd')}</div>
-                              {dayData?.has_data && (
-                                <div className="text-xs opacity-75">
-                                  {dayData.total_calories} cal
-                                </div>
-                              )}
-                            </div>
+                            <div className="font-bold text-sm">{format(day, 'd')}</div>
+                            {dayData?.has_data && (
+                              <div className="text-xs opacity-90 font-medium leading-tight">
+                                {dayData.total_calories}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -769,19 +773,21 @@ const Feed: React.FC = () => {
                 })()}
               </div>
               
-              {/* Legend - Match Diary colors */}
-              <div className="flex items-center justify-center space-x-3 text-xs">
-                <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-green-500 rounded"></div>
-                  <span className="text-gray-600">Both goals met</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-                  <span className="text-gray-600">Partial</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-red-500 rounded"></div>
-                  <span className="text-gray-600">Goals not met</span>
+              {/* Legend - Beautiful and compact */}
+              <div className="mt-4 pt-3 border-t border-gray-100">
+                <div className="grid grid-cols-1 gap-2 text-xs">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 bg-gradient-to-br from-green-400 to-green-600 rounded-sm flex-shrink-0 shadow-sm"></div>
+                    <span className="text-gray-700 font-medium whitespace-nowrap">Both goals met</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 bg-gradient-to-br from-amber-400 to-orange-500 rounded-sm flex-shrink-0 shadow-sm"></div>
+                    <span className="text-gray-700 font-medium whitespace-nowrap">Partial goals</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 bg-gradient-to-br from-red-400 to-red-600 rounded-sm flex-shrink-0 shadow-sm"></div>
+                    <span className="text-gray-700 font-medium whitespace-nowrap">Goals not met</span>
+                  </div>
                 </div>
               </div>
             </div>

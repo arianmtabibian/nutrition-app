@@ -21,7 +21,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return user ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
-// Special protection for onboarding - extra safeguards
+// Smart protection for onboarding - only blocks users who have completed onboarding
 const OnboardingProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
   
@@ -33,13 +33,8 @@ const OnboardingProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ chi
     return <Navigate to="/login" replace />;
   }
   
-  // Additional check: if user has been using the app, redirect to dashboard
-  const hasAccessedApp = localStorage.getItem('hasAccessedApp');
-  if (hasAccessedApp === 'true') {
-    console.log('Route-level protection: User has accessed app before, redirecting to dashboard');
-    return <Navigate to="/dashboard" replace />;
-  }
-  
+  // Allow new users to access onboarding, but prevent users who have completed it from returning
+  // The actual profile check happens inside the Onboarding component for proper async handling
   return <>{children}</>;
 };
 

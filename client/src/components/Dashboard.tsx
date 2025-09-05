@@ -118,17 +118,52 @@ const Dashboard: React.FC = () => {
 
   const currentTab = getCurrentTab();
 
-  // NEVER redirect logged-in users to onboarding - they can always access the dashboard
+  // Check if user needs onboarding (new users only) - existing users never redirected back
   useEffect(() => {
+    const checkProfileExists = async () => {
+      try {
+        const response = await profileAPI.get();
+        if (!response.data.profile) {
+          // No profile exists - this is a new user who needs onboarding
+          console.log('New user with no profile, redirecting to onboarding');
+          navigate('/onboarding');
+          return;
+        }
+        
+        // User has a profile - mark them as having accessed the app to prevent future redirects
+        localStorage.setItem('hasAccessedApp', 'true');
+        localStorage.setItem('lastAccess', new Date().toISOString());
+        console.log('User has profile, allowing dashboard access');
+        setCheckingProfile(false);
+      } catch (error: any) {
+        console.error('Error checking profile:', error);
+        
+        // Only redirect to onboarding for new users (404 = no profile exists)
+        if (error?.response?.status === 404) {
+          console.log('Profile not found (404), new user needs onboarding');
+          navigate('/onboarding');
+        } else {
+          // For any other error, check if user has accessed app before
+          const hasAccessedApp = localStorage.getItem('hasAccessedApp');
+          if (hasAccessedApp === 'true') {
+            // Existing user - never redirect to onboarding
+            console.log('Existing user (has accessed app before), allowing dashboard access despite error');
+            setCheckingProfile(false);
+          } else {
+            // Could be a new user with network issues - allow them to try onboarding
+            console.log('Uncertain status for potentially new user, allowing onboarding attempt');
+            navigate('/onboarding');
+          }
+        }
+      }
+    };
+    
     if (user) {
-      console.log('User is authenticated, allowing full dashboard access');
-      // User is logged in, they can always access the dashboard
-      // We'll handle missing profile data gracefully in the UI instead of redirecting
-      setCheckingProfile(false);
+      checkProfileExists();
     } else {
       setCheckingProfile(false);
     }
-  }, [user]);
+  }, [user, navigate]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

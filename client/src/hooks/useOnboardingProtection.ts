@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-// Global protection hook to prevent any navigation to onboarding for existing users
+// Smart global protection hook - allows new users to complete onboarding once
 export const useOnboardingProtection = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -11,22 +11,16 @@ export const useOnboardingProtection = () => {
   useEffect(() => {
     // Only run this protection if user is authenticated
     if (!user) return;
-
-    // Check if user is trying to access onboarding
-    if (location.pathname === '/onboarding') {
-      const hasAccessedApp = localStorage.getItem('hasAccessedApp');
-      
-      if (hasAccessedApp === 'true') {
-        console.log('Global navigation guard: Preventing onboarding access for existing user');
-        navigate('/dashboard', { replace: true });
-        return;
-      }
-    }
     
-    // Mark that user has accessed the app (for future protection)
+    // Mark that user has accessed the app when they reach dashboard
+    // This happens AFTER they complete onboarding, not before
     if (location.pathname.startsWith('/dashboard')) {
       localStorage.setItem('hasAccessedApp', 'true');
       localStorage.setItem('lastAccess', new Date().toISOString());
     }
+    
+    // Note: We don't prevent onboarding access at the global level anymore
+    // The Onboarding component itself handles the profile check to determine
+    // if the user should be there or not
   }, [location.pathname, user, navigate]);
 };

@@ -516,43 +516,47 @@ const Onboarding: React.FC = () => {
     }
   ];
 
-  // ABSOLUTE PROTECTION: Multiple layers to prevent logged-in users from accessing onboarding
+  // SMART PROTECTION: Only prevent users who have COMPLETED onboarding from returning
   useEffect(() => {
-    // First check: Has the user accessed the app before?
-    if (hasAccessedAppBefore()) {
-      console.log('User has accessed app before, redirecting to dashboard immediately');
-      navigate('/dashboard', { replace: true });
-      return;
-    }
-
     const checkExistingProfile = async () => {
       try {
         const response = await profileAPI.get();
         if (response.data.profile) {
-          // User already has a profile, redirect to dashboard immediately
-          console.log('User has existing profile, redirecting to dashboard');
+          // User already has a completed profile - they shouldn't be here
+          console.log('User has completed profile, redirecting to dashboard');
+          // Mark them as having accessed the app to prevent future redirects
+          localStorage.setItem('hasAccessedApp', 'true');
           navigate('/dashboard', { replace: true });
           return;
         }
+        // No profile exists - new user can continue with onboarding
+        console.log('New user with no profile, allowing onboarding');
         setLoading(false);
       } catch (error: any) {
         console.log('Profile check error in onboarding:', error);
         
-        // If there's ANY doubt about whether the user should be here, send them to dashboard
-        // Only continue with onboarding if we get a clear 404 (profile doesn't exist)
         if (error?.response?.status === 404) {
+          // Confirmed no profile exists - new user can continue
           console.log('Confirmed no profile exists (404), continuing with onboarding');
           setLoading(false);
         } else {
-          // For any other error (network, auth, server), redirect to dashboard to be safe
-          console.log('Uncertain about profile status, redirecting to dashboard for safety');
-          navigate('/dashboard', { replace: true });
+          // For other errors, check if they've completed onboarding before
+          const hasAccessedApp = localStorage.getItem('hasAccessedApp');
+          if (hasAccessedApp === 'true') {
+            // User has accessed app before - they shouldn't be in onboarding
+            console.log('Existing user trying to access onboarding, redirecting to dashboard');
+            navigate('/dashboard', { replace: true });
+          } else {
+            // Could be a new user with network issues - let them try onboarding
+            console.log('Network error for potentially new user, allowing onboarding attempt');
+            setLoading(false);
+          }
         }
       }
     };
     
     checkExistingProfile();
-  }, [navigate, hasAccessedAppBefore]);
+  }, [navigate]);
 
   useEffect(() => {
     if (timeRemaining > 0 && currentStep < steps.length - 1) {
@@ -585,10 +589,21 @@ const Onboarding: React.FC = () => {
       try {
         // Update profile with collected data
         await profileAPI.update(profileData);
+        
+        // Mark user as having completed onboarding and accessed the app
+        localStorage.setItem('hasAccessedApp', 'true');
+        localStorage.setItem('onboardingCompleted', new Date().toISOString());
+        console.log('Onboarding completed successfully');
+        
         // Redirect to dashboard
         navigate('/dashboard');
       } catch (error) {
         console.error('Failed to update profile:', error);
+        
+        // Even if profile update fails, mark as completed to prevent redirect loops
+        localStorage.setItem('hasAccessedApp', 'true');
+        localStorage.setItem('onboardingCompleted', new Date().toISOString());
+        
         // Still redirect to dashboard
         navigate('/dashboard');
       }
