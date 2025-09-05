@@ -97,3 +97,12 @@ export const diaryAPI = {
   getMonthSummary: (year: number, month: number) => 
     api.get(`/api/diary/month/${year}/${month}/summary`),
 };
+
+export const favoritesAPI = {
+  getAll: () => api.get('/api/favorites'),
+  create: (data: any) => api.post('/api/favorites', data),
+  createFromMeal: (mealId: number, customName?: string) => 
+    api.post('/api/favorites/from-meal', { mealId, customName }),
+  update: (id: number, data: any) => api.put(`/api/favorites/${id}`, data),
+  delete: (id: number) => api.delete(`/api/favorites/${id}`),
+};

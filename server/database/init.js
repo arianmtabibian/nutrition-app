@@ -172,10 +172,32 @@ function initializeDatabase() {
         )
       `);
 
+      // Favorite meals table
+      db.run(`
+        CREATE TABLE IF NOT EXISTS favorite_meals (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          name TEXT NOT NULL,
+          meal_type TEXT NOT NULL,
+          description TEXT NOT NULL,
+          calories INTEGER NOT NULL,
+          protein REAL NOT NULL,
+          carbs REAL NOT NULL,
+          fat REAL NOT NULL,
+          fiber REAL NOT NULL,
+          sugar REAL NOT NULL,
+          sodium REAL NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        )
+      `);
+
       // Create indexes for better performance
       db.run(`CREATE INDEX IF NOT EXISTS idx_meals_user_date ON meals(user_id, meal_date)`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_daily_nutrition_user_date ON daily_nutrition(user_id, date)`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id ON user_profiles(user_id)`);
+      db.run(`CREATE INDEX IF NOT EXISTS idx_favorite_meals_user_id ON favorite_meals(user_id)`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_posts_user_id ON posts(user_id)`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_post_likes_post_id ON post_likes(post_id)`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_post_comments_post_id ON post_comments(post_id)`);

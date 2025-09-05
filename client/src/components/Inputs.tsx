@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
-import { Plus, Loader2, Trash2, Utensils, Calendar, Zap, Beef } from 'lucide-react';
-import { mealsAPI } from '../services/api';
+import { Plus, Loader2, Trash2, Utensils, Calendar, Zap, Beef, Heart, HeartOff } from 'lucide-react';
+import { mealsAPI, favoritesAPI } from '../services/api';
 import { generateMealSummary } from '../utils/mealSummary';
 
 interface Meal {
@@ -50,6 +50,10 @@ const Inputs: React.FC = () => {
     sugar: 0,
     sodium: 0
   });
+  const [favoritingMeal, setFavoritingMeal] = useState<number | null>(null);
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [loadingFavorites, setLoadingFavorites] = useState(false);
+  const [showFavorites, setShowFavorites] = useState(false);
 
   // Helper function to safely format dates
   const safeFormatDate = (dateString: string, formatString: string) => {
@@ -68,6 +72,10 @@ const Inputs: React.FC = () => {
     loadMeals();
   }, [selectedDate]);
 
+  useEffect(() => {
+    loadFavorites();
+  }, []);
+
   const loadMeals = async () => {
     setLoading(true);
     try {
@@ -78,6 +86,37 @@ const Inputs: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadFavorites = async () => {
+    setLoadingFavorites(true);
+    try {
+      const response = await favoritesAPI.getAll();
+      setFavorites(response.data.favorites || []);
+    } catch (error) {
+      console.error('Failed to load favorites:', error);
+    } finally {
+      setLoadingFavorites(false);
+    }
+  };
+
+  const handleSelectFromFavorites = (favorite: any) => {
+    setNewMeal({
+      meal_type: favorite.meal_type,
+      description: favorite.description
+    });
+    setManualMacros({
+      calories: favorite.calories || 0,
+      protein: favorite.protein || 0,
+      carbs: favorite.carbs || 0,
+      fat: favorite.fat || 0,
+      fiber: favorite.fiber || 0,
+      sugar: favorite.sugar || 0,
+      sodium: favorite.sodium || 0
+    });
+    setShowFavorites(false);
+    setMessage(`Selected "${favorite.name}" from favorites!`);
+    setTimeout(() => setMessage(''), 3000);
   };
 
   const handleAddMeal = async (isManual: boolean) => {
@@ -112,9 +151,8 @@ const Inputs: React.FC = () => {
 
       const response = await mealsAPI.add(mealData);
       
-      // Add the new meal to the list
-      const addedMeal = response.data.meal;
-      setMeals(prev => [...prev, addedMeal]);
+      // Reload meals from server to ensure consistency
+      await loadMeals();
       
       // Reset form
       setNewMeal({ meal_type: 'breakfast', description: '' });
@@ -173,6 +211,26 @@ const Inputs: React.FC = () => {
     }
   };
 
+  const handleAddToFavorites = async (meal: Meal) => {
+    setFavoritingMeal(meal.id);
+    try {
+      await favoritesAPI.createFromMeal(meal.id);
+      setMessage('Meal added to favorites!');
+      setTimeout(() => setMessage(''), 3000);
+      // Reload favorites to update the count and list
+      await loadFavorites();
+    } catch (error: any) {
+      if (error.response?.status === 409) {
+        setMessage('This meal is already in your favorites');
+      } else {
+        setMessage(error.response?.data?.error || 'Failed to add to favorites');
+      }
+      setTimeout(() => setMessage(''), 3000);
+    } finally {
+      setFavoritingMeal(null);
+    }
+  };
+
   const startEditMeal = (meal: Meal) => {
     setEditingMeal(meal.id);
     setEditForm({
@@ -204,9 +262,9 @@ const Inputs: React.FC = () => {
   const handleEditMeal = async (mealId: number) => {
     try {
       const response = await mealsAPI.update(mealId, editForm);
-      setMeals(prev => prev.map(meal => 
-        meal.id === mealId ? response.data.meal : meal
-      ));
+      
+      // Reload meals from server to ensure consistency
+      await loadMeals();
       setMessage('Meal updated successfully!');
       setTimeout(() => setMessage(''), 3000);
       setEditingMeal(null);
@@ -344,6 +402,68 @@ const Inputs: React.FC = () => {
                 required
               />
             </div>
+          </div>
+          
+          {/* Favorites Selection */}
+          <div className="border-t border-gray-200 pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-medium text-gray-700">
+                Or select from favorites
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowFavorites(!showFavorites)}
+                className="text-sm text-primary-600 hover:text-primary-700 transition-colors"
+              >
+                {showFavorites ? 'Hide' : 'Show'} Favorites ({favorites.length})
+              </button>
+            </div>
+            
+            {showFavorites && (
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {loadingFavorites ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary-600" />
+                    <span className="ml-2 text-sm text-gray-600">Loading favorites...</span>
+                  </div>
+                ) : favorites.length === 0 ? (
+                  <div className="text-center py-4 text-gray-500 text-sm">
+                    <Heart className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                    <p>No favorite meals yet</p>
+                    <p>Add meals to favorites to quickly select them here</p>
+                  </div>
+                ) : (
+                  favorites.map((favorite) => (
+                    <div
+                      key={favorite.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                      onClick={() => handleSelectFromFavorites(favorite)}
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-lg">{favorite.meal_type === 'breakfast' ? '🍳' : favorite.meal_type === 'lunch' ? '🥗' : favorite.meal_type === 'dinner' ? '🍽️' : '🍎'}</span>
+                          <span className="font-medium text-gray-900">{favorite.name}</span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            favorite.meal_type === 'breakfast' ? 'bg-yellow-100 text-yellow-800' :
+                            favorite.meal_type === 'lunch' ? 'bg-green-100 text-green-800' :
+                            favorite.meal_type === 'dinner' ? 'bg-blue-100 text-blue-800' :
+                            'bg-purple-100 text-purple-800'
+                          }`}>
+                            {favorite.meal_type.charAt(0).toUpperCase() + favorite.meal_type.slice(1)}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {favorite.calories} cal • {favorite.protein}g protein
+                        </div>
+                      </div>
+                      <div className="text-primary-600 hover:text-primary-700">
+                        <Plus className="h-4 w-4" />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
           
           {/* AI Analysis Info */}
@@ -702,7 +822,9 @@ const Inputs: React.FC = () => {
                             {safeFormatDate(meal.created_at, 'h:mm a')}
                           </span>
                         </div>
-                        <p className="text-gray-900 font-medium">{generateMealSummary(meal.description)}</p>
+                        <p className="text-gray-900 font-medium">
+                          {generateMealSummary(meal.description)}
+                        </p>
                         <p className="text-xs text-gray-500 mt-1" title={meal.description}>
                           {meal.description.length > 50 ? `${meal.description.substring(0, 50)}...` : meal.description}
                         </p>
@@ -730,6 +852,18 @@ const Inputs: React.FC = () => {
                       </div>
                       
                       <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleAddToFavorites(meal)}
+                          disabled={favoritingMeal === meal.id}
+                          className="text-gray-400 hover:text-pink-600 transition-colors disabled:opacity-50"
+                          title="Add to favorites"
+                        >
+                          {favoritingMeal === meal.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Heart className="h-4 w-4" />
+                          )}
+                        </button>
                         <button
                           onClick={() => startEditMeal(meal)}
                           className="text-gray-400 hover:text-primary-600 transition-colors"

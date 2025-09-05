@@ -10,6 +10,7 @@ const mealRoutes = require('./routes/meals');
 const diaryRoutes = require('./routes/diary');
 const socialRoutes = require('./routes/social');
 const backupRoutes = require('./routes/backup');
+const favoritesRoutes = require('./routes/favorites');
 const { initializeDatabase } = require('./database/init');
 const { restoreFromEnv, simpleBackup } = require('./utils/realPersistence');
 
@@ -64,6 +65,7 @@ app.use('/api/meals', mealRoutes);
 app.use('/api/diary', diaryRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/backup', backupRoutes);
+app.use('/api/favorites', favoritesRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
