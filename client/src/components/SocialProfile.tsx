@@ -404,19 +404,21 @@ const SocialProfile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
-
-        {/* Profile Header */}
-        <div className="border-b border-gray-200 pb-8 pt-8 px-6">
-          <div className="flex items-start space-x-8">
-            {/* Profile Picture */}
-            <div className="relative">
-              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
+      {/* Background Header Section */}
+      <div className="relative h-80 bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 overflow-hidden">
+        {/* Background Image Placeholder */}
+        <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+        
+        {/* Profile Picture - Centered */}
+        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2">
+          <div className="relative">
+            <div className="w-40 h-40 rounded-full bg-white p-1 shadow-xl">
+              <div className="w-full h-full rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-5xl font-bold overflow-hidden">
                 {profileData.profile.profile_picture ? (
                   <img 
                     src={profileData.profile.profile_picture} 
                     alt="Profile" 
-                    className="w-32 h-32 rounded-full object-cover"
+                    className="w-full h-full rounded-full object-cover"
                   />
                 ) : (
                   (profileData.user.first_name && profileData.user.first_name.charAt(0)) || 
@@ -424,127 +426,358 @@ const SocialProfile: React.FC = () => {
                   'U'
                 )}
               </div>
-              <button className="absolute bottom-0 right-0 bg-gradient-to-r from-orange-500 to-red-500 text-white p-2 rounded-full hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-lg">
-                <PenTool className="w-4 h-4" />
+            </div>
+            <button className="absolute bottom-2 right-2 bg-gradient-to-r from-orange-500 to-red-500 text-white p-3 rounded-full hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-lg">
+              <PenTool className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Background Edit Button */}
+        <button className="absolute top-4 right-4 bg-white bg-opacity-90 hover:bg-opacity-100 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-md">
+          <Image className="w-4 h-4" />
+          <span>Edit Background</span>
+        </button>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-4 pt-24 pb-8">
+        {/* Profile Info Section */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center space-x-4 mb-4">
+            <h1 className="text-3xl font-bold text-gray-900">{profileData.user.first_name} {profileData.user.last_name}</h1>
+            {!profileData.profile.daily_calories && !profileData.profile.weight ? (
+              <button className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md">
+                <Edit3 className="w-4 h-4 inline mr-2" />
+                Complete Profile
               </button>
+            ) : (
+              <button 
+                onClick={openEditProfile}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-medium transition-colors border border-gray-300"
+              >
+                <Edit3 className="w-4 h-4 inline mr-2" />
+                Edit Profile
+              </button>
+            )}
+            <button className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md">
+              Follow
+            </button>
+          </div>
+          
+          <p className="text-gray-600 mb-2">@{profileData.user.username}</p>
+          
+          {profileData.profile.bio ? (
+            <p className="text-gray-700 max-w-md mx-auto">{profileData.profile.bio}</p>
+          ) : (
+            <p className="text-gray-500 italic">No bio yet</p>
+          )}
+        </div>
+
+        {/* Stats and Progress Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          {/* Left Column - Stats */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="font-semibold text-gray-900 mb-4">Activity Stats</h3>
+            
+            {/* Posts, Followers, Following */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">{profileData.stats.posts}</div>
+                <div className="text-sm text-gray-600">Posts</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">{profileData.stats.followers}</div>
+                <div className="text-sm text-gray-600">Followers</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">{profileData.stats.following}</div>
+                <div className="text-sm text-gray-600">Following</div>
+              </div>
             </div>
 
-            {/* Profile Info */}
-            <div className="flex-1">
-              <div className="flex items-center space-x-4 mb-4">
-                <h1 className="text-2xl font-light">{profileData.user.username || 'User'}</h1>
-                {!profileData.profile.daily_calories && !profileData.profile.weight ? (
-                  <button className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-1.5 rounded font-medium transition-all duration-200 shadow-md">
-                    <Edit3 className="w-4 h-4 inline mr-2" />
-                    Complete Profile
-                  </button>
-                ) : (
-                  <button 
-                    onClick={openEditProfile}
-                    className="bg-gray-50 hover:bg-gray-100 px-4 py-1.5 rounded font-medium transition-colors border border-gray-200"
-                  >
-                    <Edit3 className="w-4 h-4 inline mr-2" />
-                    Edit Profile
-                  </button>
-                )}
-                <button className="bg-gray-50 hover:bg-gray-100 p-2 rounded transition-colors border border-gray-200">
-                  <Settings className="w-5 h-5" />
+            {/* Daily Streak */}
+            <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+              <div className="flex items-center space-x-2 mb-2">
+                <span className="text-orange-500">🔥</span>
+                <span className="font-semibold text-gray-800">Daily Streak</span>
+              </div>
+              {streakLoading ? (
+                <span className="text-orange-500">Loading...</span>
+              ) : streak > 0 ? (
+                <div className="text-3xl font-bold text-orange-500">{streak} {streak === 1 ? 'day' : 'days'}</div>
+              ) : (
+                <span className="text-orange-500">Start your goal today!</span>
+              )}
+            </div>
+          </div>
+
+          {/* Middle Column - Progress Bars */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="font-semibold text-gray-900 mb-4">Nutrition Goals</h3>
+            
+            {profileData.profile.daily_calories ? (
+              <div className="space-y-6">
+                {/* Calories Progress */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray-700">Daily Calories</span>
+                    <span className="text-sm text-gray-600">{profileData.profile.daily_calories} cal</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div className="bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full" style={{width: '75%'}}></div>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">75% of daily goal</div>
+                </div>
+
+                {/* Protein Progress */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray-700">Daily Protein</span>
+                    <span className="text-sm text-gray-600">{profileData.profile.daily_protein}g</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full" style={{width: '60%'}}></div>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">60% of daily goal</div>
+                </div>
+
+                {/* Weight Progress */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray-700">Weight Goal</span>
+                    <span className="text-sm text-gray-600">{profileData.profile.weight} → {profileData.profile.target_weight} lbs</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div className="bg-gradient-to-r from-green-500 to-teal-500 h-3 rounded-full" style={{width: '40%'}}></div>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">40% to target weight</div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-4">Set up your nutrition goals to track progress</p>
+                <button className="bg-gradient-to-r from-orange-500 to-red-500 text-white py-2 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md">
+                  Set Goals
                 </button>
               </div>
+            )}
+          </div>
 
-              {/* Stats */}
-              <div className="flex space-x-8 mb-4">
-                <div>
-                  <span className="font-semibold text-orange-600">{profileData.stats.posts}</span> posts
-                </div>
-                <div>
-                  <span className="font-semibold text-orange-600">{profileData.stats.followers}</span> followers
-                </div>
-                <div>
-                  <span className="font-semibold text-orange-600">{profileData.stats.following}</span> following
-                </div>
-              </div>
-
-              {/* Bio and Name */}
-              <div className="mb-4">
-                <h2 className="font-semibold">
-                  {profileData.user.first_name || 'First'} {profileData.user.last_name || 'Last'}
-                </h2>
-                {profileData.profile.bio && (
-                  <p className="text-gray-700 mt-1">{profileData.profile.bio}</p>
-                )}
-                {!profileData.profile.bio && (
-                  <p className="text-gray-500 mt-1 italic">No bio yet</p>
-                )}
-              </div>
-
-              {/* Streak Counter */}
-              <div className="bg-orange-50 rounded-lg px-4 py-2 mb-4 border border-orange-200 flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <span className="text-orange-500">🔥</span>
-                  <span className="font-semibold text-gray-800">Daily Streak:</span>
-                  {streakLoading ? (
-                    <span className="text-lg text-orange-500">Loading...</span>
-                  ) : streak > 0 ? (
-                    <span className="text-2xl font-bold text-orange-500">{streak} {streak === 1 ? 'day' : 'days'}</span>
-                  ) : (
-                    <span className="text-orange-500">Start your goal today!</span>
-                  )}
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-600">
-                    {streakLoading ? 'Calculating...' : streak > 0 
-                      ? `Hit your goal for ${streak} ${streak === 1 ? 'day' : 'days'} in a row!` 
-                      : 'Build a streak!'
-                    }
-                  </p>
-                </div>
-              </div>
-
-              {/* Nutrition Profile Summary */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-800 mb-2">Nutrition Goals</h3>
-                {!profileData.profile.daily_calories && !profileData.profile.weight ? (
-                  <div className="text-center py-4">
-                    <p className="text-gray-500 mb-3">Complete your profile to set nutrition goals</p>
-                    <button className="bg-gradient-to-r from-orange-500 to-red-500 text-white py-2 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md">
-                      Set Goals
-                    </button>
+          {/* Right Column - Mini Calendar */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="font-semibold text-gray-900 mb-4">Activity Calendar</h3>
+            
+            {/* Mini Calendar Grid */}
+            <div className="grid grid-cols-7 gap-1 text-xs">
+              {/* Days of week header */}
+              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day) => (
+                <div key={day} className="text-center text-gray-500 font-medium p-1">{day}</div>
+              ))}
+              
+              {/* Calendar days */}
+              {Array.from({ length: 35 }, (_, i) => {
+                const isActive = Math.random() > 0.7; // Random activity for demo
+                const isToday = i === 15; // Demo today
+                return (
+                  <div
+                    key={i}
+                    className={`aspect-square rounded flex items-center justify-center text-xs ${
+                      isActive 
+                        ? 'bg-orange-500 text-white' 
+                        : isToday 
+                          ? 'bg-orange-100 text-orange-600 border border-orange-300'
+                          : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    {i + 1 <= 31 ? i + 1 : ''}
                   </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">Daily Calories:</span>
-                      <span className="ml-2 font-medium">{profileData.profile.daily_calories || 'Not set'}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Daily Protein:</span>
-                      <span className="ml-2 font-medium">{profileData.profile.daily_protein || 'Not set'}g</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Current Weight:</span>
-                      <span className="ml-2 font-medium">{profileData.profile.weight || 'Not set'} lbs</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Target Weight:</span>
-                      <span className="ml-2 font-medium">{profileData.profile.target_weight || 'Not set'} lbs</span>
-                    </div>
-                  </div>
-                )}
+                );
+              })}
+            </div>
+            
+            <div className="mt-4 text-xs text-gray-500">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 bg-orange-500 rounded"></div>
+                  <span>Goal met</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 bg-gray-100 rounded border"></div>
+                  <span>No activity</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Create Post Button */}
-        <div className="px-6 py-6 border-b border-gray-200">
-          <button
-            onClick={() => setShowCreatePost(true)}
-            className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
-          >
-            <PenTool className="w-5 h-5" />
-            <span>Create a new post</span>
-          </button>
+        {/* Two Column Layout - Posts and Groups */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Posts */}
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">Posts</h2>
+              <button
+                onClick={() => setShowCreatePost(true)}
+                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-md"
+              >
+                <PenTool className="w-4 h-4" />
+                <span>New Post</span>
+              </button>
+            </div>
+            
+            {/* Posts Feed */}
+            <div className="space-y-6">
+              {posts.length > 0 ? (
+                posts.map((post) => (
+                  <div key={post.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    {/* Post Header */}
+                    <div className="flex items-center justify-between p-4">
+                      <div className="flex items-center space-x-3">
+                        {profileData?.profile?.profile_picture ? (
+                          <img
+                            src={profileData.profile.profile_picture}
+                            alt={`${user?.first_name} ${user?.last_name}`}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-semibold">
+                            {(user?.first_name && user.first_name.charAt(0)) || 'U'}
+                          </div>
+                        )}
+                        <div>
+                          <h3 className="font-semibold text-gray-900">
+                            {user?.first_name} {user?.last_name}
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            {new Date(post.created_at).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                      <MoreHorizontal className="w-5 h-5 text-gray-400 cursor-pointer hover:text-gray-600" />
+                    </div>
+
+                    {/* Post Content */}
+                    {post.content && (
+                      <div className="px-4 pb-3">
+                        <p className="text-gray-900">{post.content}</p>
+                      </div>
+                    )}
+
+                    {/* Post Image */}
+                    {post.image_url && (
+                      <div className="px-4 pb-3">
+                        <img
+                          src={post.image_url}
+                          alt="Post content"
+                          className="w-full rounded-lg object-cover max-h-96"
+                        />
+                      </div>
+                    )}
+
+                    {/* Post Actions */}
+                    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+                      <div className="flex items-center space-x-4">
+                        <button
+                          onClick={() => handleLike(post.id)}
+                          className={`flex items-center space-x-1 transition-colors ${
+                            post.is_liked ? 'text-red-600' : 'text-gray-600 hover:text-red-600'
+                          }`}
+                        >
+                          <Heart className={`w-5 h-5 ${post.is_liked ? 'fill-current' : ''}`} />
+                          {!post.hide_like_count && <span className="text-sm">{post.likes_count}</span>}
+                        </button>
+                        
+                        {post.allow_comments && (
+                          <button className="flex items-center space-x-1 text-gray-600 hover:text-blue-600 transition-colors">
+                            <MessageCircle className="w-5 h-5" />
+                            <span className="text-sm">{post.comments_count}</span>
+                          </button>
+                        )}
+                        
+                        <button className="flex items-center space-x-1 text-gray-600 hover:text-green-600 transition-colors">
+                          <Share className="w-5 h-5" />
+                        </button>
+                      </div>
+                      
+                      <button
+                        onClick={() => handleBookmark(post.id)}
+                        className={`flex items-center space-x-2 transition-colors ${
+                          post.is_bookmarked ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'
+                        }`}
+                      >
+                        <Bookmark className={`w-5 h-5 ${post.is_bookmarked ? 'fill-current' : ''}`} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                  <PenTool className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-xl font-medium mb-2 text-gray-600">No posts yet!</h3>
+                  <p className="text-gray-500 mb-4">When you share photos and videos, they'll appear here.</p>
+                  <button
+                    onClick={() => setShowCreatePost(true)}
+                    className="bg-gradient-to-r from-orange-500 to-red-500 text-white py-2 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md"
+                  >
+                    Share your first post
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column - Groups */}
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">Groups</h2>
+              <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors border border-gray-300">
+                <UserPlus className="w-4 h-4 inline mr-2" />
+                Join Group
+              </button>
+            </div>
+            
+            {/* Groups List */}
+            <div className="space-y-4">
+              {/* Sample Groups - Replace with actual data */}
+              {[
+                { name: "Fitness Enthusiasts", members: 1234, image: "🏃‍♂️" },
+                { name: "Healthy Recipes", members: 856, image: "🥗" },
+                { name: "Weight Loss Support", members: 2341, image: "⚖️" },
+                { name: "Marathon Runners", members: 567, image: "🏃‍♀️" },
+              ].map((group, index) => (
+                <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white text-xl">
+                      {group.image}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900">{group.name}</h3>
+                      <p className="text-sm text-gray-500">{group.members.toLocaleString()} members</p>
+                    </div>
+                    <button className="bg-orange-50 hover:bg-orange-100 text-orange-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
+                      View
+                    </button>
+                  </div>
+                </div>
+              ))}
+              
+              {/* No Groups Message */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+                <UserPlus className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-lg font-medium mb-2 text-gray-600">Join Groups</h3>
+                <p className="text-gray-500 mb-4">Connect with like-minded people in nutrition and fitness groups.</p>
+                <button className="bg-gradient-to-r from-orange-500 to-red-500 text-white py-2 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md">
+                  Explore Groups
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -681,365 +914,6 @@ const SocialProfile: React.FC = () => {
                 Post
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      </div>
-
-      {/* Tabs */}
-      <div className="max-w-4xl mx-auto">
-        <div className="flex border-b border-gray-200 px-6">
-          <button
-            onClick={() => setActiveTab('posts')}
-            className={`flex items-center space-x-2 px-4 py-5 border-b-2 transition-colors ${
-              activeTab === 'posts' 
-                ? 'border-gray-900 text-gray-900' 
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <Grid className="w-4 h-4" />
-            <span>POSTS</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('liked')}
-            className={`flex items-center space-x-2 px-4 py-5 border-b-2 transition-colors ${
-              activeTab === 'liked' 
-                ? 'border-gray-900 text-gray-900' 
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <Heart className="w-4 h-4" />
-            <span>LIKED</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('saved')}
-            className={`flex items-center space-x-2 px-4 py-5 border-b-2 transition-colors ${
-              activeTab === 'saved' 
-                ? 'border-gray-900 text-gray-900' 
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <Bookmark className="w-4 h-4" />
-            <span>SAVED</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Posts Feed */}
-      {activeTab === 'posts' && (
-        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="space-y-6 pt-6 px-6">
-            {posts.map((post) => (
-              <div key={post.id} className="border border-gray-200 rounded-lg">
-              {/* Post Header */}
-              <div className="flex items-center justify-between p-4 pb-3">
-                <div className="flex items-center space-x-3">
-                  {profileData?.profile?.profile_picture ? (
-                    <img
-                      src={profileData.profile.profile_picture}
-                      alt={`${user?.first_name} ${user?.last_name}`}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                      <UserCircle className="w-6 h-6 text-gray-400" />
-                    </div>
-                  )}
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
-                      {user?.first_name} {user?.last_name}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      {new Date(post.created_at).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  </div>
-                </div>
-                <MoreHorizontal className="w-5 h-5 text-gray-400 cursor-pointer hover:text-gray-600" />
-              </div>
-
-              {/* Post Content */}
-              {post.content && (
-                <div className="px-4 pb-3">
-                  <p className="text-gray-900">{post.content}</p>
-                </div>
-              )}
-
-              {/* Post Image */}
-              {post.image_url && (
-                <div className="px-4 pb-3">
-                  <img
-                    src={post.image_url}
-                    alt="Post content"
-                    className="w-full rounded-lg object-cover max-h-96"
-                  />
-                </div>
-              )}
-
-              {/* Post Actions */}
-              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={() => handleLike(post.id)}
-                    className={`flex items-center space-x-1 transition-colors ${
-                      post.is_liked ? 'text-red-600' : 'text-gray-600 hover:text-red-600'
-                    }`}
-                  >
-                    <Heart className={`w-5 h-5 ${post.is_liked ? 'fill-current' : ''}`} />
-                    {!post.hide_like_count && <span className="text-sm">{post.likes_count}</span>}
-                  </button>
-                  
-                  {post.allow_comments && (
-                    <button className="flex items-center space-x-1 text-gray-600 hover:text-blue-600 transition-colors">
-                      <MessageCircle className="w-5 h-5" />
-                      <span className="text-sm">{post.comments_count}</span>
-                    </button>
-                  )}
-                  
-                  <button className="flex items-center space-x-1 text-gray-600 hover:text-green-600 transition-colors">
-                    <Share className="w-5 h-5" />
-                  </button>
-                </div>
-                
-                <button
-                  onClick={() => handleBookmark(post.id)}
-                  className={`flex items-center space-x-2 transition-colors ${
-                    post.is_bookmarked ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'
-                  }`}
-                >
-                  <Bookmark className={`w-5 h-5 ${post.is_bookmarked ? 'fill-current' : ''}`} />
-                </button>
-              </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Liked Posts */}
-      {activeTab === 'liked' && (
-        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="space-y-6 pt-6 px-6">
-            {likedPosts.map((post) => (
-              <div key={post.id} className="border border-gray-200 rounded-lg">
-              {/* Post Header */}
-              <div className="flex items-center justify-between p-4 pb-3">
-                <div className="flex items-center space-x-3">
-                  {post.user.profile_picture ? (
-                    <img
-                      src={post.user.profile_picture}
-                      alt={`${post.user.first_name} ${post.user.last_name}`}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                      <UserCircle className="w-6 h-6 text-gray-400" />
-                    </div>
-                  )}
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
-                      {post.user.first_name} {post.user.last_name}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      {new Date(post.created_at).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  </div>
-                </div>
-                <MoreHorizontal className="w-5 h-5 text-gray-400 cursor-pointer hover:text-gray-600" />
-              </div>
-
-              {/* Post Content */}
-              {post.content && (
-                <div className="px-4 pb-3">
-                  <p className="text-gray-900">{post.content}</p>
-                </div>
-              )}
-
-              {/* Post Image */}
-              {post.image_url && (
-                <div className="px-4 pb-3">
-                  <img
-                    src={post.image_url}
-                    alt="Post content"
-                    className="w-full rounded-lg object-cover max-h-96"
-                  />
-                </div>
-              )}
-
-              {/* Post Actions */}
-              <div className="flex items-center justify-between p-4 border-t border-gray-200">
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={() => handleLike(post.id)}
-                    className={`flex items-center space-x-2 transition-colors ${
-                      post.is_liked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'
-                    }`}
-                  >
-                    <Heart className={`w-6 h-6 ${post.is_liked ? 'fill-current' : ''}`} />
-                    {!post.hide_like_count && (
-                      <span className="text-sm">{post.likes_count}</span>
-                    )}
-                  </button>
-                  <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                    <MessageCircle className="w-6 h-6" />
-                    <span className="text-sm ml-1">{post.comments_count}</span>
-                  </button>
-                  <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                    <Share className="w-6 h-6" />
-                  </button>
-                </div>
-                <button
-                  onClick={() => handleBookmark(post.id)}
-                  className={`flex items-center space-x-2 transition-colors ${
-                    post.is_bookmarked ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'
-                  }`}
-                >
-                  <Bookmark className={`w-6 h-6 ${post.is_bookmarked ? 'fill-current' : ''}`} />
-                </button>
-              </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Saved Posts */}
-      {activeTab === 'saved' && (
-        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="space-y-6 pt-6 px-6">
-            {bookmarkedPosts.map((post) => (
-              <div key={post.id} className="border border-gray-200 rounded-lg">
-              {/* Post Header */}
-              <div className="flex items-center justify-between p-4 pb-3">
-                <div className="flex items-center space-x-3">
-                  {post.user.profile_picture ? (
-                    <img
-                      src={post.user.profile_picture}
-                      alt={`${post.user.first_name} ${post.user.last_name}`}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                      <UserCircle className="w-6 h-6 text-gray-400" />
-                    </div>
-                  )}
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
-                      {post.user.first_name} {post.user.last_name}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      {new Date(post.created_at).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  </div>
-                </div>
-                <MoreHorizontal className="w-5 h-5 text-gray-400 cursor-pointer hover:text-gray-600" />
-              </div>
-
-              {/* Post Content */}
-              {post.content && (
-                <div className="px-4 pb-3">
-                  <p className="text-gray-900">{post.content}</p>
-                </div>
-              )}
-
-              {/* Post Image */}
-              {post.image_url && (
-                <div className="px-4 pb-3">
-                  <img
-                    src={post.image_url}
-                    alt="Post content"
-                    className="w-full rounded-lg object-cover max-h-96"
-                  />
-                </div>
-              )}
-
-              {/* Post Actions */}
-              <div className="flex items-center justify-between p-4 border-t border-gray-200">
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={() => handleLike(post.id)}
-                    className={`flex items-center space-x-2 transition-colors ${
-                      post.is_liked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'
-                    }`}
-                  >
-                    <Heart className={`w-6 h-6 ${post.is_liked ? 'fill-current' : ''}`} />
-                    {!post.hide_like_count && (
-                      <span className="text-sm">{post.likes_count}</span>
-                    )}
-                  </button>
-                  <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                    <MessageCircle className="w-6 h-6" />
-                    <span className="text-sm ml-1">{post.comments_count}</span>
-                  </button>
-                  <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                    <Share className="w-6 h-6" />
-                  </button>
-                </div>
-                <button
-                  onClick={() => handleBookmark(post.id)}
-                  className={`flex items-center space-x-2 transition-colors ${
-                    post.is_bookmarked ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'
-                  }`}
-                >
-                  <Bookmark className={`w-6 h-6 ${post.is_bookmarked ? 'fill-current' : ''}`} />
-                </button>
-              </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* No Posts Message */}
-      {activeTab === 'posts' && posts.length === 0 && (
-        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-12 text-center text-gray-500">
-            <PenTool className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-xl font-medium mb-2">No posts yet!</h3>
-            <p>When you share photos and videos, they'll appear on your profile.</p>
-            <button
-              onClick={() => setShowCreatePost(true)}
-              className="mt-4 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Share your first photo
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* No Liked Posts Message */}
-      {activeTab === 'liked' && likedPosts.length === 0 && (
-        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-12 text-center text-gray-500">
-            <Heart className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-xl font-medium mb-2">No liked posts yet</h3>
-            <p>Posts you like will appear here.</p>
-          </div>
-        </div>
-      )}
-
-      {/* No Saved Posts Message */}
-      {activeTab === 'saved' && bookmarkedPosts.length === 0 && (
-        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-12 text-center text-gray-500">
-            <Bookmark className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-xl font-medium mb-2">No saved posts yet</h3>
-            <p>Posts you save will appear here.</p>
           </div>
         </div>
       )}
