@@ -444,8 +444,8 @@ const SocialProfile: React.FC = () => {
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
 
         {/* Profile Header */}
-        <div className="border-b border-gray-200 pb-8 pt-8">
-          <div className="flex items-start space-x-8 px-6">
+        <div className="border-b border-gray-200 pb-8 pt-8 px-6">
+          <div className="flex items-start space-x-8">
             {/* Profile Picture */}
             <div className="relative">
               <div className="w-32 h-32 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
