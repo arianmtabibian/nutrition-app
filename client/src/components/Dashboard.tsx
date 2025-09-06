@@ -8,9 +8,9 @@ import { profileAPI } from '../services/api';
 import Overview from './Overview';
 import SocialProfile from './SocialProfile';
 import Feed from './Feed';
-import Diary from './Diary';
 import Inputs from './Inputs';
 import Groups from './Groups';
+import MealPlan from './MealPlan';
 
 import LoadingSpinner from './ui/LoadingSpinner';
 
@@ -106,8 +106,8 @@ const Dashboard: React.FC = () => {
   const tabs = [
     { id: 'feed', name: 'Feed', icon: Home, path: '/dashboard/feed' },
     { id: 'overview', name: 'Overview', icon: BarChart3, path: '/dashboard/overview' },
-    { id: 'diary', name: 'Diary', icon: Calendar, path: '/dashboard/diary' },
     { id: 'groups', name: 'Groups', icon: User, path: '/dashboard/groups' },
+    { id: 'mealplan', name: 'Meal Plan', icon: Utensils, path: '/dashboard/mealplan' },
     { id: 'profile', name: 'Profile', icon: User, path: '/dashboard/profile' },
   ];
 
@@ -384,7 +384,7 @@ const Dashboard: React.FC = () => {
           <Route path="/overview" element={<Overview />} />
           <Route path="/feed" element={<Feed />} />
           <Route path="/inputs" element={<Inputs />} />
-          <Route path="/diary" element={<Diary />} />
+          <Route path="/mealplan" element={<MealPlan />} />
           <Route path="/groups" element={<Groups />} />
           <Route path="/profile" element={<SocialProfile />} />
           {/* Catch-all route for any invalid dashboard paths */}

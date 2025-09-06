@@ -488,7 +488,7 @@ const Feed: React.FC = () => {
                 
                 <button 
                   onClick={() => setShowFollowSearch(true)}
-                  className="w-full bg-orange-600 text-white py-2.5 px-4 rounded-xl hover:bg-orange-700 transition-colors font-medium shadow-md"
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-2.5 px-4 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
                   Find People
                 </button>
@@ -651,7 +651,7 @@ const Feed: React.FC = () => {
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <button
                       onClick={() => setShowFollowSearch(true)}
-                      className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+                      className="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:scale-105"
                     >
                       Find Friends
                     </button>
@@ -777,7 +777,7 @@ const Feed: React.FC = () => {
                           <button
                             onClick={() => handleAddComment(post.id)}
                             disabled={!newComments[post.id]?.trim()}
-                            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
                           >
                             Post
                           </button>
@@ -865,7 +865,7 @@ const Feed: React.FC = () => {
                 </div>
               </div>
               
-              <button className="w-full mt-6 bg-orange-600 text-white py-2.5 px-4 rounded-xl hover:bg-orange-700 transition-colors font-medium shadow-md">
+              <button className="w-full mt-6 bg-gradient-to-r from-orange-500 to-orange-600 text-white py-2.5 px-4 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105">
                 Create Group
               </button>
             </div>
@@ -980,7 +980,7 @@ const Feed: React.FC = () => {
                   <button
                     onClick={handleCreatePost}
                     disabled={!newPost.content.trim() && !newPost.imageFile}
-                    className="px-6 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-md hover:shadow-lg"
+                    className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
                   >
                     Share Post
                   </button>
@@ -1038,10 +1038,10 @@ const Feed: React.FC = () => {
                       </div>
                       <button
                         onClick={() => handleFollow(user.id)}
-                        className={`px-4 py-2 rounded-xl font-medium transition-colors ${
+                        className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
                           user.is_following
                             ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                            : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 shadow-md hover:shadow-lg'
                         }`}
                       >
                         {user.is_following ? 'Following' : 'Follow'}
