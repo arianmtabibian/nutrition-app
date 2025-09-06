@@ -368,8 +368,9 @@ const SocialProfile: React.FC = () => {
       loadPosts(); // Reload posts
     } catch (error) {
       console.error('Error creating post:', error);
-      if (error.response) {
-        console.error('Response error:', error.response.status, error.response.data);
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as any;
+        console.error('Response error:', axiosError.response?.status, axiosError.response?.data);
       }
     }
   };
