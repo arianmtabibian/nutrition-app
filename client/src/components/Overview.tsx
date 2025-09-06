@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addDays, subDays, isToday } from 'date-fns';
 import { Target, Flame, Beef, TrendingUp, Calendar, Zap, Plus, Utensils, Clock, Edit2, Save, X, Loader2, Heart, ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
 import { profileAPI, mealsAPI, diaryAPI, favoritesAPI } from '../services/api';
@@ -143,8 +144,8 @@ const WeightAnalysis: React.FC<{
       </div>
 
       {/* Progress Analysis */}
-      <div className="bg-white rounded-lg p-4 border border-blue-200">
-        <h4 className="font-semibold text-blue-900 mb-3">Weekly Progress Analysis</h4>
+      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <h4 className="font-semibold text-gray-700 mb-3">Weekly Progress Analysis</h4>
         
         {weeklyData.length > 0 ? (
           <div className="space-y-3">
@@ -208,6 +209,7 @@ const safeFormatDate = (dateString: string, formatStr: string) => {
 };
 
 const Overview: React.FC = () => {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [todayNutrition, setTodayNutrition] = useState<DailyNutrition | null>(null);
   const [todayMeals, setTodayMeals] = useState<MealData[]>([]);
@@ -640,18 +642,7 @@ const Overview: React.FC = () => {
 
   // Remove aggressive auto-refresh - only refresh on user actions or events
 
-  // Refresh data when the tab becomes visible (user switches back to this tab)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        console.log('Tab became visible, refreshing data...');
-        loadOverviewData();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
+  // REMOVED: Aggressive auto-refresh on tab visibility to prevent refresh loops
 
   // Listen for storage events to refresh when meals are added from other tabs
   useEffect(() => {
@@ -730,7 +721,7 @@ const Overview: React.FC = () => {
         <h3 className="text-lg font-medium text-gray-900 mb-2">No Profile Set</h3>
         <p className="text-gray-500 mb-4">Set your daily nutrition goals in the Profile tab to see your overview.</p>
         <button
-          onClick={() => window.location.href = '/dashboard/profile'}
+          onClick={() => navigate('/dashboard/profile')}
           className="btn-primary"
         >
           Set Goals
@@ -771,7 +762,7 @@ const Overview: React.FC = () => {
           <p className="text-gray-500 mb-4">Start tracking your nutrition by adding your first meal of the day.</p>
           <div className="flex justify-center space-x-4">
             <button
-              onClick={() => window.location.href = '/dashboard/inputs'}
+              onClick={() => navigate('/dashboard/inputs')}
               className="btn-primary"
             >
               Add Meal
@@ -1140,7 +1131,7 @@ const Overview: React.FC = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button
-            onClick={() => window.location.href = '/dashboard/inputs'}
+            onClick={() => navigate('/dashboard/inputs')}
             className="flex items-center space-x-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-all duration-200 group"
           >
             <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -1153,7 +1144,7 @@ const Overview: React.FC = () => {
           </button>
 
           <button
-            onClick={() => window.location.href = '/dashboard/profile'}
+            onClick={() => navigate('/dashboard/profile')}
             className="flex items-center space-x-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-all duration-200 group"
           >
             <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">

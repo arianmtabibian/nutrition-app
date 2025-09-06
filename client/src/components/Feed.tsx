@@ -102,7 +102,7 @@ const Feed: React.FC = () => {
       setMonthData(response.data);
     } catch (error) {
       console.error('📅 Feed Calendar: Error loading month data:', error);
-      setMonthData({ days: [] });
+      setMonthData(null);
     }
   }, [currentDate]);
 
@@ -113,22 +113,36 @@ const Feed: React.FC = () => {
     try {
       console.log('📊 Feed: Loading sidebar data...');
       
-      // Load profile data using the same API as Overview
+      // Load profile data using the same API as Overview - FIXED
       const profileResponse = await profileAPI.get();
-      if (profileResponse.data.profile) {
+      console.log('📊 Feed: Full profile response:', profileResponse.data);
+      
+      if (profileResponse.data) {
         setProfileData(profileResponse.data);
-        console.log('📊 Feed: Profile data loaded:', profileResponse.data.profile);
+        console.log('📊 Feed: Profile data set:', {
+          posts: profileResponse.data.profile?.posts_count,
+          followers: profileResponse.data.profile?.followers_count,
+          following: profileResponse.data.profile?.following_count
+        });
       }
 
-      // Load today's nutrition using the same method as Overview
+      // Load today's nutrition using EXACT same method as Overview - FIXED
       const today = new Date().toISOString().split('T')[0];
-      const mealsResponse = await mealsAPI.getByDate(today);
-      console.log('📊 Feed: Meals response:', mealsResponse.data);
+      console.log('📊 Feed: Loading meals for date:', today);
       
-      if (mealsResponse.data) {
-        // Calculate totals from meals (same as Overview)
+      const mealsResponse = await mealsAPI.getByDate(today);
+      console.log('📊 Feed: Raw meals response:', mealsResponse);
+      console.log('📊 Feed: Meals data:', mealsResponse.data);
+      
+      if (mealsResponse.data && mealsResponse.data.meals) {
+        // Calculate totals from meals (EXACT same as Overview)
         const meals = mealsResponse.data.meals || [];
-        const totalCalories = meals.reduce((sum: number, meal: any) => sum + (meal.calories || 0), 0);
+        console.log('📊 Feed: Processing meals:', meals.length, 'meals found');
+        
+        const totalCalories = meals.reduce((sum: number, meal: any) => {
+          console.log('📊 Feed: Meal calories:', meal.calories);
+          return sum + (meal.calories || 0);
+        }, 0);
         const totalProtein = meals.reduce((sum: number, meal: any) => sum + (meal.protein || 0), 0);
         const totalCarbs = meals.reduce((sum: number, meal: any) => sum + (meal.carbs || 0), 0);
         const totalFat = meals.reduce((sum: number, meal: any) => sum + (meal.fat || 0), 0);
@@ -143,15 +157,34 @@ const Feed: React.FC = () => {
           proteinGoal: profileResponse.data.profile?.daily_protein || 150,
         };
         
-        console.log('📊 Feed: Calculated nutrition data:', nutritionData);
+        console.log('📊 Feed: Final calculated nutrition data:', nutritionData);
         setTodayNutrition(nutritionData);
+      } else {
+        console.log('📊 Feed: No meals data found, setting empty nutrition');
+        setTodayNutrition({
+          totalCalories: 0,
+          totalProtein: 0,
+          totalCarbs: 0,
+          totalFat: 0,
+          calorieGoal: profileResponse.data.profile?.daily_calories || 2000,
+          proteinGoal: profileResponse.data.profile?.daily_protein || 150,
+        });
       }
 
-      // Load month data for calendar
+      // Load month data for calendar - FIXED
       await loadMonthData();
       
     } catch (error) {
       console.error('📊 Feed: Error loading sidebar data:', error);
+      // Set default nutrition data on error
+      setTodayNutrition({
+        totalCalories: 0,
+        totalProtein: 0,
+        totalCarbs: 0,
+        totalFat: 0,
+        calorieGoal: 2000,
+        proteinGoal: 150,
+      });
     } finally {
       setSidebarLoading(false);
     }
@@ -473,15 +506,15 @@ const Feed: React.FC = () => {
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-4 mb-6">
                   <div className="text-center">
-                    <div className="text-xl font-bold text-blue-600">12</div>
+                    <div className="text-xl font-bold text-blue-600">{profileData?.profile?.posts_count || 0}</div>
                     <div className="text-xs text-gray-500">Posts</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold text-green-600">48</div>
+                    <div className="text-xl font-bold text-green-600">{profileData?.profile?.following_count || 0}</div>
                     <div className="text-xs text-gray-500">Following</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold text-purple-600">124</div>
+                    <div className="text-xl font-bold text-purple-600">{profileData?.profile?.followers_count || 0}</div>
                     <div className="text-xs text-gray-500">Followers</div>
                   </div>
                 </div>
@@ -533,12 +566,8 @@ const Feed: React.FC = () => {
                     ></div>
                   </div>
                   
-                  {/* Macros */}
-                  <div className="grid grid-cols-4 gap-2">
-                    <div className="text-center bg-green-50 rounded-lg p-2">
-                      <div className="text-green-600 font-semibold text-sm">{todayNutrition.totalProtein || 0}g</div>
-                      <div className="text-gray-500 text-xs">Protein</div>
-                    </div>
+                  {/* Macros - REMOVED PROTEIN RECTANGLE */}
+                  <div className="grid grid-cols-3 gap-2">
                     <div className="text-center bg-yellow-50 rounded-lg p-2">
                       <div className="text-yellow-600 font-semibold text-sm">{todayNutrition.totalCarbs || 0}g</div>
                       <div className="text-gray-500 text-xs">Carbs</div>
@@ -548,7 +577,7 @@ const Feed: React.FC = () => {
                       <div className="text-gray-500 text-xs">Fat</div>
                     </div>
                     <div className="text-center bg-blue-50 rounded-lg p-2">
-                      <div className="text-blue-600 font-semibold text-sm">{Math.round(((todayNutrition.totalProtein || 0) / (todayNutrition.proteinGoal || 150)) * 100)}%</div>
+                      <div className="text-blue-600 font-semibold text-sm">{Math.round(((todayNutrition.totalCalories || 0) / (todayNutrition.calorieGoal || 2000)) * 100)}%</div>
                       <div className="text-gray-500 text-xs">Goal</div>
                     </div>
                   </div>
