@@ -113,3 +113,28 @@ export const favoritesAPI = {
   update: (id: number, data: any) => api.put(`/api/favorites/${id}`, data),
   delete: (id: number) => api.delete(`/api/favorites/${id}`),
 };
+
+export const socialAPI = {
+  // Posts
+  createPost: (formData: FormData) => {
+    return api.post('/api/social/posts', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  getUserPosts: (userId: number) => api.get(`/api/social/posts/${userId}`),
+  getFeed: () => api.get('/api/social/feed'),
+  likePost: (postId: number) => api.post(`/api/social/posts/${postId}/like`),
+  bookmarkPost: (postId: number) => api.post(`/api/social/posts/${postId}/favorite`),
+  
+  // Profile
+  getProfile: (userId: number) => api.get(`/api/social/profile/${userId}`),
+  getLikedPosts: (userId: number) => api.get(`/api/social/profile/${userId}/liked-posts`),
+  getBookmarkedPosts: (userId: number) => api.get(`/api/social/profile/${userId}/favorited-posts`),
+  
+  // Comments
+  getComments: (postId: number) => api.get(`/api/social/posts/${postId}/comments`),
+  addComment: (postId: number, content: string) => 
+    api.post(`/api/social/posts/${postId}/comments`, { content }),
+};

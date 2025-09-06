@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Heart, MessageCircle, Share, MoreHorizontal, PenTool, Edit3, Settings, Grid, Bookmark, UserPlus, UserCheck, UserCircle, Image, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { diaryAPI, mealsAPI, profileAPI } from '../services/api';
+import { diaryAPI, mealsAPI, profileAPI, socialAPI } from '../services/api';
 
 interface Post {
   id: number;
@@ -251,15 +251,10 @@ const SocialProfile: React.FC = () => {
 
   const loadPosts = async (retryCount = 0) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts/${user?.id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setPosts(data.posts);
-      }
+      if (!user?.id) return;
+      
+      const response = await socialAPI.getUserPosts(user.id);
+      setPosts(response.data.posts);
     } catch (error) {
       console.error('Error loading posts:', error);
       
@@ -276,15 +271,10 @@ const SocialProfile: React.FC = () => {
 
   const loadLikedPosts = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/profile/${user?.id}/liked-posts`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setLikedPosts(data.posts);
-      }
+      if (!user?.id) return;
+      
+      const response = await socialAPI.getLikedPosts(user.id);
+      setLikedPosts(response.data.posts);
     } catch (error) {
       console.error('Error loading liked posts:', error);
     }
@@ -292,15 +282,10 @@ const SocialProfile: React.FC = () => {
 
   const loadBookmarkedPosts = async () => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/profile/${user?.id}/favorited-posts`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setBookmarkedPosts(data.posts);
-      }
+      if (!user?.id) return;
+      
+      const response = await socialAPI.getBookmarkedPosts(user.id);
+      setBookmarkedPosts(response.data.posts);
     } catch (error) {
       console.error('Error loading bookmarked posts:', error);
     }
@@ -308,25 +293,18 @@ const SocialProfile: React.FC = () => {
 
   const handleLike = async (postId: number) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts/${postId}/like`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      if (response.ok) {
-        // Update local state
-        setPosts(posts.map(post => 
-          post.id === postId 
-            ? { 
-                ...post, 
-                is_liked: !post.is_liked,
-                likes_count: post.is_liked ? post.likes_count - 1 : post.likes_count + 1
-              }
-            : post
-        ));
-      }
+      await socialAPI.likePost(postId);
+      
+      // Update local state
+      setPosts(posts.map(post => 
+        post.id === postId 
+          ? { 
+              ...post, 
+              is_liked: !post.is_liked,
+              likes_count: post.is_liked ? post.likes_count - 1 : post.likes_count + 1
+            }
+          : post
+      ));
     } catch (error) {
       console.error('Error liking post:', error);
     }
@@ -334,31 +312,24 @@ const SocialProfile: React.FC = () => {
 
   const handleBookmark = async (postId: number) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts/${postId}/favorite`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      if (response.ok) {
-        // Update local state in all relevant arrays
-        setPosts(posts.map(post => 
-          post.id === postId 
-            ? { ...post, is_bookmarked: !post.is_bookmarked }
-            : post
-        ));
-        setLikedPosts(likedPosts.map(post => 
-          post.id === postId 
-            ? { ...post, is_bookmarked: !post.is_bookmarked }
-            : post
-        ));
-        setBookmarkedPosts(bookmarkedPosts.map(post => 
-          post.id === postId 
-            ? { ...post, is_bookmarked: !post.is_bookmarked }
-            : post
-        ));
-      }
+      await socialAPI.bookmarkPost(postId);
+      
+      // Update local state in all relevant arrays
+      setPosts(posts.map(post => 
+        post.id === postId 
+          ? { ...post, is_bookmarked: !post.is_bookmarked }
+          : post
+      ));
+      setLikedPosts(likedPosts.map(post => 
+        post.id === postId 
+          ? { ...post, is_bookmarked: !post.is_bookmarked }
+          : post
+      ));
+      setBookmarkedPosts(bookmarkedPosts.map(post => 
+        post.id === postId 
+          ? { ...post, is_bookmarked: !post.is_bookmarked }
+          : post
+      ));
     } catch (error) {
       console.error('Error bookmarking post:', error);
     }
@@ -379,35 +350,27 @@ const SocialProfile: React.FC = () => {
         formData.append('mealData', JSON.stringify(newPost.mealData));
       }
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: formData
-      });
+      const response = await socialAPI.createPost(formData);
       
-      if (response.ok) {
-        const result = await response.json();
-        setNewPost({ 
-          content: '', 
-          imageFile: null, 
-          mealData: null,
-          allowComments: true,
-          hideLikeCount: false
-        });
-        setShowCreatePost(false);
-        
-        // Trigger a custom event to update the feed
-        window.dispatchEvent(new CustomEvent('postCreated', { detail: result }));
-        
-        loadPosts(); // Reload posts
-      } else {
-        const error = await response.json();
-        console.error('Failed to create post:', error);
-      }
+      const result = response.data;
+      setNewPost({ 
+        content: '', 
+        imageFile: null, 
+        mealData: null,
+        allowComments: true,
+        hideLikeCount: false
+      });
+      setShowCreatePost(false);
+      
+      // Trigger a custom event to update the feed
+      window.dispatchEvent(new CustomEvent('postCreated', { detail: result }));
+      
+      loadPosts(); // Reload posts
     } catch (error) {
       console.error('Error creating post:', error);
+      if (error.response) {
+        console.error('Response error:', error.response.status, error.response.data);
+      }
     }
   };
 
@@ -768,7 +731,7 @@ const SocialProfile: React.FC = () => {
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="space-y-6 pt-6 px-6">
             {posts.map((post) => (
-            <div key={post.id} className="border border-gray-200 rounded-lg">
+              <div key={post.id} className="border border-gray-200 rounded-lg">
               {/* Post Header */}
               <div className="flex items-center justify-between p-4 pb-3">
                 <div className="flex items-center space-x-3">
@@ -852,7 +815,7 @@ const SocialProfile: React.FC = () => {
                   <Bookmark className={`w-5 h-5 ${post.is_bookmarked ? 'fill-current' : ''}`} />
                 </button>
               </div>
-            </div>
+              </div>
             ))}
           </div>
         </div>
@@ -863,7 +826,7 @@ const SocialProfile: React.FC = () => {
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="space-y-6 pt-6 px-6">
             {likedPosts.map((post) => (
-            <div key={post.id} className="border border-gray-200 rounded-lg">
+              <div key={post.id} className="border border-gray-200 rounded-lg">
               {/* Post Header */}
               <div className="flex items-center justify-between p-4 pb-3">
                 <div className="flex items-center space-x-3">
@@ -944,7 +907,7 @@ const SocialProfile: React.FC = () => {
                   <Bookmark className={`w-6 h-6 ${post.is_bookmarked ? 'fill-current' : ''}`} />
                 </button>
               </div>
-            </div>
+              </div>
             ))}
           </div>
         </div>
@@ -955,7 +918,7 @@ const SocialProfile: React.FC = () => {
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="space-y-6 pt-6 px-6">
             {bookmarkedPosts.map((post) => (
-            <div key={post.id} className="border border-gray-200 rounded-lg">
+              <div key={post.id} className="border border-gray-200 rounded-lg">
               {/* Post Header */}
               <div className="flex items-center justify-between p-4 pb-3">
                 <div className="flex items-center space-x-3">
@@ -1036,7 +999,7 @@ const SocialProfile: React.FC = () => {
                   <Bookmark className={`w-6 h-6 ${post.is_bookmarked ? 'fill-current' : ''}`} />
                 </button>
               </div>
-            </div>
+              </div>
             ))}
           </div>
         </div>
