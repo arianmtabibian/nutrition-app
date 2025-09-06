@@ -1037,7 +1037,7 @@ const SocialProfile: React.FC = () => {
       {activeTab === 'posts' && posts.length === 0 && (
         <div className="p-12 text-center text-gray-500 mx-6">
           <PenTool className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-xl font-medium mb-2">No posts yet</h3>
+          <h3 className="text-xl font-medium mb-2">No posts yet!</h3>
           <p>When you share photos and videos, they'll appear on your profile.</p>
           <button
             onClick={() => setShowCreatePost(true)}
