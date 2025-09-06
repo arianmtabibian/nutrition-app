@@ -465,7 +465,25 @@ const SocialProfile: React.FC = () => {
             {/* For now, we'll hide it since this is typically the user's own profile */}
           </div>
           
-          <p className="text-gray-600 mb-2">@{profileData.user.username}</p>
+          <p className="text-gray-600 mb-4">@{profileData.user.username}</p>
+          
+          {/* Posts, Followers, Following Stats */}
+          <div className="flex justify-center items-center space-x-8 mb-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900">{profileData.stats.posts}</div>
+              <div className="text-sm text-gray-600">Posts</div>
+            </div>
+            <div className="w-px h-8 bg-gray-300"></div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900">{profileData.stats.followers}</div>
+              <div className="text-sm text-gray-600">Followers</div>
+            </div>
+            <div className="w-px h-8 bg-gray-300"></div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900">{profileData.stats.following}</div>
+              <div className="text-sm text-gray-600">Following</div>
+            </div>
+          </div>
           
           {profileData.profile.bio ? (
             <p className="text-gray-700 max-w-md mx-auto">{profileData.profile.bio}</p>
@@ -476,52 +494,58 @@ const SocialProfile: React.FC = () => {
 
         {/* Stats and Progress Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* Left Column - Stats */}
+          {/* Left Column - Health Metrics */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Activity Stats</h3>
+            <h3 className="font-semibold text-gray-900 mb-4">Health Metrics</h3>
             
-            {/* Posts, Followers, Following */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">{profileData.stats.posts}</div>
-                <div className="text-sm text-gray-600">Posts</div>
+            {/* Health Stats Grid */}
+            <div className="space-y-4 mb-6">
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Current Weight</span>
+                <span className="text-lg font-bold text-gray-900">
+                  {profileData.profile.weight ? `${profileData.profile.weight} lbs` : 'Not set'}
+                </span>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">{profileData.stats.followers}</div>
-                <div className="text-sm text-gray-600">Followers</div>
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Target Weight</span>
+                <span className="text-lg font-bold text-gray-900">
+                  {profileData.profile.target_weight ? `${profileData.profile.target_weight} lbs` : 'Not set'}
+                </span>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">{profileData.stats.following}</div>
-                <div className="text-sm text-gray-600">Following</div>
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Height</span>
+                <span className="text-lg font-bold text-gray-900">
+                  {profileData.profile.height ? `${Math.floor(profileData.profile.height / 12)}'${profileData.profile.height % 12}"` : 'Not set'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Activity Level</span>
+                <span className="text-lg font-bold text-gray-900 capitalize">
+                  {profileData.profile.activity_level || 'Not set'}
+                </span>
               </div>
             </div>
 
-            {/* Daily Streak - Extended */}
-            <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-xl p-8 flex-1 shadow-lg">
+            {/* Daily Streak - Simplified */}
+            <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-xl p-6 flex-1">
               <div className="text-center">
-                <div className="flex items-center justify-center space-x-3 mb-6">
-                  <span className="text-white text-4xl">🔥</span>
-                  <span className="font-bold text-white text-2xl">Daily Streak</span>
+                <div className="flex items-center justify-center space-x-2 mb-3">
+                  <span className="text-white text-2xl">🔥</span>
+                  <span className="font-semibold text-white text-lg">Daily Streak</span>
                 </div>
                 {streakLoading ? (
-                  <div className="text-white text-xl">Loading...</div>
+                  <div className="text-white">Loading...</div>
                 ) : streak > 0 ? (
                   <div>
-                    <div className="text-6xl font-black text-white mb-4">{streak}</div>
-                    <div className="text-xl font-semibold text-orange-100 mb-3">
+                    <div className="text-4xl font-bold text-white mb-2">{streak}</div>
+                    <div className="text-sm font-medium text-orange-100">
                       {streak === 1 ? 'Day' : 'Days'} Strong!
                     </div>
-                    <p className="text-orange-100 text-sm leading-relaxed">
-                      Amazing consistency! Keep tracking your nutrition to maintain this streak.
-                    </p>
                   </div>
                 ) : (
                   <div>
-                    <div className="text-5xl font-black text-white mb-4">0</div>
-                    <div className="text-xl font-semibold text-orange-100 mb-3">Start Today!</div>
-                    <p className="text-orange-100 text-sm leading-relaxed">
-                      Begin your nutrition journey and build an impressive streak!
-                    </p>
+                    <div className="text-3xl font-bold text-white mb-2">0</div>
+                    <div className="text-sm font-medium text-orange-100">Start Today!</div>
                   </div>
                 )}
               </div>

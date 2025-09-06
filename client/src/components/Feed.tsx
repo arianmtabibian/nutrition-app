@@ -723,10 +723,12 @@ const Feed: React.FC = () => {
                   <div className="flex items-center justify-between p-4 border-b border-gray-200">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white text-sm font-semibold">
-                        {post.user.first_name?.charAt(0) || post.user.username?.charAt(0)}
+                        {post.user?.first_name?.charAt(0) || post.user?.username?.charAt(0) || 'U'}
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-900">{post.user.first_name} {post.user.last_name}</div>
+                        <div className="font-semibold text-gray-900">
+                          {post.user?.first_name || 'Unknown'} {post.user?.last_name || 'User'}
+                        </div>
                         <div className="text-sm text-gray-500">{formatPostDate(post.created_at)}</div>
                       </div>
                     </div>
@@ -841,11 +843,13 @@ const Feed: React.FC = () => {
                         {comments[post.id]?.map(comment => (
                           <div key={comment.id} className="flex items-start space-x-3">
                             <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white text-sm font-semibold">
-                              {comment.user.first_name?.charAt(0) || comment.user.username?.charAt(0)}
+                              {comment.user?.first_name?.charAt(0) || comment.user?.username?.charAt(0) || 'U'}
                             </div>
                             <div className="flex-1">
                               <div className="bg-white rounded-lg p-3">
-                                <div className="font-semibold text-sm text-gray-900">{comment.user.first_name} {comment.user.last_name}</div>
+                                <div className="font-semibold text-sm text-gray-900">
+                                  {comment.user?.first_name || 'Unknown'} {comment.user?.last_name || 'User'}
+                                </div>
                                 <div className="text-gray-700">{comment.content}</div>
                               </div>
                               <div className="text-xs text-gray-500 mt-1">{formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}</div>
@@ -1081,10 +1085,12 @@ const Feed: React.FC = () => {
                     <div key={user.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition-colors">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
-                          {user.first_name?.charAt(0) || user.username?.charAt(0)}
+                          {user?.first_name?.charAt(0) || user?.username?.charAt(0) || 'U'}
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900">{user.first_name} {user.last_name}</div>
+                          <div className="font-medium text-gray-900">
+                            {user?.first_name || 'Unknown'} {user?.last_name || 'User'}
+                          </div>
                           <div className="text-sm text-gray-500">@{user.username}</div>
                         </div>
                       </div>

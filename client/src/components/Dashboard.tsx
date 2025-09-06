@@ -291,22 +291,22 @@ const Dashboard: React.FC = () => {
               {/* Inline Search Bar */}
               <div className="flex items-center">
               {showSearchDropdown ? (
-                <div className="flex items-center bg-white border-2 border-gray-200 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 inline-search-bar">
+                <div className="flex items-center bg-white border border-gray-300 rounded-lg transition-all duration-200 inline-search-bar">
                   {/* Search Filter Dropdown */}
                   <div className="relative">
                     <select
                       value={searchFilter}
                       onChange={(e) => setSearchFilter(e.target.value)}
-                      className="appearance-none bg-gradient-to-r from-gray-50 to-gray-100 hover:from-orange-50 hover:to-orange-100 border-0 rounded-l-xl px-4 py-3 pr-10 text-sm font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-orange-50 transition-all duration-200 cursor-pointer"
+                      className="appearance-none bg-white hover:bg-gray-50 border-0 rounded-l-lg px-4 py-2 pr-10 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-200 cursor-pointer"
                       style={{
                         backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
                         backgroundPosition: 'right 0.5rem center',
                         backgroundRepeat: 'no-repeat',
-                        backgroundSize: '1.5em 1.5em'
+                        backgroundSize: '1.2em 1.2em'
                       }}
                     >
-                      <option value="Friends" className="bg-white text-gray-700 py-2">👥 Friends</option>
-                      <option value="Groups" className="bg-white text-gray-700 py-2">👫 Groups</option>
+                      <option value="Friends" className="bg-white text-gray-700 py-3 px-4 hover:bg-gray-50">Friends</option>
+                      <option value="Groups" className="bg-white text-gray-700 py-3 px-4 hover:bg-gray-50">Groups</option>
                     </select>
                   </div>
                   
@@ -316,7 +316,7 @@ const Dashboard: React.FC = () => {
                     placeholder={`Search ${searchFilter.toLowerCase()}...`}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="border-0 border-l-2 border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-300 text-sm w-64 bg-white placeholder-gray-500"
+                    className="border-0 border-l border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm w-64 bg-white placeholder-gray-500"
                     autoFocus
                   />
                   
@@ -326,9 +326,9 @@ const Dashboard: React.FC = () => {
                       setShowSearchDropdown(false);
                       setSearchQuery('');
                     }}
-                    className="p-3 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 rounded-r-xl transition-all duration-200 border-l-2 border-gray-200 group"
+                    className="p-2 hover:bg-gray-100 rounded-r-lg transition-colors border-l border-gray-300"
                   >
-                    <X className="h-4 w-4 text-gray-400 group-hover:text-red-500 transition-colors" />
+                    <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
                   </button>
                 </div>
               ) : (
