@@ -102,113 +102,41 @@ const Feed: React.FC = () => {
       setMonthData(response.data);
     } catch (error) {
       console.error('📅 Feed Calendar: Error loading month data:', error);
-      // Set empty data structure as fallback
-      setMonthData({
-        year: currentDate.getFullYear(),
-        month: currentDate.getMonth() + 1,
-        days: []
-      });
+      setMonthData({ days: [] });
     }
   }, [currentDate]);
 
-  const loadFeed = useCallback(async () => {
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/feed`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setPosts(data.posts);
-      }
-    } catch (error) {
-      console.error('Error loading feed:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   const loadSidebarData = useCallback(async () => {
+    if (!user) return;
+    
+    setSidebarLoading(true);
     try {
-      setSidebarLoading(true);
-      console.log('Loading sidebar data...');
-      
-      let profileDataForGoals = null;
-      
-      // Load profile data with stats
-      const profileResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/profile/${user?.id}`, {
+      // Load profile data
+      const profileResponse = await fetch('/api/profile/me', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data')}`
         }
       });
-      
-      console.log('Profile response status:', profileResponse.status);
       
       if (profileResponse.ok) {
-        profileDataForGoals = await profileResponse.json();
-        console.log('Profile data received:', profileDataForGoals);
-        setProfileData(profileDataForGoals);
-      } else {
-        console.error('Profile API error:', profileResponse.status, await profileResponse.text());
+        const profileData = await profileResponse.json();
+        setProfileData(profileData);
       }
-      
-      // Load today's nutrition data
-      const today = format(new Date(), 'yyyy-MM-dd');
-      console.log('Loading meals for date:', today);
-      
-      const mealsResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/meals/${today}`, {
+
+      // Load today's nutrition
+      const today = new Date().toISOString().split('T')[0];
+      const nutritionResponse = await fetch(`/api/meals/date/${today}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data')}`
         }
       });
       
-      console.log('Meals response status:', mealsResponse.status);
-      
-      if (mealsResponse.ok) {
-        const mealsData = await mealsResponse.json();
-        console.log('Meals data received:', mealsData);
-        const meals = mealsData.meals || [];
-        
-        // Calculate totals
-        const totalCalories = meals.reduce((sum: number, meal: any) => sum + (meal.calories || 0), 0);
-        const totalProtein = meals.reduce((sum: number, meal: any) => sum + (meal.protein || 0), 0);
-        
-        console.log('Calculated totals:', { totalCalories, totalProtein });
-        
-        // Get goals from profile data
-        let calorieGoal = 2000;
-        let proteinGoal = 150;
-        
-        if (profileDataForGoals?.profile) {
-          calorieGoal = profileDataForGoals.profile.daily_calories || 2000;
-          proteinGoal = profileDataForGoals.profile.daily_protein || 150;
-        }
-        
-        const calorieDeficit = calorieGoal - totalCalories;
-        
-        console.log('Final nutrition data:', { totalCalories, totalProtein, calorieGoal, proteinGoal, calorieDeficit });
-        
-        setTodayNutrition({
-          totalCalories,
-          totalProtein,
-          calorieGoal,
-          proteinGoal,
-          calorieDeficit
-        });
-      } else {
-        console.error('Meals API error:', mealsResponse.status, await mealsResponse.text());
-        // Set default nutrition data if no meals
-        setTodayNutrition({
-          totalCalories: 0,
-          totalProtein: 0,
-          calorieGoal: profileDataForGoals?.profile?.daily_calories || 2000,
-          proteinGoal: profileDataForGoals?.profile?.daily_protein || 150,
-          calorieDeficit: profileDataForGoals?.profile?.daily_calories || 2000
-        });
+      if (nutritionResponse.ok) {
+        const nutritionData = await nutritionResponse.json();
+        setTodayNutrition(nutritionData);
       }
-      
-      // Load calendar data for current month
+
+      // Load month data for calendar
       await loadMonthData();
       
     } catch (error) {
@@ -216,103 +144,41 @@ const Feed: React.FC = () => {
     } finally {
       setSidebarLoading(false);
     }
-  }, [user?.id, currentDate, loadMonthData]);
+  }, [user, loadMonthData]);
 
-  useEffect(() => {
-    if (user) {
-      loadFeed();
-      loadSidebarData();
-      loadMonthData(); // Ensure calendar loads initially
+  const loadPosts = async () => {
+    try {
+      const response = await fetch('/api/social/feed', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data')}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setPosts(data);
+      }
+    } catch (error) {
+      console.error('Error loading posts:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [user, loadFeed, loadSidebarData, loadMonthData]);
-
-  // Reload month data when current date changes (for calendar navigation)
-  useEffect(() => {
-    if (user) {
-      console.log('📅 Feed: Current date changed, reloading month data');
-      loadMonthData();
-    }
-  }, [currentDate, loadMonthData, user]);
-
-  // Listen for post creation events to auto-update feed and sidebar
-  useEffect(() => {
-    const handlePostCreated = () => {
-      console.log('Post created event received, refreshing feed and sidebar');
-      loadFeed();
-      loadSidebarData(); // Also refresh sidebar to update post count
-    };
-
-    window.addEventListener('postCreated', handlePostCreated);
-    
-    return () => {
-      window.removeEventListener('postCreated', handlePostCreated);
-    };
-  }, [loadFeed, loadSidebarData]);
-
-  // Listen for meal updates to refresh sidebar AND calendar
-  useEffect(() => {
-    const handleMealUpdate = (event: any) => {
-      console.log('🍽️ Feed: Meal update event received:', event.type);
-      console.log('🍽️ Feed: IMMEDIATELY refreshing calendar...');
-      
-      // Immediate refresh - no timeout
-      loadMonthData();
-      loadSidebarData();
-      
-      // Also do delayed refreshes as backup
-      setTimeout(() => {
-        console.log('🍽️ Feed: Backup refresh 1 (500ms)...');
-        loadMonthData();
-        loadSidebarData();
-      }, 500);
-      
-      setTimeout(() => {
-        console.log('🍽️ Feed: Backup refresh 2 (1000ms)...');
-        loadMonthData();
-      }, 1000);
-    };
-
-    const handleCalendarRefresh = () => {
-      console.log('📅 Feed: Calendar refresh event received - IMMEDIATE refresh');
-      loadMonthData();
-    };
-
-    // Listen to various meal-related events
-    window.addEventListener('mealAdded', handleMealUpdate);
-    window.addEventListener('mealDataChanged', handleMealUpdate);
-    window.addEventListener('mealDeleted', handleMealUpdate);
-    window.addEventListener('mealUpdated', handleMealUpdate);
-    window.addEventListener('sidebarRefresh', handleMealUpdate);
-    window.addEventListener('calendarRefresh', handleCalendarRefresh);
-    
-    return () => {
-      window.removeEventListener('mealAdded', handleMealUpdate);
-      window.removeEventListener('mealDataChanged', handleMealUpdate);
-      window.removeEventListener('mealDeleted', handleMealUpdate);
-      window.removeEventListener('mealUpdated', handleMealUpdate);
-      window.removeEventListener('sidebarRefresh', handleMealUpdate);
-      window.removeEventListener('calendarRefresh', handleCalendarRefresh);
-    };
-  }, [loadSidebarData, loadMonthData]);
+  };
 
   const handleLike = async (postId: number) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts/${postId}/like`, {
+      const response = await fetch(`/api/social/posts/${postId}/like`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data')}`
         }
       });
+      
       if (response.ok) {
-        // Update local state
+        const data = await response.json();
         setPosts(posts.map(post => 
           post.id === postId 
-            ? { 
-                ...post, 
-                is_liked: !post.is_liked,
-                likes_count: post.is_liked ? post.likes_count - 1 : post.likes_count + 1
-              }
+            ? { ...post, is_liked: data.is_liked, likes_count: data.likes_count }
             : post
         ));
       }
@@ -323,21 +189,18 @@ const Feed: React.FC = () => {
 
   const handleBookmark = async (postId: number) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts/${postId}/favorite`, {
+      const response = await fetch(`/api/social/posts/${postId}/bookmark`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data')}`
         }
       });
+      
       if (response.ok) {
-        // Update local state
+        const data = await response.json();
         setPosts(posts.map(post => 
           post.id === postId 
-            ? { 
-                ...post, 
-                is_bookmarked: !post.is_bookmarked
-              }
+            ? { ...post, is_bookmarked: data.is_bookmarked }
             : post
         ));
       }
@@ -346,132 +209,8 @@ const Feed: React.FC = () => {
     }
   };
 
-  const handleCreatePost = async () => {
-    console.log('handleCreatePost called with:', newPost);
-    
-    if (!newPost.content.trim()) {
-      console.log('No content, returning early');
-      alert('Please enter some content for your post');
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append('content', newPost.content);
-      formData.append('allowComments', newPost.allowComments.toString());
-      formData.append('hideLikeCount', newPost.hideLikeCount.toString());
-      
-      if (newPost.imageFile) {
-        formData.append('image', newPost.imageFile);
-        console.log('Added image file:', newPost.imageFile.name);
-      }
-      
-      if (newPost.mealData) {
-        formData.append('mealData', JSON.stringify(newPost.mealData));
-      }
-
-      console.log('Sending request to /api/social/posts');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: formData
-      });
-      
-      console.log('Response status:', response.status);
-      
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Post created successfully:', result);
-        setNewPost({ 
-          content: '', 
-          imageFile: null, 
-          mealData: null,
-          allowComments: true,
-          hideLikeCount: false
-        });
-        setShowCreatePost(false);
-        
-        // Trigger a custom event to update the feed
-        window.dispatchEvent(new CustomEvent('postCreated', { detail: result }));
-        
-        // Reload feed and sidebar data
-        loadFeed();
-        loadSidebarData();
-      } else {
-        const errorText = await response.text();
-        console.error('Failed to create post. Status:', response.status, 'Response:', errorText);
-        alert(`Failed to create post: ${response.status} - ${errorText}`);
-      }
-    } catch (error) {
-      console.error('Error creating post:', error);
-      alert(`Error creating post: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
-
-
-  const searchUsers = async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    try {
-      setSearchLoading(true);
-      // For now, return mock data since search doesn't need to work yet
-      const mockUsers = [
-        { id: 1, username: 'john_doe', first_name: 'John', last_name: 'Doe', profile_picture: null },
-        { id: 2, username: 'jane_smith', first_name: 'Jane', last_name: 'Smith', profile_picture: null },
-        { id: 3, username: 'fitness_guru', first_name: 'Mike', last_name: 'Johnson', profile_picture: null }
-      ].filter(user => 
-        user.username.toLowerCase().includes(query.toLowerCase()) ||
-        user.first_name.toLowerCase().includes(query.toLowerCase()) ||
-        user.last_name.toLowerCase().includes(query.toLowerCase())
-      );
-      
-      setSearchResults(mockUsers);
-    } catch (error) {
-      console.error('Error searching users:', error);
-    } finally {
-      setSearchLoading(false);
-    }
-  };
-
-  const loadComments = async (postId: number) => {
-    if (loadingComments.has(postId)) return;
-    
-    setLoadingComments(prev => {
-      const newSet = new Set(prev);
-      newSet.add(postId);
-      return newSet;
-    });
-    
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts/${postId}/comments`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setComments(prev => ({ ...prev, [postId]: data.comments }));
-      }
-    } catch (error) {
-      console.error('Error loading comments:', error);
-    } finally {
-      setLoadingComments(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(postId);
-        return newSet;
-      });
-    }
-  };
-
-  const handleToggleComments = (postId: number) => {
-    const isExpanded = expandedComments.has(postId);
-    
-    if (isExpanded) {
+  const toggleComments = async (postId: number) => {
+    if (expandedComments.has(postId)) {
       setExpandedComments(prev => {
         const newSet = new Set(prev);
         newSet.delete(postId);
@@ -483,8 +222,34 @@ const Feed: React.FC = () => {
         newSet.add(postId);
         return newSet;
       });
+      
       if (!comments[postId]) {
-        loadComments(postId);
+        setLoadingComments(prev => {
+          const newSet = new Set(prev);
+          newSet.add(postId);
+          return newSet;
+        });
+        
+        try {
+          const response = await fetch(`/api/social/posts/${postId}/comments`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data')}`
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            setComments(prev => ({ ...prev, [postId]: data }));
+          }
+        } catch (error) {
+          console.error('Error loading comments:', error);
+        } finally {
+          setLoadingComments(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(postId);
+            return newSet;
+          });
+        }
       }
     }
   };
@@ -494,19 +259,23 @@ const Feed: React.FC = () => {
     if (!content) return;
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts/${postId}/comments`, {
+      const response = await fetch(`/api/social/posts/${postId}/comments`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data')}`
         },
         body: JSON.stringify({ content })
       });
-      
+
       if (response.ok) {
+        const newComment = await response.json();
+        setComments(prev => ({
+          ...prev,
+          [postId]: [...(prev[postId] || []), newComment]
+        }));
         setNewComments(prev => ({ ...prev, [postId]: '' }));
-        loadComments(postId); // Reload comments
-        // Update comments count in posts
+        
         setPosts(posts.map(post => 
           post.id === postId 
             ? { ...post, comments_count: post.comments_count + 1 }
@@ -518,6 +287,110 @@ const Feed: React.FC = () => {
     }
   };
 
+  const handleCreatePost = async () => {
+    if (!newPost.content.trim() && !newPost.imageFile) return;
+
+    const formData = new FormData();
+    formData.append('content', newPost.content);
+    if (newPost.imageFile) {
+      formData.append('image', newPost.imageFile);
+    }
+    if (newPost.mealData) {
+      formData.append('meal_data', JSON.stringify(newPost.mealData));
+    }
+    formData.append('allow_comments', newPost.allowComments.toString());
+    formData.append('hide_like_count', newPost.hideLikeCount.toString());
+
+    try {
+      const response = await fetch('/api/social/posts', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data')}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const newPostData = await response.json();
+        setPosts([newPostData, ...posts]);
+        setNewPost({
+          content: '',
+          imageFile: null,
+          mealData: null,
+          allowComments: true,
+          hideLikeCount: false
+        });
+        setShowCreatePost(false);
+      }
+    } catch (error) {
+      console.error('Error creating post:', error);
+    }
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setNewPost(prev => ({ ...prev, imageFile: file }));
+    }
+  };
+
+  const searchUsers = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      const response = await fetch(`/api/social/users/search?q=${encodeURIComponent(query)}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data')}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data);
+      }
+    } catch (error) {
+      console.error('Error searching users:', error);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleFollow = async (userId: number) => {
+    try {
+      const response = await fetch(`/api/social/users/${userId}/follow`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data')}`
+        }
+      });
+
+      if (response.ok) {
+        setSearchResults(searchResults.map(user =>
+          user.id === userId
+            ? { ...user, is_following: !user.is_following }
+            : user
+        ));
+      }
+    } catch (error) {
+      console.error('Error following user:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      loadPosts();
+      loadSidebarData();
+    }
+  }, [user, loadSidebarData]);
+
+  useEffect(() => {
+    loadMonthData();
+  }, [loadMonthData]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -528,721 +401,405 @@ const Feed: React.FC = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50">
-        <div className="flex max-w-7xl mx-auto gap-6 p-6">
-        {/* Left Sidebar - Profile & Calendar */}
-        <div className="w-80 flex-shrink-0 sticky top-6 self-start space-y-4 max-h-[calc(100vh-3rem)] overflow-y-auto">
-          {/* Profile Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            {sidebarLoading ? (
-              <div className="animate-pulse">
-                <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto mb-4"></div>
-                <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-4"></div>
-                <div className="flex justify-between mb-4">
-                  <div className="h-4 bg-gray-200 rounded w-16"></div>
-                  <div className="h-4 bg-gray-200 rounded w-16"></div>
-                  <div className="h-4 bg-gray-200 rounded w-16"></div>
-                </div>
-              </div>
-            ) : profileData ? (
-              <>
-                {/* Profile Image */}
-                <div className="text-center mb-4">
-                  {profileData.profile?.profile_picture ? (
-                    <img
-                      src={profileData.profile.profile_picture}
-                      alt={`${user?.first_name} ${user?.last_name}`}
-                      className="w-20 h-20 rounded-full mx-auto object-cover border-4 border-blue-100"
+      <div className="min-h-screen bg-white">
+        
+        {/* Three Column Layout */}
+        <div className="flex gap-6 max-w-7xl mx-auto p-6">
+          
+          {/* Left Sidebar - Profile & Calendar */}
+          <div className="w-80 flex-shrink-0 sticky top-6 self-start space-y-6 max-h-[calc(100vh-3rem)] overflow-y-auto">
+            
+            {/* Profile Card */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 relative overflow-hidden">
+              {/* Subtle decorative elements */}
+              <div className="absolute top-0 right-0 w-16 h-16 bg-blue-50 rounded-full -translate-y-8 translate-x-8"></div>
+              <div className="absolute bottom-0 left-0 w-12 h-12 bg-purple-50 rounded-full translate-y-6 -translate-x-6"></div>
+              
+              <div className="relative text-center">
+                {user?.profile_picture ? (
+                  <div className="relative inline-block">
+                    <img 
+                      src={user.profile_picture} 
+                      alt="Profile" 
+                      className="w-20 h-20 rounded-full mx-auto mb-4 object-cover ring-3 ring-blue-100 shadow-md"
                     />
-                  ) : (
-                    <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto flex items-center justify-center border-4 border-blue-100">
-                      <UserCircle className="w-12 h-12 text-gray-400" />
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-3 border-white"></div>
+                  </div>
+                ) : (
+                  <div className="relative inline-block">
+                    <div className="w-20 h-20 rounded-full bg-blue-500 flex items-center justify-center text-white text-xl font-semibold mx-auto mb-4 ring-3 ring-blue-100 shadow-md">
+                      {user?.first_name?.charAt(0) || user?.username?.charAt(0) || 'U'}
                     </div>
-                  )}
-                </div>
-                
-                {/* Name */}
-                <h2 className="text-xl font-semibold text-gray-900 text-center mb-1">
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-3 border-white"></div>
+                  </div>
+                )}
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
                   {user?.first_name} {user?.last_name}
-                </h2>
-                <p className="text-gray-500 text-center text-sm mb-4">@{user?.username}</p>
+                </h3>
+                <p className="text-gray-500 mb-4">@{user?.username}</p>
                 
                 {/* Stats */}
-                <div className="flex justify-between text-center mb-4">
-                  <div>
-                    <div className="font-semibold text-lg text-gray-900">{profileData.stats?.posts || 0}</div>
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-blue-600">12</div>
                     <div className="text-xs text-gray-500">Posts</div>
                   </div>
-                  <div>
-                    <div className="font-semibold text-lg text-gray-900">{profileData.stats?.followers || 0}</div>
-                    <div className="text-xs text-gray-500">Followers</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-lg text-gray-900">{profileData.stats?.following || 0}</div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-green-600">48</div>
                     <div className="text-xs text-gray-500">Following</div>
                   </div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-purple-600">124</div>
+                    <div className="text-xs text-gray-500">Followers</div>
+                  </div>
                 </div>
                 
-                {/* Section Break */}
-                <div className="border-t border-gray-200 pt-4">
-                  <button
-                    onClick={() => navigate('/dashboard/inputs')}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Add Meal</span>
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-4">
-                <div className="text-gray-500">Unable to load profile</div>
+                <button 
+                  onClick={() => setShowFollowSearch(true)}
+                  className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-md"
+                >
+                  Find People
+                </button>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-          {/* Today's Nutrition Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <BarChart3 className="w-5 h-5 mr-2" />
-              Today's Overview
-            </h3>
-          
-            {sidebarLoading ? (
-              <div className="animate-pulse space-y-3">
-                <div className="h-4 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              </div>
-            ) : todayNutrition ? (
-              <div className="space-y-3">
-                {/* Calorie Deficit */}
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Calorie Deficit:</span>
-                  <div className="flex items-center">
-                    {todayNutrition.calorieDeficit > 0 ? (
-                      <TrendingDown className="w-4 h-4 text-green-600 mr-1" />
-                    ) : (
-                      <TrendingUp className="w-4 h-4 text-red-600 mr-1" />
-                    )}
-                    <span className={`font-semibold ${todayNutrition.calorieDeficit > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {Math.abs(todayNutrition.calorieDeficit)} cal
+            {/* Today's Nutrition Card */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-14 h-14 bg-green-50 rounded-full -translate-y-7 translate-x-7"></div>
+              
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 relative">Today's Nutrition</h3>
+              {todayNutrition ? (
+                <div className="space-y-4 relative">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Calories</span>
+                    <span className="font-semibold text-gray-900">
+                      {todayNutrition.totalCalories || 0} / {todayNutrition.calorieGoal || 2000}
                     </span>
                   </div>
-                </div>
-                
-                {/* Protein */}
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Protein:</span>
-                  <span className="font-semibold text-gray-900">
-                    {Math.round(todayNutrition.totalProtein)}g / {todayNutrition.proteinGoal}g
-                  </span>
-                </div>
-                
-                {/* Progress Bars */}
-                <div className="space-y-2">
-                  <div>
-                    <div className="flex justify-between text-xs text-gray-500 mb-1">
-                      <span>Calories</span>
-                      <span>{todayNutrition.totalCalories} / {todayNutrition.calorieGoal}</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full"
-                        style={{ width: `${Math.min((todayNutrition.totalCalories / todayNutrition.calorieGoal) * 100, 100)}%` }}
-                      ></div>
-                    </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2.5 shadow-inner">
+                    <div 
+                      className="bg-blue-500 h-2.5 rounded-full transition-all duration-300" 
+                      style={{ 
+                        width: `${Math.min(100, ((todayNutrition.totalCalories || 0) / (todayNutrition.calorieGoal || 2000)) * 100)}%` 
+                      }}
+                    ></div>
                   </div>
                   
-                  <div>
-                    <div className="flex justify-between text-xs text-gray-500 mb-1">
-                      <span>Protein</span>
-                      <span>{Math.round(todayNutrition.totalProtein)} / {todayNutrition.proteinGoal}g</span>
+                  {/* Macros */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="text-center bg-green-50 rounded-xl p-3">
+                      <div className="text-green-600 font-semibold text-base">{todayNutrition.totalProtein || 0}g</div>
+                      <div className="text-gray-500 text-xs">Protein</div>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-green-600 h-2 rounded-full"
-                        style={{ width: `${Math.min((todayNutrition.totalProtein / todayNutrition.proteinGoal) * 100, 100)}%` }}
-                      ></div>
+                    <div className="text-center bg-yellow-50 rounded-xl p-3">
+                      <div className="text-yellow-600 font-semibold text-base">{todayNutrition.totalCarbs || 0}g</div>
+                      <div className="text-gray-500 text-xs">Carbs</div>
+                    </div>
+                    <div className="text-center bg-red-50 rounded-xl p-3">
+                      <div className="text-red-600 font-semibold text-base">{todayNutrition.totalFat || 0}g</div>
+                      <div className="text-gray-500 text-xs">Fat</div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-4">
-                <div className="text-gray-500">No data available</div>
-              </div>
-            )}
-          </div>
-
-          {/* Calendar Streak Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                <Calendar className="w-5 h-5 mr-2" />
-                {format(currentDate, 'MMMM yyyy')}
-              </h3>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setCurrentDate(prev => subMonths(prev, 1))}
-                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4 text-gray-600" />
-                </button>
-                <button
-                  onClick={() => setCurrentDate(prev => addMonths(prev, 1))}
-                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <ChevronRight className="w-4 h-4 text-gray-600" />
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          {sidebarLoading ? (
-            <div className="animate-pulse">
-              <div className="grid grid-cols-7 gap-2 p-2 bg-gray-50 rounded-lg">
-                {/* Day headers skeleton */}
-                {Array.from({ length: 7 }).map((_, i) => (
-                  <div key={`header-${i}`} className="h-6 bg-gray-200 rounded"></div>
-                ))}
-                {/* Calendar days skeleton */}
-                {Array.from({ length: 35 }).map((_, i) => (
-                  <div key={i} className="aspect-square bg-gray-200 rounded-lg"></div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {/* Calendar Grid - Compact and beautiful */}
-              <div className="grid grid-cols-7 gap-2 p-2 bg-gray-50 rounded-lg">
-                {/* Day headers */}
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                  <div key={day} className="p-2 text-center text-xs font-bold text-gray-600 uppercase tracking-wide">
-                    {day.substring(0, 1)}
-                  </div>
-                ))}
-                
-                {/* Padding days for proper calendar layout */}
-                {monthData && (() => {
-                  const start = startOfMonth(currentDate);
-                  const firstDayOfMonth = start.getDay();
-                  const paddingDays = Array.from({ length: firstDayOfMonth }, (_, i) => i);
-                  const days = eachDayOfInterval({
-                    start: startOfMonth(currentDate),
-                    end: endOfMonth(currentDate)
-                  });
-                  
-                  const getDayStatus = (day: any) => {
-                    if (!day?.has_data) return 'no-data';
-                    if (day.calories_met && day.protein_met) return 'both-met';
-                    if (day.calories_met || day.protein_met) return 'partial';
-                    return 'none-met';
-                  };
-
-                  const getDayColor = (day: any) => {
-                    const status = getDayStatus(day);
-                    switch (status) {
-                      case 'both-met':
-                        return 'bg-green-500 text-white'; // EXACT match to Diary
-                      case 'partial':
-                        return 'bg-yellow-500 text-white'; // EXACT match to Diary  
-                      case 'none-met':
-                        return 'bg-red-500 text-white'; // EXACT match to Diary
-                      default:
-                        return 'bg-gray-100 text-gray-400'; // EXACT match to Diary
-                    }
-                  };
-
-                  return (
-                    <>
-                      {/* Padding days */}
-                      {paddingDays.map((_, i) => (
-                        <div key={`padding-${i}`} className="aspect-square" />
-                      ))}
-                      
-                      {/* Calendar days */}
-                      {days.map(day => {
-                        const dateStr = format(day, 'yyyy-MM-dd');
-                        const dayData = monthData.days?.find((d: any) => d.date === dateStr);
-                        const isCurrentDay = isToday(day);
-                        
-                        // Debug logging for ALL days with data
-                        if (dayData?.has_data) {
-                          console.log(`📅 Feed Calendar: Day ${format(day, 'd')} data:`, {
-                            date: dateStr,
-                            hasData: dayData.has_data,
-                            calories: dayData.total_calories,
-                            caloriesMet: dayData.calories_met,
-                            proteinMet: dayData.protein_met,
-                            status: getDayStatus(dayData),
-                            color: getDayColor(dayData)
-                          });
-                        }
-                        
-                        return (
-                          <div
-                            key={day.toString()}
-                            className={`
-                              aspect-square p-1 text-xs font-medium rounded-lg transition-all duration-200 cursor-pointer
-                              flex items-center justify-center
-                              ${getDayColor(dayData || { has_data: false })}
-                              ${isCurrentDay ? 'ring-2 ring-blue-500 ring-offset-1' : ''}
-                              hover:opacity-80 hover:scale-105
-                            `}
-                          >
-                            <div className="font-bold text-sm">{format(day, 'd')}</div>
-                          </div>
-                        );
-                      })}
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Main Feed Content */}
-        <div className="flex-1">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            {/* Create Post Button */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-4 z-10">
-              <button
-                onClick={() => setShowCreatePost(true)}
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
-              >
-                <PenTool className="w-5 h-5" />
-                <span>Create a new post</span>
-              </button>
+              ) : (
+                <div className="text-gray-400 text-center py-6 relative">No nutrition data for today</div>
+              )}
             </div>
 
-      {/* Create Post Modal */}
-      {showCreatePost && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
-              <h3 className="text-xl font-semibold text-gray-900">Create New Post</h3>
-              <button
-                onClick={() => setShowCreatePost(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-4 space-y-4 flex-1 overflow-y-auto">
-              {/* Text Input */}
-              <div>
-            <textarea
-              value={newPost.content}
-              onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-                  placeholder="What's going on?"
-                  className="w-full border border-gray-300 rounded-lg p-3 resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              rows={4}
-            />
-              </div>
-
-              {/* Image Preview */}
-              {newPost.imageFile && (
-                <div className="relative">
-                  <img
-                    src={URL.createObjectURL(newPost.imageFile)}
-                    alt="Preview"
-                    className="w-full h-40 object-cover rounded-lg"
-                  />
-                  <button
-                    onClick={() => setNewPost({ ...newPost, imageFile: null })}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
+            {/* Calendar Streak Card */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 relative overflow-hidden">
+              <div className="absolute bottom-0 left-0 w-16 h-16 bg-purple-50 rounded-full translate-y-8 -translate-x-8"></div>
+              
+              <div className="flex items-center justify-between mb-4 relative">
+                <h3 className="text-lg font-semibold text-gray-900">Calendar</h3>
+                <div className="flex items-center space-x-2">
+                  <button 
+                    onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                    <X className="h-3 w-3" />
+                    <ChevronLeft className="w-4 h-4 text-gray-500" />
+                  </button>
+                  <button 
+                    onClick={() => setCurrentDate(addMonths(currentDate, 1))}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4 text-gray-500" />
                   </button>
                 </div>
-              )}
-
-              {/* Upload Controls */}
-              <div className="border border-gray-200 rounded-lg p-3">
-                <h4 className="font-medium text-gray-900 mb-2">Add to your post</h4>
-                <div className="flex items-center space-x-4">
-                  <label className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg cursor-pointer transition-colors">
-                    <Image className="h-4 w-4" />
-                    <span className="text-sm font-medium">Upload Photo</span>
-            <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setNewPost({ ...newPost, imageFile: file });
-                        }
-                      }}
-                      className="hidden"
-                    />
-                  </label>
+              </div>
+              
+              <div className="text-center mb-3 relative">
+                <div className="text-sm font-medium text-gray-900 bg-gray-50 rounded-lg py-2 px-3">
+                  {format(currentDate, 'MMMM yyyy')}
                 </div>
               </div>
-
-              {/* Privacy Settings */}
-              <div className="border border-gray-200 rounded-lg p-3">
-                <h4 className="font-medium text-gray-900 mb-3">Privacy Settings</h4>
-                <div className="space-y-3">
-                  {/* Allow Comments Toggle */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Allow comments</label>
-                      <p className="text-xs text-gray-500">Let people comment on your post</p>
-                    </div>
-                    <button
-                      onClick={() => setNewPost({ ...newPost, allowComments: !newPost.allowComments })}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        newPost.allowComments ? 'bg-blue-600' : 'bg-gray-200'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          newPost.allowComments ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
+              
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7 gap-1 text-xs relative">
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
+                  <div key={day} className="text-center p-2 text-gray-500 font-medium">
+                    {day}
                   </div>
-
-                  {/* Hide Like Count Toggle */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Hide like count</label>
-                      <p className="text-xs text-gray-500">Only you will see the total number of likes</p>
-                    </div>
-              <button
-                      onClick={() => setNewPost({ ...newPost, hideLikeCount: !newPost.hideLikeCount })}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        newPost.hideLikeCount ? 'bg-blue-600' : 'bg-gray-200'
-                      }`}
+                ))}
+                {eachDayOfInterval({
+                  start: startOfMonth(currentDate),
+                  end: endOfMonth(currentDate)
+                }).map(day => {
+                  const dayData = monthData?.days?.find((d: any) => 
+                    new Date(d.date).getDate() === day.getDate()
+                  );
+                  const hasData = dayData?.has_data;
+                  const isCurrentDay = isToday(day);
+                  
+                  return (
+                    <div
+                      key={day.toISOString()}
+                      className={`
+                        text-center p-2 rounded-lg text-sm font-medium transition-all duration-200
+                        ${isCurrentDay ? 'bg-blue-500 text-white shadow-md' : ''}
+                        ${hasData && !isCurrentDay ? 'bg-green-100 text-green-700' : ''}
+                        ${!hasData && !isCurrentDay ? 'text-gray-400 hover:bg-gray-50' : ''}
+                      `}
                     >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          newPost.hideLikeCount ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-              </button>
-                  </div>
-                </div>
+                      {day.getDate()}
+                    </div>
+                  );
+                })}
               </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex items-center justify-end space-x-3 p-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
-              <button
-                onClick={() => setShowCreatePost(false)}
-                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  console.log('Post button clicked', newPost);
-                  handleCreatePost();
-                }}
-                disabled={!newPost.content.trim()}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors"
-              >
-                Post
-              </button>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Feed Posts */}
-      {posts.length === 0 ? (
-        <div className="p-8 text-center text-gray-500">
-          <PenTool className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-xl font-medium mb-2">No posts in your feed</h3>
-          <p className="mb-6">Follow some users to see their posts here, or create your own post!</p>
-          
-          <div className="space-y-4">
-          <button
-            onClick={() => setShowCreatePost(true)}
-              className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors mr-4"
-          >
-            Create your first post
-          </button>
-            
+          {/* Main Feed Content */}
+          <div className="flex-1 space-y-6">
+            {/* Create Post Button */}
             <button
-              onClick={() => setShowFollowSearch(true)}
-              className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+              onClick={() => setShowCreatePost(true)}
+              className="w-full bg-blue-600 text-white py-4 px-6 rounded-xl hover:bg-blue-700 transition-colors shadow-lg group"
             >
-              Find people to follow
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold">
+                  {user?.first_name?.charAt(0) || user?.username?.charAt(0) || 'U'}
+                </div>
+                <span className="text-base font-medium">What's on your plate today?</span>
+                <Plus className="w-5 h-5 ml-auto group-hover:rotate-90 transition-transform" />
+              </div>
             </button>
-          </div>
-        </div>
-      ) : (
-        <>
+
+            {/* Posts */}
             <div className="space-y-6">
-              {posts.map((post) => (
-                <div key={post.id} className="border border-gray-200 rounded-lg">
+              {posts.map(post => (
+                <div key={post.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300">
                   {/* Post Header */}
-                  <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                  <div className="flex items-center justify-between p-6">
                     <div className="flex items-center space-x-3">
-                      {post.user.profile_picture ? (
-                        <img
-                          src={post.user.profile_picture}
-                          alt={`${post.user.first_name} ${post.user.last_name}`}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">
-                          {post.user.first_name?.charAt(0) || post.user.username?.charAt(0)}
-                        </div>
-                      )}
+                      <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold shadow-md">
+                        {post.user.first_name?.charAt(0) || post.user.username?.charAt(0)}
+                      </div>
                       <div>
-                        <div className="font-semibold text-gray-900">
-                          {post.user.first_name} {post.user.last_name}
-                        </div>
+                        <div className="font-semibold text-gray-900">{post.user.first_name} {post.user.last_name}</div>
                         <div className="text-sm text-gray-500">{formatPostDate(post.created_at)}</div>
                       </div>
                     </div>
-                    <button className="text-gray-400 hover:text-gray-600">
+                    <button className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors">
                       <MoreHorizontal className="w-5 h-5" />
                     </button>
                   </div>
 
                   {/* Post Content */}
                   {post.content && (
-                    <div className="p-4">
-                      <p className="text-gray-900">{post.content}</p>
+                    <div className="px-6 pb-4">
+                      <p className="text-gray-900 leading-relaxed">{post.content}</p>
                     </div>
                   )}
 
                   {/* Post Image */}
                   {post.image_url && (
-                    <div className="w-full">
+                    <div className="relative overflow-hidden">
                       <img 
                         src={post.image_url} 
                         alt="Post" 
-                        className="w-full object-cover"
+                        className="w-full object-cover max-h-80"
                       />
                     </div>
                   )}
 
                   {/* Meal Data */}
                   {post.meal_data && (
-                    <div className="p-4 bg-gray-50 border-t border-gray-200">
-                      <h4 className="font-semibold text-gray-800 mb-2">Meal Breakdown</h4>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-600">Calories:</span>
-                          <span className="ml-2 font-medium">{post.meal_data.calories}</span>
+                    <div className="mx-6 my-4 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <div className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                        Meal Information
+                      </div>
+                      <div className="grid grid-cols-4 gap-3">
+                        <div className="text-center bg-white rounded-lg p-3">
+                          <div className="font-semibold text-blue-600 text-base">{post.meal_data.calories || 0}</div>
+                          <div className="text-gray-500 text-xs">Calories</div>
                         </div>
-                        <div>
-                          <span className="text-gray-600">Protein:</span>
-                          <span className="ml-2 font-medium">{post.meal_data.protein}g</span>
+                        <div className="text-center bg-white rounded-lg p-3">
+                          <div className="font-semibold text-green-600 text-base">{post.meal_data.protein || 0}g</div>
+                          <div className="text-gray-500 text-xs">Protein</div>
                         </div>
-                        <div>
-                          <span className="text-gray-600">Carbs:</span>
-                          <span className="ml-2 font-medium">{post.meal_data.carbs}g</span>
+                        <div className="text-center bg-white rounded-lg p-3">
+                          <div className="font-semibold text-yellow-600 text-base">{post.meal_data.carbs || 0}g</div>
+                          <div className="text-gray-500 text-xs">Carbs</div>
                         </div>
-                        <div>
-                          <span className="text-gray-600">Fat:</span>
-                          <span className="ml-2 font-medium">{post.meal_data.fat}g</span>
+                        <div className="text-center bg-white rounded-lg p-3">
+                          <div className="font-semibold text-red-600 text-base">{post.meal_data.fat || 0}g</div>
+                          <div className="text-gray-500 text-xs">Fat</div>
                         </div>
                       </div>
                     </div>
                   )}
 
                   {/* Post Actions */}
-                  <div className="p-4 border-t border-gray-200">
+                  <div className="px-6 py-4 border-t border-gray-50">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-6">
                         <button
                           onClick={() => handleLike(post.id)}
                           className={`flex items-center space-x-2 transition-colors ${
-                            post.is_liked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'
+                            post.is_liked 
+                              ? 'text-red-500' 
+                              : 'text-gray-500 hover:text-red-500'
                           }`}
                         >
-                          <Heart className={`w-6 h-6 ${post.is_liked ? 'fill-current' : ''}`} />
-                          {!post.hide_like_count || post.user.id === user?.id ? (
-                            <span className="text-sm">{post.likes_count}</span>
-                          ) : (
-                            <span className="text-sm">•</span>
-                          )}
+                          <Heart className={`w-5 h-5 ${post.is_liked ? 'fill-current' : ''}`} />
+                          <span className="text-sm font-medium">{post.likes_count}</span>
                         </button>
-                        {post.allow_comments !== false && (
-                          <button 
-                            onClick={() => handleToggleComments(post.id)}
-                            className="flex items-center space-x-2 text-gray-400 hover:text-gray-600 transition-colors"
-                          >
-                            <MessageCircle className="w-6 h-6" />
-                            <span className="text-sm">{post.comments_count}</span>
-                          </button>
-                        )}
-                        <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                          <Share className="w-6 h-6" />
+                        <button
+                          onClick={() => toggleComments(post.id)}
+                          className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors"
+                        >
+                          <MessageCircle className="w-5 h-5" />
+                          <span className="text-sm font-medium">{post.comments_count}</span>
+                        </button>
+                        <button className="text-gray-500 hover:text-green-500 transition-colors">
+                          <Share className="w-5 h-5" />
                         </button>
                       </div>
                       <button
                         onClick={() => handleBookmark(post.id)}
-                        className={`flex items-center space-x-2 transition-colors ${
-                          post.is_bookmarked ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'
+                        className={`transition-colors ${
+                          post.is_bookmarked 
+                            ? 'text-blue-500' 
+                            : 'text-gray-500 hover:text-blue-500'
                         }`}
                       >
-                        <Bookmark className={`w-6 h-6 ${post.is_bookmarked ? 'fill-current' : ''}`} />
+                        <Bookmark className={`w-5 h-5 ${post.is_bookmarked ? 'fill-current' : ''}`} />
                       </button>
                     </div>
                   </div>
 
-              {/* Comments Section */}
-              {post.allow_comments !== false && expandedComments.has(post.id) && (
-                <div className="border-t border-gray-200">
-                  {/* Show latest comments */}
-                  {loadingComments.has(post.id) ? (
-                    <div className="p-4 text-center text-gray-500">Loading comments...</div>
-                  ) : comments[post.id] && comments[post.id].length > 0 ? (
-                    <div className="p-4">
-                      <div className="space-y-3 mb-4">
-                        {comments[post.id].slice(0, 3).map((comment) => (
-                          <div key={comment.id} className="flex space-x-3">
-                            {comment.user.profile_picture ? (
-                              <img
-                                src={comment.user.profile_picture}
-                                alt={`${comment.user.first_name} ${comment.user.last_name}`}
-                                className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                              />
-                            ) : (
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                                {comment.user.first_name?.charAt(0) || comment.user.username?.charAt(0)}
-                              </div>
-                            )}
+                  {/* Comments Section */}
+                  {expandedComments.has(post.id) && (
+                    <div className="px-6 py-4 border-t border-gray-50 bg-gray-50">
+                      {/* Add Comment */}
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-semibold">
+                          {user?.first_name?.charAt(0) || user?.username?.charAt(0) || 'U'}
+                        </div>
+                        <div className="flex-1 flex items-center space-x-3">
+                          <input
+                            type="text"
+                            placeholder="Add a comment..."
+                            value={newComments[post.id] || ''}
+                            onChange={(e) => setNewComments(prev => ({...prev, [post.id]: e.target.value}))}
+                            className="flex-1 px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                            onKeyPress={(e) => e.key === 'Enter' && handleAddComment(post.id)}
+                          />
+                          <button
+                            onClick={() => handleAddComment(post.id)}
+                            disabled={!newComments[post.id]?.trim()}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                          >
+                            Post
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Comments List */}
+                      <div className="space-y-3">
+                        {comments[post.id]?.map(comment => (
+                          <div key={comment.id} className="flex items-start space-x-3">
+                            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-semibold">
+                              {comment.user.first_name?.charAt(0) || comment.user.username?.charAt(0)}
+                            </div>
                             <div className="flex-1">
-                              <div className="bg-gray-100 rounded-lg px-3 py-2">
-                                <div className="font-medium text-sm text-gray-900">
-                                  {comment.user.first_name} {comment.user.last_name}
-                                </div>
-                                <div className="text-sm text-gray-700">{comment.content}</div>
+                              <div className="bg-white rounded-xl p-3 shadow-sm">
+                                <div className="font-semibold text-sm text-gray-900 mb-1">{comment.user.first_name} {comment.user.last_name}</div>
+                                <div className="text-gray-700">{comment.content}</div>
                               </div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                {formatPostDate(comment.created_at)}
-                              </div>
+                              <div className="text-xs text-gray-500 mt-2 ml-3">{formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}</div>
                             </div>
                           </div>
                         ))}
                       </div>
-                      
-                      {comments[post.id].length > 3 && (
-                        <button className="text-sm text-blue-600 hover:text-blue-700 mb-4">
-                          View all {comments[post.id].length} comments
-                        </button>
-                      )}
                     </div>
-                  ) : (
-                    <div className="p-4 text-center text-gray-500">No comments yet</div>
                   )}
+                </div>
+              ))}
+            </div>
+          </div>
 
-                  {/* Add Comment */}
-                  <div className="p-4 border-t border-gray-100">
-                    <div className="flex space-x-3">
-                      {user?.profile_picture ? (
-                        <img
-                          src={user.profile_picture}
-                          alt={`${user.first_name} ${user.last_name}`}
-                          className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                          {user?.first_name?.charAt(0) || 'U'}
-                        </div>
-                      )}
-                      <div className="flex-1 flex space-x-2">
-                        <input
-                          type="text"
-                          value={newComments[post.id] || ''}
-                          onChange={(e) => setNewComments(prev => ({ ...prev, [post.id]: e.target.value }))}
-                          placeholder="Write a comment..."
-                          className="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          onKeyPress={(e) => e.key === 'Enter' && handleAddComment(post.id)}
-                        />
-                        <button
-                          onClick={() => handleAddComment(post.id)}
-                          disabled={!newComments[post.id]?.trim()}
-                          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
-                        >
-                          Post
-                        </button>
-                      </div>
-                    </div>
+          {/* Right Sidebar - Groups */}
+          <div className="w-80 flex-shrink-0 sticky top-6 self-start space-y-6 max-h-[calc(100vh-3rem)] overflow-y-auto">
+            
+            {/* Groups Card */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-14 h-14 bg-indigo-50 rounded-full -translate-y-7 translate-x-7"></div>
+              
+              <div className="flex items-center justify-between mb-6 relative">
+                <h3 className="text-lg font-semibold text-gray-900">Groups</h3>
+                <button className="text-blue-600 hover:text-blue-700 text-sm font-medium bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-full transition-colors">
+                  See All
+                </button>
+              </div>
+              
+              <div className="space-y-3 relative">
+                {/* Mock Group Items */}
+                <div className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors group">
+                  <div className="w-10 h-10 rounded-xl bg-green-500 flex items-center justify-center shadow-sm">
+                    <span className="text-white font-semibold text-sm">VG</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900 group-hover:text-green-600 transition-colors">Vegan Recipes</div>
+                    <div className="text-sm text-gray-500">1.2k members</div>
                   </div>
                 </div>
-              )}
+                
+                <div className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors group">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center shadow-sm">
+                    <span className="text-white font-semibold text-sm">FT</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">Fitness Goals</div>
+                    <div className="text-sm text-gray-500">856 members</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors group">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500 flex items-center justify-center shadow-sm">
+                    <span className="text-white font-semibold text-sm">WL</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900 group-hover:text-purple-600 transition-colors">Weight Loss</div>
+                    <div className="text-sm text-gray-500">2.1k members</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors group">
+                  <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center shadow-sm">
+                    <span className="text-white font-semibold text-sm">KT</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900 group-hover:text-orange-600 transition-colors">Keto Diet</div>
+                    <div className="text-sm text-gray-500">643 members</div>
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
-        </>
-      )}
-          </div>
-        </div>
-
-        {/* Right Sidebar - Groups */}
-        <div className="w-80 flex-shrink-0 sticky top-6 self-start space-y-4 max-h-[calc(100vh-3rem)] overflow-y-auto">
-          {/* Groups Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Suggested Groups</h3>
-            
-            <div className="space-y-3">
-              {/* Group 1 */}
-              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">FG</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-semibold text-gray-900 truncate">Fitness Goals</h4>
-                  <p className="text-xs text-gray-500">124 members</p>
-                </div>
-                <button className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full hover:bg-blue-700 transition-colors">
-                  View
-                </button>
-              </div>
-
-              {/* Group 2 */}
-              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">HR</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-semibold text-gray-900 truncate">Healthy Recipes</h4>
-                  <p className="text-xs text-gray-500">89 members</p>
-                </div>
-                <button className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full hover:bg-blue-700 transition-colors">
-                  View
-                </button>
-              </div>
-
-              {/* Group 3 */}
-              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">WL</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-semibold text-gray-900 truncate">Weight Loss</h4>
-                  <p className="text-xs text-gray-500">203 members</p>
-                </div>
-                <button className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full hover:bg-blue-700 transition-colors">
-                  View
-                </button>
-              </div>
-            </div>
-
-            {/* Find More Groups Link */}
-            <div className="text-center border-t border-gray-200 pt-4 mt-4">
-              <button 
-                onClick={() => {
-                  // TODO: Navigate to groups discovery page
-                  console.log('Find more groups clicked');
-                }}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline transition-colors"
-              >
-                Find more groups
+              
+              <button className="w-full mt-6 bg-indigo-600 text-white py-2.5 px-4 rounded-xl hover:bg-indigo-700 transition-colors font-medium shadow-md">
+                Create Group
               </button>
             </div>
           </div>
@@ -1251,126 +808,80 @@ const Feed: React.FC = () => {
 
       {/* Create Post Modal */}
       {showCreatePost && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
-              <h3 className="text-xl font-semibold text-gray-900">Create New Post</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-900">Create Post</h2>
               <button
                 onClick={() => setShowCreatePost(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <X className="h-6 w-6" />
+                <X className="w-5 h-5" />
               </button>
             </div>
-
-            {/* Modal Content */}
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="space-y-4">
-                {/* Post Content Input */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    What's on your mind?
-                  </label>
+            
+            <div className="p-6 space-y-4">
+              <div className="flex items-start space-x-3">
+                <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+                  {user?.first_name?.charAt(0) || user?.username?.charAt(0) || 'U'}
+                </div>
+                <div className="flex-1">
                   <textarea
+                    placeholder="What's on your mind?"
                     value={newPost.content}
-                    onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-                    placeholder="What's going on?"
-                    className="w-full border border-gray-300 rounded-lg p-3 resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    onChange={(e) => setNewPost(prev => ({ ...prev, content: e.target.value }))}
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                     rows={4}
                   />
                 </div>
+              </div>
 
-                {/* Image Preview */}
-                {newPost.imageFile && (
-                  <div className="relative">
-                    <img
-                      src={URL.createObjectURL(newPost.imageFile)}
-                      alt="Preview"
-                      className="w-full h-40 object-cover rounded-lg"
-                    />
-                    <button
-                      onClick={() => setNewPost({ ...newPost, imageFile: null })}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                )}
-
-                {/* Upload Controls */}
-                <div className="border border-gray-200 rounded-lg p-3">
-                  <h4 className="font-medium text-gray-900 mb-2">Add to your post</h4>
-                  <div className="flex items-center space-x-4">
-                    <label className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg cursor-pointer transition-colors">
-                      <Image className="h-4 w-4" />
-                      <span className="text-sm font-medium">Upload Photo</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setNewPost({ ...newPost, imageFile: file });
-                          }
-                        }}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
+              {newPost.imageFile && (
+                <div className="relative">
+                  <img
+                    src={URL.createObjectURL(newPost.imageFile)}
+                    alt="Preview"
+                    className="w-full h-64 object-cover rounded-xl"
+                  />
+                  <button
+                    onClick={() => setNewPost(prev => ({ ...prev, imageFile: null }))}
+                    className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
+              )}
 
-                {/* Post Options */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">Allow comments</span>
-                    <button
-                      onClick={() => setNewPost({ ...newPost, allowComments: !newPost.allowComments })}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        newPost.allowComments ? 'bg-blue-600' : 'bg-gray-200'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          newPost.allowComments ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">Hide like count</span>
-                    <button
-                      onClick={() => setNewPost({ ...newPost, hideLikeCount: !newPost.hideLikeCount })}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        newPost.hideLikeCount ? 'bg-blue-600' : 'bg-gray-200'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          newPost.hideLikeCount ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
+              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                <div className="flex items-center space-x-4">
+                  <label className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 cursor-pointer transition-colors">
+                    <Image className="w-5 h-5" />
+                    <span className="text-sm font-medium">Photo</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => setShowCreatePost(false)}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCreatePost}
+                    disabled={!newPost.content.trim() && !newPost.imageFile}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                  >
+                    Post
+                  </button>
                 </div>
               </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex items-center justify-between p-4 border-t border-gray-200 flex-shrink-0">
-              <button
-                onClick={() => setShowCreatePost(false)}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreatePost}
-                disabled={!newPost.content.trim()}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg transition-colors"
-              >
-                Post
-              </button>
             </div>
           </div>
         </div>
@@ -1378,168 +889,69 @@ const Feed: React.FC = () => {
 
       {/* Follow People Search Modal */}
       {showFollowSearch && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-xl font-semibold text-gray-900">Find People to Follow</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-900">Find People</h2>
               <button
-                onClick={() => {
-                  setShowFollowSearch(false);
-                  setSearchQuery('');
-                  setSearchResults([]);
-                }}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                onClick={() => setShowFollowSearch(false)}
+                className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <X className="h-6 w-6" />
+                <X className="w-5 h-5" />
               </button>
             </div>
+            
+            <div className="p-6">
+              <div className="mb-6">
+                <input
+                  type="text"
+                  placeholder="Search for people..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    searchUsers(e.target.value);
+                  }}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
 
-            {/* Search Input */}
-            <div className="p-4">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  searchUsers(e.target.value);
-                }}
-                placeholder="Search for users..."
-                className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              />
-            </div>
-
-            {/* Search Results */}
-            <div className="max-h-64 overflow-y-auto">
               {searchLoading ? (
-                <div className="p-4 text-center">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
-              ) : searchResults.length > 0 ? (
-                <div className="space-y-2 p-4">
-                  {searchResults.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg">
+              ) : (
+                <div className="space-y-3">
+                  {searchResults.map(user => (
+                    <div key={user.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition-colors">
                       <div className="flex items-center space-x-3">
-                        {user.profile_picture ? (
-                          <img
-                            src={user.profile_picture}
-                            alt={`${user.first_name} ${user.last_name}`}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                            <UserCircle className="w-6 h-6 text-gray-400" />
-                          </div>
-                        )}
+                        <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+                          {user.first_name?.charAt(0) || user.username?.charAt(0)}
+                        </div>
                         <div>
-                          <div className="font-medium text-gray-900">
-                            {user.first_name} {user.last_name}
-                          </div>
+                          <div className="font-medium text-gray-900">{user.first_name} {user.last_name}</div>
                           <div className="text-sm text-gray-500">@{user.username}</div>
                         </div>
                       </div>
                       <button
-                        onClick={() => {
-                          // Follow functionality placeholder
-                          alert(`Follow functionality coming soon for ${user.username}!`);
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg transition-colors"
+                        onClick={() => handleFollow(user.id)}
+                        className={`px-4 py-2 rounded-xl font-medium transition-colors ${
+                          user.is_following
+                            ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                        }`}
                       >
-                        Follow
+                        {user.is_following ? 'Following' : 'Follow'}
                       </button>
                     </div>
                   ))}
-                </div>
-              ) : searchQuery && !searchLoading ? (
-                <div className="p-4 text-center text-gray-500">
-                  No users found matching "{searchQuery}"
-                </div>
-              ) : (
-                <div className="p-4 text-center text-gray-500">
-                  Start typing to search for users...
                 </div>
               )}
             </div>
           </div>
         </div>
       )}
-
-        {/* Right Sidebar - Groups */}
-        <div className="w-80 flex-shrink-0 sticky top-6 self-start space-y-4 max-h-[calc(100vh-3rem)] overflow-y-auto">
-          {/* Groups Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <UserCircle className="w-5 h-5 mr-2" />
-            My Groups
-          </h3>
-          
-          {/* Mock Group Cards */}
-          <div className="space-y-3 mb-4">
-            {/* Group 1 */}
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">FG</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-semibold text-gray-900 truncate">Fitness Goals</h4>
-                <p className="text-xs text-gray-500">124 members</p>
-              </div>
-              <button className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full hover:bg-blue-700 transition-colors">
-                View
-              </button>
-            </div>
-
-            {/* Group 2 */}
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">HR</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-semibold text-gray-900 truncate">Healthy Recipes</h4>
-                <p className="text-xs text-gray-500">89 members</p>
-              </div>
-              <button className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full hover:bg-blue-700 transition-colors">
-                View
-              </button>
-            </div>
-
-            {/* Group 3 */}
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">WL</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-semibold text-gray-900 truncate">Weight Loss</h4>
-                <p className="text-xs text-gray-500">203 members</p>
-              </div>
-              <button className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full hover:bg-blue-700 transition-colors">
-                View
-              </button>
-            </div>
-          </div>
-
-          {/* Find More Groups Link */}
-          <div className="text-center border-t border-gray-200 pt-4">
-            <button 
-              onClick={() => {
-                // TODO: Navigate to groups discovery page
-                console.log('Find more groups clicked');
-              }}
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline transition-colors"
-            >
-              Find more groups
-            </button>
-          </div>
-        </div>
-      </div>
     </>
   );
 };
 
 export default Feed;
-
-
-
-
-
-
