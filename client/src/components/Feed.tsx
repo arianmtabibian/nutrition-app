@@ -426,33 +426,59 @@ const Feed: React.FC = () => {
 
   useEffect(() => {
     if (user) {
+      console.log('🔧 Feed: Loading posts...');
       loadPosts();
-      loadSidebarData();
     }
-  }, [user, loadSidebarData]);
+  }, [user]);
 
   useEffect(() => {
+    console.log('🔧 Feed: Month data effect triggered');
     loadMonthData();
   }, [loadMonthData]);
 
-  // Listen for meal data changes (like Overview does)
+  // Force data load when user becomes available
+  useEffect(() => {
+    if (user) {
+      console.log('🔧 Feed: User available, loading data immediately...');
+      loadSidebarData();
+      loadMonthData();
+    }
+  }, [user]); // Trigger when user changes
+
+  // Enhanced automatic syncing with Overview page - IMPROVED
   useEffect(() => {
     const handleMealDataChanged = () => {
-      console.log('📊 Feed: Meal data changed event received, reloading sidebar data...');
+      console.log('📊 Feed: Meal data changed event received, auto-syncing...');
       loadSidebarData();
       loadMonthData(); // Also refresh calendar when meals change
     };
 
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'mealAdded' || e.key === 'mealDeleted' || e.key === 'mealUpdated') {
+        console.log('📊 Feed: Storage event detected, auto-syncing...');
+        handleMealDataChanged();
+      }
+    };
+
+    // Listen for custom events (same tab)
     window.addEventListener('mealDataChanged', handleMealDataChanged);
     window.addEventListener('mealAdded', handleMealDataChanged);
     window.addEventListener('mealUpdated', handleMealDataChanged);
     window.addEventListener('mealDeleted', handleMealDataChanged);
+    
+    // Listen for storage events (cross-tab)
+    window.addEventListener('storage', handleStorageChange);
+
+    // Also listen for sidebar refresh events from other components
+    window.addEventListener('sidebarRefresh', handleMealDataChanged);
 
     return () => {
       window.removeEventListener('mealDataChanged', handleMealDataChanged);
       window.removeEventListener('mealAdded', handleMealDataChanged);
       window.removeEventListener('mealUpdated', handleMealDataChanged);
       window.removeEventListener('mealDeleted', handleMealDataChanged);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('sidebarRefresh', handleMealDataChanged);
     };
   }, [loadSidebarData, loadMonthData]);
 

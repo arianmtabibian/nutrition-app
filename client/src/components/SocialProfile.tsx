@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Heart, MessageCircle, Share, MoreHorizontal, PenTool, Edit3, Settings, Grid, Bookmark, UserPlus, UserCheck, UserCircle, Image, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { diaryAPI, mealsAPI } from '../services/api';
+import { diaryAPI, mealsAPI, profileAPI } from '../services/api';
 
 interface Post {
   id: number;
@@ -440,77 +440,78 @@ const SocialProfile: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto bg-white">
-      {/* Profile Header */}
-      <div className="border-b border-gray-200 pb-8 pt-8">
-        <div className="flex items-start space-x-8 px-6">
-          {/* Profile Picture */}
-          <div className="relative">
-            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-4xl font-bold">
-              {profileData.profile.profile_picture ? (
-                <img 
-                  src={profileData.profile.profile_picture} 
-                  alt="Profile" 
-                  className="w-32 h-32 rounded-full object-cover"
-                />
-                             ) : (
-                 (profileData.user.first_name && profileData.user.first_name.charAt(0)) || 
-                 (profileData.user.username && profileData.user.username.charAt(0)) || 
-                 'U'
-               )}
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Modern Header with Orange Theme */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-3">
+                <UserCircle className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
+                <p className="text-gray-600">Manage your account and nutrition goals</p>
+              </div>
             </div>
-            <button className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors">
-              <PenTool className="w-4 h-4" />
-            </button>
           </div>
+        </div>
 
-          {/* Profile Info */}
-          <div className="flex-1">
-            <div className="flex items-center space-x-4 mb-4">
-              <h1 className="text-2xl font-light">{profileData.user.username || 'User'}</h1>
-              {!profileData.profile.daily_calories && !profileData.profile.weight ? (
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded font-medium transition-colors">
-                  <Edit3 className="w-4 h-4 inline mr-2" />
-                  Complete Profile
-                </button>
-              ) : (
-                <button 
+        {/* Profile Info Card */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-start space-x-6">
+            {/* Profile Picture */}
+            <div className="relative">
+              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                {profileData.profile.profile_picture ? (
+                  <img 
+                    src={profileData.profile.profile_picture} 
+                    alt="Profile" 
+                    className="w-24 h-24 rounded-2xl object-cover"
+                  />
+                ) : (
+                  `${profileData.user.first_name?.[0] || ''}${profileData.user.last_name?.[0] || 'U'}`
+                )}
+              </div>
+            </div>
+
+            {/* Profile Details */}
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {profileData.user.first_name} {profileData.user.last_name}
+                  </h2>
+                  <p className="text-gray-500">@{profileData.user.username || `user${profileData.user.id}`}</p>
+                </div>
+                <button
                   onClick={openEditProfile}
-                  className="bg-gray-100 hover:bg-gray-200 px-4 py-1.5 rounded font-medium transition-colors"
+                  className="bg-gradient-to-r from-orange-500 to-red-500 text-white py-2 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg transform hover:scale-105"
                 >
-                  <Edit3 className="w-4 h-4 inline mr-2" />
-                  Edit Profile
+                  <Edit3 className="w-4 h-4" />
+                  <span>Edit Profile</span>
                 </button>
-              )}
-              <button className="bg-gray-100 hover:bg-gray-200 p-2 rounded transition-colors">
-                <Settings className="w-5 h-5" />
-              </button>
-            </div>
+              </div>
 
-            {/* Stats */}
-            <div className="flex space-x-8 mb-4">
-              <div>
-                <span className="font-semibold">{profileData.stats.posts}</span> posts
-              </div>
-              <div>
-                <span className="font-semibold">{profileData.stats.followers}</span> followers
-              </div>
-              <div>
-                <span className="font-semibold">{profileData.stats.following}</span> following
-              </div>
-            </div>
-
-            {/* Bio and Name */}
-            <div className="mb-4">
-              <h2 className="font-semibold">
-                {profileData.user.first_name || 'First'} {profileData.user.last_name || 'Last'}
-              </h2>
               {profileData.profile.bio && (
-                <p className="text-gray-700 mt-1">{profileData.profile.bio}</p>
+                <p className="text-gray-700 mb-4 bg-gray-50 rounded-lg p-3">{profileData.profile.bio}</p>
               )}
-              {!profileData.profile.bio && (
-                <p className="text-gray-500 mt-1 italic">No bio yet</p>
-              )}
+
+              {/* Stats Cards */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-blue-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-blue-600">{profileData.stats.posts}</div>
+                  <div className="text-sm text-blue-600 font-medium">Posts</div>
+                </div>
+                <div className="bg-green-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-green-600">{profileData.stats.followers}</div>
+                  <div className="text-sm text-green-600 font-medium">Followers</div>
+                </div>
+                <div className="bg-purple-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-purple-600">{profileData.stats.following}</div>
+                  <div className="text-sm text-purple-600 font-medium">Following</div>
+                </div>
+              </div>
             </div>
 
             {/* Streak Counter */}
@@ -536,50 +537,71 @@ const SocialProfile: React.FC = () => {
               </div>
             </div>
 
-            {/* Nutrition Profile Summary */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-semibold text-gray-800 mb-2">Nutrition Goals</h3>
-              {!profileData.profile.daily_calories && !profileData.profile.weight ? (
-                <div className="text-center py-4">
-                  <p className="text-gray-500 mb-3">Complete your profile to set nutrition goals</p>
-                  <button className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-                    Set Goals
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Daily Calories:</span>
-                    <span className="ml-2 font-medium">{profileData.profile.daily_calories || 'Not set'}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Daily Protein:</span>
-                    <span className="ml-2 font-medium">{profileData.profile.daily_protein || 'Not set'}g</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Current Weight:</span>
-                    <span className="ml-2 font-medium">{profileData.profile.weight || 'Not set'} lbs</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Target Weight:</span>
-                    <span className="ml-2 font-medium">{profileData.profile.target_weight || 'Not set'} lbs</span>
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         </div>
-      </div>
 
-      {/* Create Post Button */}
-      <div className="px-6 py-6 border-b border-gray-200">
-        <button
-          onClick={() => setShowCreatePost(true)}
-          className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
-        >
-          <PenTool className="w-5 h-5" />
-          <span>Create a new post</span>
-        </button>
+        {/* Nutrition Goals Card */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <UserCircle className="w-6 h-6 text-orange-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">Nutrition Goals</h3>
+          </div>
+
+          {!profileData.profile.daily_calories ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <UserCircle className="w-8 h-8 text-gray-400" />
+              </div>
+              <p className="text-gray-500 mb-4">No nutrition goals set yet</p>
+              <button
+                onClick={openEditProfile}
+                className="bg-gradient-to-r from-orange-500 to-red-500 text-white py-2 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                Set Goals
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-orange-50 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-orange-600 font-medium">Daily Calories</span>
+                  <span className="text-2xl font-bold text-orange-600">{profileData.profile.daily_calories}</span>
+                </div>
+              </div>
+              <div className="bg-green-50 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-green-600 font-medium">Daily Protein</span>
+                  <span className="text-2xl font-bold text-green-600">{profileData.profile.daily_protein}g</span>
+                </div>
+              </div>
+              <div className="bg-blue-50 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-blue-600 font-medium">Current Weight</span>
+                  <span className="text-2xl font-bold text-blue-600">{profileData.profile.weight || 'Not set'} lbs</span>
+                </div>
+              </div>
+              <div className="bg-purple-50 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-purple-600 font-medium">Target Weight</span>
+                  <span className="text-2xl font-bold text-purple-600">{profileData.profile.target_weight || 'Not set'} lbs</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Create Post Card */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <button
+            onClick={() => setShowCreatePost(true)}
+            className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg transform hover:scale-105"
+          >
+            <PenTool className="w-5 h-5" />
+            <span>Create a new post</span>
+          </button>
+        </div>
       </div>
 
       {/* Create Post Modal */}
@@ -605,7 +627,7 @@ const SocialProfile: React.FC = () => {
                   value={newPost.content}
                   onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
                   placeholder="What's going on?"
-                  className="w-full border border-gray-300 rounded-lg p-4 resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="w-full border border-gray-300 rounded-lg p-4 resize-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                   rows={4}
                 />
               </div>
@@ -710,7 +732,7 @@ const SocialProfile: React.FC = () => {
                   handleCreatePost();
                 }}
                 disabled={!newPost.content.trim()}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors"
+                className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:bg-gray-400 text-white rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
               >
                 Post
               </button>
