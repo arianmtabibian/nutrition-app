@@ -474,7 +474,7 @@ const SocialProfile: React.FC = () => {
           {/* Posts, Followers, Following Stats */}
           <div className="flex justify-center items-center space-x-8 mb-6">
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{profileData.stats.posts}</div>
+              <div className="text-2xl font-bold text-orange-600">{profileData.stats.posts}</div>
               <div className="text-sm text-gray-600">Posts</div>
             </div>
             <div className="w-px h-8 bg-gray-300"></div>

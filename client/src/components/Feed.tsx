@@ -72,7 +72,19 @@ const Feed: React.FC = () => {
   const [searchLoading, setSearchLoading] = useState(false);
 
   const formatPostDate = (dateString: string) => {
+    // Handle invalid or missing date strings
+    if (!dateString) {
+      return 'Just now';
+    }
+
     const postDate = new Date(dateString);
+    
+    // Check if the date is valid
+    if (isNaN(postDate.getTime())) {
+      console.warn('Invalid date string:', dateString);
+      return 'Just now';
+    }
+
     const today = new Date();
     const isToday = postDate.toDateString() === today.toDateString();
     
@@ -83,7 +95,12 @@ const Feed: React.FC = () => {
         hour12: true 
       })}`;
     } else {
-      return formatDistanceToNow(postDate, { addSuffix: true });
+      try {
+        return formatDistanceToNow(postDate, { addSuffix: true });
+      } catch (error) {
+        console.warn('Error formatting date distance:', error);
+        return 'Recently';
+      }
     }
   };
 
@@ -357,6 +374,11 @@ const Feed: React.FC = () => {
       if (response && (response.status === 200 || response.status === 201)) {
         const newPostData = response.data;
         console.log('New post data:', newPostData);
+        
+        // Ensure the post has a valid created_at timestamp
+        if (!newPostData.created_at) {
+          newPostData.created_at = new Date().toISOString();
+        }
         
         setPosts(prevPosts => [newPostData, ...prevPosts]);
         setNewPost({
@@ -867,7 +889,7 @@ const Feed: React.FC = () => {
                                 </div>
                                 <div className="text-gray-700">{comment.content}</div>
                               </div>
-                              <div className="text-xs text-gray-500 mt-1">{formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}</div>
+                              <div className="text-xs text-gray-500 mt-1">{formatPostDate(comment.created_at)}</div>
                             </div>
                           </div>
                         ))}
