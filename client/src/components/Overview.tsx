@@ -953,7 +953,7 @@ const Overview: React.FC = () => {
                 key={day.date}
                 className={`flex flex-col items-center p-3 rounded-lg text-xs font-medium transition-colors flex-1 ${
                   day.isToday 
-                    ? 'bg-orange-100 text-orange-800 border border-orange-400' 
+                    ? 'bg-orange-100 text-orange-800' 
                     : day.bothMet 
                       ? 'bg-green-100 text-green-800' 
                       : day.hasData 
@@ -1141,10 +1141,10 @@ const Overview: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button
             onClick={() => window.location.href = '/dashboard/inputs'}
-            className="flex items-center space-x-4 p-4 bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200 transition-all duration-200 group"
+            className="flex items-center space-x-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-all duration-200 group"
           >
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-              <Plus className="w-6 h-6 text-orange-600" />
+            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+              <Plus className="w-6 h-6 text-gray-600" />
             </div>
             <div className="text-left">
               <div className="font-semibold text-gray-900">Add Meal</div>
@@ -1154,10 +1154,10 @@ const Overview: React.FC = () => {
 
           <button
             onClick={() => window.location.href = '/dashboard/profile'}
-            className="flex items-center space-x-4 p-4 bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200 transition-all duration-200 group"
+            className="flex items-center space-x-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-all duration-200 group"
           >
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-              <Target className="w-6 h-6 text-orange-600" />
+            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+              <Target className="w-6 h-6 text-gray-600" />
             </div>
             <div className="text-left">
               <div className="font-semibold text-gray-900">Update Goals</div>

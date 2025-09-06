@@ -402,6 +402,27 @@ const Feed: React.FC = () => {
     loadMonthData();
   }, [loadMonthData]);
 
+  // Listen for meal data changes (like Overview does)
+  useEffect(() => {
+    const handleMealDataChanged = () => {
+      console.log('📊 Feed: Meal data changed event received, reloading sidebar data...');
+      loadSidebarData();
+      loadMonthData(); // Also refresh calendar when meals change
+    };
+
+    window.addEventListener('mealDataChanged', handleMealDataChanged);
+    window.addEventListener('mealAdded', handleMealDataChanged);
+    window.addEventListener('mealUpdated', handleMealDataChanged);
+    window.addEventListener('mealDeleted', handleMealDataChanged);
+
+    return () => {
+      window.removeEventListener('mealDataChanged', handleMealDataChanged);
+      window.removeEventListener('mealAdded', handleMealDataChanged);
+      window.removeEventListener('mealUpdated', handleMealDataChanged);
+      window.removeEventListener('mealDeleted', handleMealDataChanged);
+    };
+  }, [loadSidebarData, loadMonthData]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -492,6 +513,22 @@ const Feed: React.FC = () => {
                       className="bg-orange-500 h-2.5 rounded-full transition-all duration-300" 
                       style={{ 
                         width: `${Math.min(100, ((todayNutrition.totalCalories || 0) / (todayNutrition.calorieGoal || 2000)) * 100)}%` 
+                      }}
+                    ></div>
+                  </div>
+                  
+                  {/* Protein Progress */}
+                  <div className="flex justify-between items-center mt-4">
+                    <span className="text-gray-600">Protein</span>
+                    <span className="font-semibold text-gray-900">
+                      {todayNutrition.totalProtein || 0}g / {todayNutrition.proteinGoal || 150}g
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2.5 shadow-inner">
+                    <div 
+                      className="bg-green-500 h-2.5 rounded-full transition-all duration-300" 
+                      style={{ 
+                        width: `${Math.min(100, ((todayNutrition.totalProtein || 0) / (todayNutrition.proteinGoal || 150)) * 100)}%` 
                       }}
                     ></div>
                   </div>
