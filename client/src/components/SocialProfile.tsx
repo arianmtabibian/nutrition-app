@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Heart, MessageCircle, Share, MoreHorizontal, PenTool, Edit3, Settings, Grid, Bookmark, UserPlus, UserCheck, UserCircle, Image, X } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from 'date-fns';
 import { diaryAPI, mealsAPI, profileAPI, socialAPI } from '../services/api';
 
 interface Post {
@@ -89,6 +89,12 @@ const SocialProfile: React.FC = () => {
   // State for streak calculation
   const [streak, setStreak] = useState(0);
   const [streakLoading, setStreakLoading] = useState(true);
+  
+  // State for nutrition and calendar data
+  const [todayNutrition, setTodayNutrition] = useState<any>(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [monthData, setMonthData] = useState<any>(null);
+  const [nutritionLoading, setNutritionLoading] = useState(true);
 
   // SIMPLE streak calculation - just count consecutive yellow/green squares
   const calculateStreak = async () => {
@@ -139,10 +145,113 @@ const SocialProfile: React.FC = () => {
     }
   };
 
+  // Load nutrition data (same as Feed component)
+  const loadNutritionData = async () => {
+    try {
+      setNutritionLoading(true);
+      console.log('📊 Profile: Loading nutrition data...');
+      
+      if (!user?.id || !profileData) {
+        console.log('📊 Profile: No user or profile data available');
+        setNutritionLoading(false);
+        return;
+      }
+
+      // Load today's nutrition using same method as Overview/Feed
+      const today = new Date().toISOString().split('T')[0];
+      console.log('📊 Profile: Loading meals for date:', today);
+      
+      const mealsResponse = await mealsAPI.getByDate(today);
+      console.log('📊 Profile: Raw meals response:', mealsResponse);
+      
+      if (mealsResponse.data && mealsResponse.data.meals) {
+        const meals = mealsResponse.data.meals || [];
+        console.log('📊 Profile: Processing meals:', meals.length, 'meals found');
+        
+        const totalCalories = meals.reduce((sum: number, meal: any) => sum + (meal.calories || 0), 0);
+        const totalProtein = meals.reduce((sum: number, meal: any) => sum + (meal.protein || 0), 0);
+        const totalCarbs = meals.reduce((sum: number, meal: any) => sum + (meal.carbs || 0), 0);
+        const totalFat = meals.reduce((sum: number, meal: any) => sum + (meal.fat || 0), 0);
+        
+        const nutritionData = {
+          totalCalories: totalCalories,
+          totalProtein: totalProtein,
+          totalCarbs: totalCarbs,
+          totalFat: totalFat,
+          calorieGoal: profileData.profile?.daily_calories || 2000,
+          proteinGoal: profileData.profile?.daily_protein || 150,
+        };
+        
+        console.log('📊 Profile: Final calculated nutrition data:', nutritionData);
+        setTodayNutrition(nutritionData);
+      }
+    } catch (error) {
+      console.error('Error loading nutrition data:', error);
+    } finally {
+      setNutritionLoading(false);
+    }
+  };
+
+  // Load calendar data (same as Feed component)
+  const loadCalendarData = async () => {
+    try {
+      console.log('📅 Profile: Loading calendar data...');
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      
+      const response = await diaryAPI.getMonth(year, month);
+      console.log('📅 Profile: Calendar response:', response);
+      
+      if (response.data) {
+        setMonthData(response.data);
+        console.log('📅 Profile: Calendar data loaded successfully');
+      }
+    } catch (error) {
+      console.error('Error loading calendar data:', error);
+    }
+  };
+
   useEffect(() => {
     if (profileData) {
       calculateStreak();
+      loadNutritionData();
+      loadCalendarData();
     }
+  }, [profileData]);
+
+  // Listen for meal updates to refresh data
+  useEffect(() => {
+    const handleMealDataChanged = () => {
+      console.log('📊 Profile: Meal data changed event received, refreshing...');
+      loadNutritionData();
+      loadCalendarData();
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'mealAdded' || e.key === 'mealDeleted' || e.key === 'mealUpdated') {
+        console.log('📊 Profile: Storage event detected, refreshing...');
+        handleMealDataChanged();
+      }
+    };
+
+    // Listen for custom events (same tab)
+    window.addEventListener('mealDataChanged', handleMealDataChanged);
+    window.addEventListener('mealAdded', handleMealDataChanged);
+    window.addEventListener('mealUpdated', handleMealDataChanged);
+    window.addEventListener('mealDeleted', handleMealDataChanged);
+    
+    // Listen for storage events (cross-tab)
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('sidebarRefresh', handleMealDataChanged);
+
+    return () => {
+      window.removeEventListener('mealDataChanged', handleMealDataChanged);
+      window.removeEventListener('mealAdded', handleMealDataChanged);
+      window.removeEventListener('mealUpdated', handleMealDataChanged);
+      window.removeEventListener('mealDeleted', handleMealDataChanged);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('sidebarRefresh', handleMealDataChanged);
+    };
   }, [profileData]);
 
   useEffect(() => {
@@ -401,6 +510,23 @@ const SocialProfile: React.FC = () => {
       const response = await socialAPI.createPost(formData);
       
       const result = response.data;
+      console.log('New post data:', result);
+      
+      // Ensure the post has proper user information
+      if (!result.created_at) {
+        result.created_at = new Date().toISOString();
+      }
+      
+      if (!result.user && user) {
+        result.user = {
+          id: user.id,
+          username: user.username,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          profile_picture: user.profile_picture || undefined
+        };
+      }
+      
       setNewPost({ 
         content: '', 
         imageFile: null, 
@@ -594,30 +720,48 @@ const SocialProfile: React.FC = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Nutrition Goals</h3>
             
-            {profileData.profile.daily_calories ? (
+            {profileData.profile.daily_calories && todayNutrition ? (
               <div className="space-y-6">
                 {/* Calories Progress */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm font-medium text-gray-700">Daily Calories</span>
-                    <span className="text-sm text-gray-600">{profileData.profile.daily_calories} cal</span>
+                    <span className="text-sm text-gray-600">
+                      {todayNutrition.totalCalories} / {todayNutrition.calorieGoal} cal
+                    </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div className="bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full" style={{width: '75%'}}></div>
+                    <div 
+                      className="bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full" 
+                      style={{
+                        width: `${Math.min(100, Math.round((todayNutrition.totalCalories / todayNutrition.calorieGoal) * 100))}%`
+                      }}
+                    ></div>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">75% of daily goal</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {Math.round((todayNutrition.totalCalories / todayNutrition.calorieGoal) * 100)}% of daily goal
+                  </div>
                 </div>
 
                 {/* Protein Progress */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm font-medium text-gray-700">Daily Protein</span>
-                    <span className="text-sm text-gray-600">{profileData.profile.daily_protein}g</span>
+                    <span className="text-sm text-gray-600">
+                      {todayNutrition.totalProtein}g / {todayNutrition.proteinGoal}g
+                    </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full" style={{width: '60%'}}></div>
+                    <div 
+                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full" 
+                      style={{
+                        width: `${Math.min(100, Math.round((todayNutrition.totalProtein / todayNutrition.proteinGoal) * 100))}%`
+                      }}
+                    ></div>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">60% of daily goal</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {Math.round((todayNutrition.totalProtein / todayNutrition.proteinGoal) * 100)}% of daily goal
+                  </div>
                 </div>
 
                 {/* Weight Progress */}
@@ -654,24 +798,62 @@ const SocialProfile: React.FC = () => {
               ))}
               
               {/* Calendar days */}
-              {Array.from({ length: 35 }, (_, i) => {
-                const isActive = Math.random() > 0.7; // Random activity for demo
-                const isToday = i === 15; // Demo today
-                return (
-                  <div
-                    key={i}
-                    className={`aspect-square rounded flex items-center justify-center text-xs ${
-                      isActive 
-                        ? 'bg-orange-500 text-white' 
-                        : isToday 
-                          ? 'bg-orange-100 text-orange-600 border border-orange-300'
-                          : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {i + 1 <= 31 ? i + 1 : ''}
-                  </div>
-                );
-              })}
+              {(() => {
+                const monthStart = startOfMonth(currentDate);
+                const monthEnd = endOfMonth(currentDate);
+                const calendarDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+                
+                // Pad the beginning to align with Monday start
+                const startPadding = (monthStart.getDay() + 6) % 7; // Convert Sunday=0 to Monday=0
+                const paddedDays = Array(startPadding).fill(null).concat(calendarDays);
+                
+                // Fill to 35 days (5 weeks)
+                while (paddedDays.length < 35) {
+                  paddedDays.push(null);
+                }
+                
+                return paddedDays.slice(0, 35).map((day, i) => {
+                  if (!day) {
+                    return <div key={i} className="aspect-square"></div>;
+                  }
+                  
+                  const dayData = monthData?.days?.find((d: any) => 
+                    d.date === format(day, 'yyyy-MM-dd')
+                  );
+                  
+                  const hasActivity = dayData?.has_data;
+                  const caloriesMet = dayData?.calories_met;
+                  const proteinMet = dayData?.protein_met;
+                  const isCurrentDay = isToday(day);
+                  const isCurrentMonth = isSameMonth(day, currentDate);
+                  
+                  let bgColor = 'bg-gray-100 text-gray-600';
+                  if (hasActivity) {
+                    if (caloriesMet && proteinMet) {
+                      bgColor = 'bg-orange-500 text-white'; // Both goals met
+                    } else if (caloriesMet || proteinMet) {
+                      bgColor = 'bg-orange-300 text-white'; // One goal met
+                    } else {
+                      bgColor = 'bg-orange-100 text-orange-600'; // Has data but no goals met
+                    }
+                  }
+                  
+                  if (isCurrentDay) {
+                    bgColor += ' ring-2 ring-orange-400';
+                  }
+                  
+                  return (
+                    <div
+                      key={i}
+                      className={`aspect-square rounded flex items-center justify-center text-xs ${bgColor} ${
+                        !isCurrentMonth ? 'opacity-30' : ''
+                      }`}
+                    >
+                      {format(day, 'd')}
+                    </div>
+                  );
+                });
+              })()}
             </div>
             
             <div className="mt-4 text-xs text-gray-500">

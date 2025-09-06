@@ -380,6 +380,17 @@ const Feed: React.FC = () => {
           newPostData.created_at = new Date().toISOString();
         }
         
+        // Ensure the post has proper user information
+        if (!newPostData.user && user) {
+          newPostData.user = {
+            id: user.id,
+            username: user.username,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            profile_picture: user.profile_picture || undefined
+          };
+        }
+        
         setPosts(prevPosts => [newPostData, ...prevPosts]);
         setNewPost({
           content: '',
