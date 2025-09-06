@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Heart, MessageCircle, Share, MoreHorizontal, PenTool, Bookmark, Image, X, Plus, UserCircle, Calendar, TrendingUp, TrendingDown, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import { diaryAPI, mealsAPI, profileAPI } from '../services/api';
+import { diaryAPI, mealsAPI, profileAPI, socialAPI } from '../services/api';
 
 interface Post {
   id: number;
@@ -346,16 +346,10 @@ const Feed: React.FC = () => {
     formData.append('hide_like_count', newPost.hideLikeCount.toString());
 
     try {
-      const response = await fetch('/api/social/posts', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data')}`
-        },
-        body: formData
-      });
-
-      if (response.ok) {
-        const newPostData = await response.json();
+      const response = await socialAPI.createPost(formData);
+      
+      if (response.status === 200 || response.status === 201) {
+        const newPostData = response.data;
         setPosts([newPostData, ...posts]);
         setNewPost({
           content: '',
@@ -365,6 +359,9 @@ const Feed: React.FC = () => {
           hideLikeCount: false
         });
         setShowCreatePost(false);
+        
+        // Trigger event for other components to refresh
+        window.dispatchEvent(new CustomEvent('postCreated', { detail: newPostData }));
       }
     } catch (error) {
       console.error('Error creating post:', error);

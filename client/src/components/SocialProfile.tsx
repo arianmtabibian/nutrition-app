@@ -406,12 +406,12 @@ const SocialProfile: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Background Header Section */}
-      <div className="relative h-64 bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 overflow-hidden">
+      <div className="relative h-64 bg-gradient-to-br from-green-400 via-blue-500 to-purple-600">
         {/* Background Image Placeholder */}
         <div className="absolute inset-0 bg-black bg-opacity-20"></div>
         
         {/* Profile Picture - Centered */}
-        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 z-30">
+        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 z-50">
           <div className="relative">
             <div className="w-40 h-40 rounded-full bg-white p-1 shadow-xl">
               <div className="w-full h-full rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-5xl font-bold overflow-hidden">
@@ -442,7 +442,7 @@ const SocialProfile: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 pt-24 pb-8">
+      <div className="max-w-6xl mx-auto px-4 pt-32 pb-8">
         {/* Profile Info Section */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-4 mb-4">

@@ -32,7 +32,7 @@ const Dashboard: React.FC = () => {
   });
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchFilter, setSearchFilter] = useState('Athletes'); // Default filter
+  const [searchFilter, setSearchFilter] = useState('Friends'); // Default filter
 
   const handleCreatePost = async () => {
     console.log('Dashboard handleCreatePost called with:', newPost);
@@ -271,36 +271,43 @@ const Dashboard: React.FC = () => {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-orange-200/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <button 
-              onClick={() => navigate('/dashboard/feed')}
-              className="flex items-center hover:opacity-80 transition-opacity"
-            >
-              <div className="relative">
-                <div className="h-10 w-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <Target className="w-5 h-5 text-white" />
+          <div className="flex items-center justify-between h-20">
+            {/* Left Section: Logo + Search */}
+            <div className="flex items-center space-x-6">
+              <button 
+                onClick={() => navigate('/dashboard/feed')}
+                className="flex items-center hover:opacity-80 transition-opacity"
+              >
+                <div className="relative">
+                  <div className="h-10 w-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <Target className="w-5 h-5 text-white" />
+                  </div>
                 </div>
-              </div>
-              <h1 className="ml-3 text-xl font-bold text-gray-900">
-                NutriTrack
-              </h1>
-            </button>
-            
-            {/* Inline Search Bar */}
-            <div className="flex items-center space-x-4">
+                <h1 className="ml-3 text-xl font-bold text-gray-900">
+                  NutriTrack
+                </h1>
+              </button>
+              
+              {/* Inline Search Bar */}
+              <div className="flex items-center">
               {showSearchDropdown ? (
-                <div className="flex items-center bg-white border border-gray-300 rounded-lg shadow-sm inline-search-bar">
+                <div className="flex items-center bg-white border-2 border-gray-200 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 inline-search-bar">
                   {/* Search Filter Dropdown */}
                   <div className="relative">
                     <select
                       value={searchFilter}
                       onChange={(e) => setSearchFilter(e.target.value)}
-                      className="appearance-none bg-transparent border-0 rounded-l-lg px-3 py-2 pr-8 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="appearance-none bg-gradient-to-r from-gray-50 to-gray-100 hover:from-orange-50 hover:to-orange-100 border-0 rounded-l-xl px-4 py-3 pr-10 text-sm font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-orange-50 transition-all duration-200 cursor-pointer"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
+                        backgroundPosition: 'right 0.5rem center',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundSize: '1.5em 1.5em'
+                      }}
                     >
-                      <option value="Athletes">Athletes</option>
-                      <option value="Groups">Groups</option>
+                      <option value="Friends" className="bg-white text-gray-700 py-2">👥 Friends</option>
+                      <option value="Groups" className="bg-white text-gray-700 py-2">👫 Groups</option>
                     </select>
-                    <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                   </div>
                   
                   {/* Search Input */}
@@ -309,7 +316,7 @@ const Dashboard: React.FC = () => {
                     placeholder={`Search ${searchFilter.toLowerCase()}...`}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="border-0 border-l border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm w-64"
+                    className="border-0 border-l-2 border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-300 text-sm w-64 bg-white placeholder-gray-500"
                     autoFocus
                   />
                   
@@ -319,9 +326,9 @@ const Dashboard: React.FC = () => {
                       setShowSearchDropdown(false);
                       setSearchQuery('');
                     }}
-                    className="p-2 hover:bg-gray-100 rounded-r-lg transition-colors border-l border-gray-300"
+                    className="p-3 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 rounded-r-xl transition-all duration-200 border-l-2 border-gray-200 group"
                   >
-                    <X className="h-4 w-4 text-gray-400" />
+                    <X className="h-4 w-4 text-gray-400 group-hover:text-red-500 transition-colors" />
                   </button>
                 </div>
               ) : (
@@ -333,8 +340,10 @@ const Dashboard: React.FC = () => {
                   <span>Search</span>
                 </button>
               )}
+              </div>
             </div>
             
+            {/* Right Section: User Info + Actions */}
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-700">
                 Welcome, <span className="font-medium">{user?.first_name || 'User'}</span>
