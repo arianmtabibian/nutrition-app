@@ -1249,6 +1249,133 @@ const Feed: React.FC = () => {
         </div>
       </div>
 
+      {/* Create Post Modal */}
+      {showCreatePost && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
+              <h3 className="text-xl font-semibold text-gray-900">Create New Post</h3>
+              <button
+                onClick={() => setShowCreatePost(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="space-y-4">
+                {/* Post Content Input */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    What's on your mind?
+                  </label>
+                  <textarea
+                    value={newPost.content}
+                    onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+                    placeholder="What's going on?"
+                    className="w-full border border-gray-300 rounded-lg p-3 resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    rows={4}
+                  />
+                </div>
+
+                {/* Image Preview */}
+                {newPost.imageFile && (
+                  <div className="relative">
+                    <img
+                      src={URL.createObjectURL(newPost.imageFile)}
+                      alt="Preview"
+                      className="w-full h-40 object-cover rounded-lg"
+                    />
+                    <button
+                      onClick={() => setNewPost({ ...newPost, imageFile: null })}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Upload Controls */}
+                <div className="border border-gray-200 rounded-lg p-3">
+                  <h4 className="font-medium text-gray-900 mb-2">Add to your post</h4>
+                  <div className="flex items-center space-x-4">
+                    <label className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg cursor-pointer transition-colors">
+                      <Image className="h-4 w-4" />
+                      <span className="text-sm font-medium">Upload Photo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setNewPost({ ...newPost, imageFile: file });
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Post Options */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">Allow comments</span>
+                    <button
+                      onClick={() => setNewPost({ ...newPost, allowComments: !newPost.allowComments })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        newPost.allowComments ? 'bg-blue-600' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          newPost.allowComments ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">Hide like count</span>
+                    <button
+                      onClick={() => setNewPost({ ...newPost, hideLikeCount: !newPost.hideLikeCount })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        newPost.hideLikeCount ? 'bg-blue-600' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          newPost.hideLikeCount ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between p-4 border-t border-gray-200 flex-shrink-0">
+              <button
+                onClick={() => setShowCreatePost(false)}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreatePost}
+                disabled={!newPost.content.trim()}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg transition-colors"
+              >
+                Post
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Follow People Search Modal */}
       {showFollowSearch && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1336,11 +1463,10 @@ const Feed: React.FC = () => {
           </div>
         </div>
       )}
-        </div>
 
         {/* Right Sidebar - Groups */}
         <div className="w-80 flex-shrink-0 sticky top-6 self-start space-y-4 max-h-[calc(100vh-3rem)] overflow-y-auto">
-        {/* Groups Card */}
+          {/* Groups Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <UserCircle className="w-5 h-5 mr-2" />
@@ -1404,7 +1530,6 @@ const Feed: React.FC = () => {
               Find more groups
             </button>
           </div>
-        </div>
         </div>
       </div>
     </>
