@@ -3,7 +3,7 @@ import axios from 'axios';
 // Create axios instance with timeout for better performance
 export const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com',
-  timeout: 25000, // 25 second timeout - more forgiving for slower connections
+  timeout: 15000, // 15 second timeout - faster startup while still reliable
   headers: {
     'Content-Type': 'application/json',
   },

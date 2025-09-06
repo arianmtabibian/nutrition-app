@@ -61,9 +61,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('🔐 Found valid auth data, verifying with backend...');
         api.defaults.headers.common['Authorization'] = `Bearer ${authData.token}`;
         
-        // Add timeout to prevent hanging requests - Increased timeout for better reliability
+        // Add timeout to prevent hanging requests - Reduced timeout for faster startup
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
         
         // Verify token and get user info from the auth verify endpoint
         api.get('/api/auth/verify', { signal: controller.signal })
@@ -92,12 +92,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               // Keep user logged in during network issues
               // Try to retry once after a delay
               if (retryCount < 1) {
-                console.log('🔐 Retrying auth verification in 3 seconds...');
+                console.log('🔐 Retrying auth verification in 2 seconds...');
                 setTimeout(() => {
                   setRetryCount(prev => prev + 1);
-                  // Direct retry instead of triggering useEffect loop
-                  checkAuth();
-                }, 3000);
+                }, 2000);
+              } else {
+                console.log('🔐 Max retries reached, giving up auth verification');
+                setLoading(false);
+                setIsCheckingAuth(false);
               }
             } else if (error.response?.status >= 500) {
               console.log('🔐 Server error during auth verification, keeping auth data');
