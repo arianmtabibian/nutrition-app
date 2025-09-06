@@ -497,18 +497,22 @@ const Feed: React.FC = () => {
                   </div>
                   
                   {/* Macros */}
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="text-center bg-green-50 rounded-xl p-3">
-                      <div className="text-green-600 font-semibold text-base">{todayNutrition.totalProtein || 0}g</div>
+                  <div className="grid grid-cols-4 gap-2">
+                    <div className="text-center bg-green-50 rounded-lg p-2">
+                      <div className="text-green-600 font-semibold text-sm">{todayNutrition.totalProtein || 0}g</div>
                       <div className="text-gray-500 text-xs">Protein</div>
                     </div>
-                    <div className="text-center bg-yellow-50 rounded-xl p-3">
-                      <div className="text-yellow-600 font-semibold text-base">{todayNutrition.totalCarbs || 0}g</div>
+                    <div className="text-center bg-yellow-50 rounded-lg p-2">
+                      <div className="text-yellow-600 font-semibold text-sm">{todayNutrition.totalCarbs || 0}g</div>
                       <div className="text-gray-500 text-xs">Carbs</div>
                     </div>
-                    <div className="text-center bg-red-50 rounded-xl p-3">
-                      <div className="text-red-600 font-semibold text-base">{todayNutrition.totalFat || 0}g</div>
+                    <div className="text-center bg-red-50 rounded-lg p-2">
+                      <div className="text-red-600 font-semibold text-sm">{todayNutrition.totalFat || 0}g</div>
                       <div className="text-gray-500 text-xs">Fat</div>
+                    </div>
+                    <div className="text-center bg-blue-50 rounded-lg p-2">
+                      <div className="text-blue-600 font-semibold text-sm">{Math.round(((todayNutrition.totalProtein || 0) / (todayNutrition.proteinGoal || 150)) * 100)}%</div>
+                      <div className="text-gray-500 text-xs">Goal</div>
                     </div>
                   </div>
                 </div>
@@ -832,23 +836,28 @@ const Feed: React.FC = () => {
         </div>
       </div>
 
-      {/* Create Post Modal - Original Design */}
+      {/* Create Post Modal - Improved Design */}
       {showCreatePost && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Create Post</h2>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-100">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <PenTool className="w-4 h-4 text-orange-600" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900">Create Post</h2>
+              </div>
               <button
                 onClick={() => setShowCreatePost(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             
-            <div className="p-4 space-y-4">
-              <div className="flex items-start space-x-3">
-                <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-semibold">
+            <div className="p-6 space-y-6">
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center text-white font-semibold shadow-md">
                   {user?.first_name?.charAt(0) || user?.username?.charAt(0) || 'U'}
                 </div>
                 <div className="flex-1">
@@ -856,8 +865,8 @@ const Feed: React.FC = () => {
                     placeholder="What's on your mind?"
                     value={newPost.content}
                     onChange={(e) => setNewPost(prev => ({ ...prev, content: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
-                    rows={4}
+                    className="w-full p-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-300 resize-none bg-gray-50 hover:bg-white transition-colors"
+                    rows={5}
                   />
                 </div>
               </div>
@@ -879,13 +888,16 @@ const Feed: React.FC = () => {
               )}
 
               {/* Post Options */}
-              <div className="space-y-3 pt-4 border-t border-gray-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Post Settings</span>
+              <div className="bg-gray-50 rounded-xl p-4 space-y-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-5 h-5 bg-orange-100 rounded flex items-center justify-center">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900">Post Settings</span>
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center space-x-2 cursor-pointer">
+                <div className="grid grid-cols-2 gap-4">
+                  <label className="flex items-center space-x-3 cursor-pointer p-3 bg-white rounded-lg border border-gray-200 hover:border-orange-300 transition-colors">
                     <input
                       type="checkbox"
                       checked={newPost.allowComments}
@@ -894,10 +906,8 @@ const Feed: React.FC = () => {
                     />
                     <span className="text-sm text-gray-700">Allow comments</span>
                   </label>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center space-x-2 cursor-pointer">
+                  
+                  <label className="flex items-center space-x-3 cursor-pointer p-3 bg-white rounded-lg border border-gray-200 hover:border-orange-300 transition-colors">
                     <input
                       type="checkbox"
                       checked={newPost.hideLikeCount}
@@ -909,11 +919,11 @@ const Feed: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-between pt-6 border-t border-gray-100">
                 <div className="flex items-center space-x-4">
-                  <label className="flex items-center space-x-2 text-gray-600 hover:text-orange-600 cursor-pointer">
+                  <label className="flex items-center space-x-3 text-gray-600 hover:text-orange-600 cursor-pointer p-2 hover:bg-orange-50 rounded-lg transition-colors">
                     <Image className="w-5 h-5" />
-                    <span className="text-sm">Photo</span>
+                    <span className="text-sm font-medium">Add Photo</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -926,16 +936,16 @@ const Feed: React.FC = () => {
                 <div className="flex items-center space-x-3">
                   <button
                     onClick={() => setShowCreatePost(false)}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                    className="px-6 py-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleCreatePost}
                     disabled={!newPost.content.trim() && !newPost.imageFile}
-                    className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-md hover:shadow-lg"
                   >
-                    Post
+                    Share Post
                   </button>
                 </div>
               </div>

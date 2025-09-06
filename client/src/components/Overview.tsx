@@ -910,19 +910,19 @@ const Overview: React.FC = () => {
           {/* Color Legend */}
           <div className="flex items-center space-x-4 text-xs">
             <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
+              <div className="w-3 h-3 bg-green-100 rounded"></div>
               <span className="text-gray-600">Goals Met</span>
             </div>
             <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-orange-100 border border-orange-300 rounded"></div>
+              <div className="w-3 h-3 bg-orange-100 rounded"></div>
               <span className="text-gray-600">Today</span>
             </div>
             <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-yellow-100 border border-yellow-300 rounded"></div>
+              <div className="w-3 h-3 bg-yellow-100 rounded"></div>
               <span className="text-gray-600">Partial</span>
             </div>
             <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-gray-100 border border-gray-300 rounded"></div>
+              <div className="w-3 h-3 bg-gray-100 rounded"></div>
               <span className="text-gray-600">No Data</span>
             </div>
           </div>
@@ -953,7 +953,7 @@ const Overview: React.FC = () => {
                 key={day.date}
                 className={`flex flex-col items-center p-3 rounded-lg text-xs font-medium transition-colors flex-1 ${
                   day.isToday 
-                    ? 'bg-orange-100 text-orange-800 border-2 border-orange-300' 
+                    ? 'bg-orange-100 text-orange-800 border border-orange-400' 
                     : day.bothMet 
                       ? 'bg-green-100 text-green-800' 
                       : day.hasData 
@@ -1154,10 +1154,10 @@ const Overview: React.FC = () => {
 
           <button
             onClick={() => window.location.href = '/dashboard/profile'}
-            className="flex items-center space-x-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-all duration-200 group"
+            className="flex items-center space-x-4 p-4 bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200 transition-all duration-200 group"
           >
-            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-              <Target className="w-6 h-6 text-gray-600" />
+            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+              <Target className="w-6 h-6 text-orange-600" />
             </div>
             <div className="text-left">
               <div className="font-semibold text-gray-900">Update Goals</div>
