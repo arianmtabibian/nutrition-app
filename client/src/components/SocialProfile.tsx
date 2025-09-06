@@ -70,6 +70,10 @@ const SocialProfile: React.FC = () => {
     hideLikeCount: false
   });
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
+  const [followers, setFollowers] = useState<any[]>([]);
+  const [following, setFollowing] = useState<any[]>([]);
   const [editProfileData, setEditProfileData] = useState({
     daily_calories: 0,
     daily_protein: 0,
@@ -474,15 +478,25 @@ const SocialProfile: React.FC = () => {
               <div className="text-sm text-gray-600">Posts</div>
             </div>
             <div className="w-px h-8 bg-gray-300"></div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{profileData.stats.followers}</div>
+            <button 
+              className="text-center hover:bg-gray-50 rounded-lg p-2 transition-colors"
+              onClick={() => setShowFollowersModal(true)}
+            >
+              <div className="text-2xl font-bold text-orange-600 hover:text-orange-700">
+                {profileData.stats.followers}
+              </div>
               <div className="text-sm text-gray-600">Followers</div>
-            </div>
+            </button>
             <div className="w-px h-8 bg-gray-300"></div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{profileData.stats.following}</div>
+            <button 
+              className="text-center hover:bg-gray-50 rounded-lg p-2 transition-colors"
+              onClick={() => setShowFollowingModal(true)}
+            >
+              <div className="text-2xl font-bold text-orange-600 hover:text-orange-700">
+                {profileData.stats.following}
+              </div>
               <div className="text-sm text-gray-600">Following</div>
-            </div>
+            </button>
           </div>
           
           {profileData.profile.bio ? (
@@ -494,40 +508,20 @@ const SocialProfile: React.FC = () => {
 
         {/* Stats and Progress Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* Left Column - Health Metrics */}
+          {/* Left Column - Activity & Streak */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Health Metrics</h3>
+            <h3 className="font-semibold text-gray-900 mb-4">Activity</h3>
             
-            {/* Health Stats Grid */}
-            <div className="space-y-4 mb-6">
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">Current Weight</span>
-                <span className="text-lg font-bold text-gray-900">
-                  {profileData.profile.weight ? `${profileData.profile.weight} lbs` : 'Not set'}
-                </span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">Target Weight</span>
-                <span className="text-lg font-bold text-gray-900">
-                  {profileData.profile.target_weight ? `${profileData.profile.target_weight} lbs` : 'Not set'}
-                </span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">Height</span>
-                <span className="text-lg font-bold text-gray-900">
-                  {profileData.profile.height ? `${Math.floor(profileData.profile.height / 12)}'${profileData.profile.height % 12}"` : 'Not set'}
-                </span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">Activity Level</span>
-                <span className="text-lg font-bold text-gray-900 capitalize">
-                  {profileData.profile.activity_level || 'Not set'}
-                </span>
-              </div>
+            {/* Activity Level */}
+            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg mb-6">
+              <span className="text-sm font-medium text-gray-700">Activity Level</span>
+              <span className="text-lg font-bold text-gray-900 capitalize">
+                {profileData.profile.activity_level || 'Not set'}
+              </span>
             </div>
 
             {/* Daily Streak - Simplified */}
-            <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-xl p-6 flex-1">
+            <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-xl p-6">
               <div className="text-center">
                 <div className="flex items-center justify-center space-x-2 mb-3">
                   <span className="text-white text-2xl">🔥</span>
@@ -1244,6 +1238,89 @@ const SocialProfile: React.FC = () => {
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Followers Modal */}
+      {showFollowersModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 max-h-96 overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Followers</h3>
+              <button
+                onClick={() => setShowFollowersModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            {followers.length > 0 ? (
+              <div className="space-y-3">
+                {followers.map((follower) => (
+                  <div key={follower.id} className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold">
+                      {follower.first_name?.charAt(0) || follower.username?.charAt(0) || 'U'}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">
+                        {follower.first_name} {follower.last_name}
+                      </div>
+                      <div className="text-sm text-gray-500">@{follower.username}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <UserCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">No followers yet</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Following Modal */}
+      {showFollowingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 max-h-96 overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Following</h3>
+              <button
+                onClick={() => setShowFollowingModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            {following.length > 0 ? (
+              <div className="space-y-3">
+                {following.map((user) => (
+                  <div key={user.id} className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold">
+                      {user.first_name?.charAt(0) || user.username?.charAt(0) || 'U'}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">
+                        {user.first_name} {user.last_name}
+                      </div>
+                      <div className="text-sm text-gray-500">@{user.username}</div>
+                    </div>
+                    <button className="text-sm bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-lg transition-colors">
+                      Following
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <UserCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">Not following anyone yet</p>
+              </div>
+            )}
           </div>
         </div>
       )}

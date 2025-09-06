@@ -44,6 +44,7 @@ const Feed: React.FC = () => {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creatingPost, setCreatingPost] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [newPost, setNewPost] = useState({ 
     content: '', 
@@ -334,6 +335,9 @@ const Feed: React.FC = () => {
   const handleCreatePost = async () => {
     if (!newPost.content.trim() && !newPost.imageFile) return;
 
+    // Use separate loading state to prevent UI blanking
+    setCreatingPost(true);
+
     const formData = new FormData();
     formData.append('content', newPost.content);
     if (newPost.imageFile) {
@@ -346,11 +350,15 @@ const Feed: React.FC = () => {
     formData.append('hide_like_count', newPost.hideLikeCount.toString());
 
     try {
+      console.log('Creating post with socialAPI...');
       const response = await socialAPI.createPost(formData);
+      console.log('Post creation response:', response);
       
-      if (response.status === 200 || response.status === 201) {
+      if (response && (response.status === 200 || response.status === 201)) {
         const newPostData = response.data;
-        setPosts([newPostData, ...posts]);
+        console.log('New post data:', newPostData);
+        
+        setPosts(prevPosts => [newPostData, ...prevPosts]);
         setNewPost({
           content: '',
           imageFile: null,
@@ -362,9 +370,16 @@ const Feed: React.FC = () => {
         
         // Trigger event for other components to refresh
         window.dispatchEvent(new CustomEvent('postCreated', { detail: newPostData }));
+      } else {
+        console.error('Unexpected response status:', response?.status);
+        alert('Failed to create post. Please try again.');
       }
     } catch (error) {
       console.error('Error creating post:', error);
+      alert('Failed to create post. Please check your connection and try again.');
+    } finally {
+      // Always reset creating post state
+      setCreatingPost(false);
     }
   };
 
@@ -1035,10 +1050,13 @@ const Feed: React.FC = () => {
                   </button>
                   <button
                     onClick={handleCreatePost}
-                    disabled={!newPost.content.trim() && !newPost.imageFile}
-                    className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+                    disabled={(!newPost.content.trim() && !newPost.imageFile) || creatingPost}
+                    className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center space-x-2"
                   >
-                    Share Post
+                    {creatingPost && (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    )}
+                    <span>{creatingPost ? 'Posting...' : 'Share Post'}</span>
                   </button>
                 </div>
               </div>
