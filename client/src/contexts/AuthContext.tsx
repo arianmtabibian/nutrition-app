@@ -61,52 +61,63 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('🔐 Found valid auth data, verifying with backend...');
         api.defaults.headers.common['Authorization'] = `Bearer ${authData.token}`;
         
-        // Add timeout to prevent hanging requests - Reduced timeout for faster startup
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-        
         // Verify token and get user info from the auth verify endpoint
-        api.get('/api/auth/verify', { signal: controller.signal })
+        api.get('/api/auth/verify', { 
+          timeout: 8000 // 8 second timeout, no AbortController to avoid cancellation issues
+        })
           .then(response => {
-            clearTimeout(timeoutId);
             console.log('🔐 Verify response in AuthContext:', response.data);
-            if (response.data.user) {
+            if (response.data && response.data.user) {
               setUser(response.data.user);
               // ALWAYS update auth data to current domain (domain migration)
               storeAuthData(authData.token, response.data.user);
               console.log('🔐 User logged in successfully on domain:', currentDomain);
               console.log('🔐 Auth data migrated to current domain');
+            } else {
+              console.log('🔐 No user data in response, clearing auth');
+              clearAuthData();
+              delete api.defaults.headers.common['Authorization'];
             }
           })
           .catch((error) => {
-            clearTimeout(timeoutId);
             console.error('🔐 Error verifying user:', error);
+            console.error('🔐 Error details:', {
+              message: error.message,
+              code: error.code,
+              status: error.response?.status,
+              data: error.response?.data
+            });
             
             // Be more specific about what constitutes an auth failure vs network issue
             if (error.response?.status === 401 || error.response?.status === 403) {
-              console.log('🔐 Token invalid, clearing auth data');
+              console.log('🔐 Token invalid (401/403), clearing auth data');
               clearAuthData();
               delete api.defaults.headers.common['Authorization'];
-            } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-              console.log('🔐 Network timeout during auth verification, keeping auth data');
+            } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout') || error.code === 'NETWORK_ERROR') {
+              console.log('🔐 Network/timeout error during auth verification, keeping auth data');
               // Keep user logged in during network issues
-              // Try to retry once after a delay
               if (retryCount < 1) {
-                console.log('🔐 Retrying auth verification in 2 seconds...');
+                console.log('🔐 Retrying auth verification in 3 seconds...');
                 setTimeout(() => {
                   setRetryCount(prev => prev + 1);
-                }, 2000);
+                }, 3000);
+                return; // Don't proceed to finally block yet
               } else {
-                console.log('🔐 Max retries reached, giving up auth verification');
-                setLoading(false);
-                setIsCheckingAuth(false);
+                console.log('🔐 Max retries reached, proceeding without verification');
               }
             } else if (error.response?.status >= 500) {
-              console.log('🔐 Server error during auth verification, keeping auth data');
+              console.log('🔐 Server error (5xx) during auth verification, keeping auth data');
               // Server errors shouldn't log users out
+            } else if (error.name === 'CanceledError' || error.message?.includes('canceled')) {
+              console.log('🔐 Request was canceled, likely due to component unmount or navigation');
+              // Don't treat cancellation as an auth failure
             } else {
-              console.log('🔐 Unknown error during auth verification:', error.message);
-              // For unknown errors, keep auth data but log the issue
+              console.log('🔐 Unknown error during auth verification:', error.message || 'Unknown error');
+              // For unknown errors, try to keep user logged in but clear if it's clearly an auth issue
+              if (error.message?.includes('unauthorized') || error.message?.includes('forbidden')) {
+                clearAuthData();
+                delete api.defaults.headers.common['Authorization'];
+              }
             }
           })
           .finally(() => {
