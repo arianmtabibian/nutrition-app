@@ -441,10 +441,11 @@ const SocialProfile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
+      <div className="w-full bg-white shadow-sm border-b border-gray-200">
 
         {/* Profile Header */}
-        <div className="border-b border-gray-200 pb-8 pt-8 px-6">
+        <div className="border-b border-gray-200 pb-8 pt-8">
+          <div className="max-w-4xl mx-auto px-6">
           <div className="flex items-start space-x-8">
             {/* Profile Picture */}
             <div className="relative">
@@ -571,10 +572,12 @@ const SocialProfile: React.FC = () => {
               </div>
             </div>
           </div>
+          </div>
         </div>
 
         {/* Create Post Button */}
-        <div className="px-6 py-6 border-b border-gray-200">
+        <div className="py-6 border-b border-gray-200">
+          <div className="max-w-4xl mx-auto px-6">
           <button
             onClick={() => setShowCreatePost(true)}
             className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
@@ -582,6 +585,7 @@ const SocialProfile: React.FC = () => {
             <PenTool className="w-5 h-5" />
             <span>Create a new post</span>
           </button>
+          </div>
         </div>
       </div>
 
@@ -723,7 +727,8 @@ const SocialProfile: React.FC = () => {
       )}
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 px-6">
+      <div className="w-full bg-white border-b border-gray-200">
+        <div className="max-w-4xl mx-auto px-6 flex">
         <button
           onClick={() => setActiveTab('posts')}
           className={`flex items-center space-x-2 px-8 py-5 border-b-2 transition-colors ${
@@ -757,11 +762,13 @@ const SocialProfile: React.FC = () => {
           <Bookmark className="w-4 h-4" />
           <span>SAVED</span>
         </button>
+        </div>
       </div>
 
       {/* Posts Feed */}
       {activeTab === 'posts' && (
-        <div className="space-y-6 pt-6 px-6">
+        <div className="w-full bg-white">
+          <div className="max-w-4xl mx-auto px-6 space-y-6 pt-6">
           {posts.map((post) => (
             <div key={post.id} className="border border-gray-200 rounded-lg">
               {/* Post Header */}
@@ -849,12 +856,13 @@ const SocialProfile: React.FC = () => {
               </div>
             </div>
           ))}
+          </div>
         </div>
       )}
 
       {/* Liked Posts */}
       {activeTab === 'liked' && (
-        <div className="space-y-6 pt-6 px-6">
+        <div className="space-y-6 pt-6 px-6 bg-white">
           {likedPosts.map((post) => (
             <div key={post.id} className="border border-gray-200 rounded-lg">
               {/* Post Header */}
@@ -944,7 +952,7 @@ const SocialProfile: React.FC = () => {
 
       {/* Saved Posts */}
       {activeTab === 'saved' && (
-        <div className="space-y-6 pt-6 px-6">
+        <div className="space-y-6 pt-6 px-6 bg-white">
           {bookmarkedPosts.map((post) => (
             <div key={post.id} className="border border-gray-200 rounded-lg">
               {/* Post Header */}
@@ -1035,7 +1043,7 @@ const SocialProfile: React.FC = () => {
 
       {/* No Posts Message */}
       {activeTab === 'posts' && posts.length === 0 && (
-        <div className="p-12 text-center text-gray-500 mx-6">
+        <div className="p-12 text-center text-gray-500 mx-6 bg-white">
           <PenTool className="w-16 h-16 mx-auto mb-4 text-gray-300" />
           <h3 className="text-xl font-medium mb-2">No posts yet!</h3>
           <p>When you share photos and videos, they'll appear on your profile.</p>
@@ -1050,7 +1058,7 @@ const SocialProfile: React.FC = () => {
 
       {/* No Liked Posts Message */}
       {activeTab === 'liked' && likedPosts.length === 0 && (
-        <div className="p-12 text-center text-gray-500 mx-6">
+        <div className="p-12 text-center text-gray-500 mx-6 bg-white">
           <Heart className="w-16 h-16 mx-auto mb-4 text-gray-300" />
           <h3 className="text-xl font-medium mb-2">No liked posts yet</h3>
           <p>Posts you like will appear here.</p>
@@ -1059,7 +1067,7 @@ const SocialProfile: React.FC = () => {
 
       {/* No Saved Posts Message */}
       {activeTab === 'saved' && bookmarkedPosts.length === 0 && (
-        <div className="p-12 text-center text-gray-500 mx-6">
+        <div className="p-12 text-center text-gray-500 mx-6 bg-white">
           <Bookmark className="w-16 h-16 mx-auto mb-4 text-gray-300" />
           <h3 className="text-xl font-medium mb-2">No saved posts yet</h3>
           <p>Posts you save will appear here.</p>
