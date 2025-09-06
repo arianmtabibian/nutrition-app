@@ -723,7 +723,7 @@ const SocialProfile: React.FC = () => {
       )}
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-gray-200 px-6">
         <button
           onClick={() => setActiveTab('posts')}
           className={`flex items-center space-x-2 px-8 py-5 border-b-2 transition-colors ${
@@ -761,7 +761,7 @@ const SocialProfile: React.FC = () => {
 
       {/* Posts Feed */}
       {activeTab === 'posts' && (
-        <div className="space-y-6 pt-6">
+        <div className="space-y-6 pt-6 px-6">
           {posts.map((post) => (
             <div key={post.id} className="border border-gray-200 rounded-lg">
               {/* Post Header */}
@@ -854,7 +854,7 @@ const SocialProfile: React.FC = () => {
 
       {/* Liked Posts */}
       {activeTab === 'liked' && (
-        <div className="space-y-6 pt-6">
+        <div className="space-y-6 pt-6 px-6">
           {likedPosts.map((post) => (
             <div key={post.id} className="border border-gray-200 rounded-lg">
               {/* Post Header */}
@@ -944,7 +944,7 @@ const SocialProfile: React.FC = () => {
 
       {/* Saved Posts */}
       {activeTab === 'saved' && (
-        <div className="space-y-6 pt-6">
+        <div className="space-y-6 pt-6 px-6">
           {bookmarkedPosts.map((post) => (
             <div key={post.id} className="border border-gray-200 rounded-lg">
               {/* Post Header */}
@@ -1035,7 +1035,7 @@ const SocialProfile: React.FC = () => {
 
       {/* No Posts Message */}
       {activeTab === 'posts' && posts.length === 0 && (
-        <div className="p-12 text-center text-gray-500">
+        <div className="p-12 text-center text-gray-500 mx-6">
           <PenTool className="w-16 h-16 mx-auto mb-4 text-gray-300" />
           <h3 className="text-xl font-medium mb-2">No posts yet</h3>
           <p>When you share photos and videos, they'll appear on your profile.</p>
@@ -1050,7 +1050,7 @@ const SocialProfile: React.FC = () => {
 
       {/* No Liked Posts Message */}
       {activeTab === 'liked' && likedPosts.length === 0 && (
-        <div className="p-12 text-center text-gray-500">
+        <div className="p-12 text-center text-gray-500 mx-6">
           <Heart className="w-16 h-16 mx-auto mb-4 text-gray-300" />
           <h3 className="text-xl font-medium mb-2">No liked posts yet</h3>
           <p>Posts you like will appear here.</p>
@@ -1059,7 +1059,7 @@ const SocialProfile: React.FC = () => {
 
       {/* No Saved Posts Message */}
       {activeTab === 'saved' && bookmarkedPosts.length === 0 && (
-        <div className="p-12 text-center text-gray-500">
+        <div className="p-12 text-center text-gray-500 mx-6">
           <Bookmark className="w-16 h-16 mx-auto mb-4 text-gray-300" />
           <h3 className="text-xl font-medium mb-2">No saved posts yet</h3>
           <p>Posts you save will appear here.</p>
