@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Heart, MessageCircle, Share, MoreHorizontal, PenTool, Bookmark, Image, X, Plus, UserCircle, Calendar, TrendingUp, TrendingDown, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import { diaryAPI } from '../services/api';
+import { diaryAPI, mealsAPI, profileAPI } from '../services/api';
 
 interface Post {
   id: number;
@@ -111,30 +111,47 @@ const Feed: React.FC = () => {
     
     setSidebarLoading(true);
     try {
-      // Load profile data (simplified - just use user data)
-      setProfileData({ profile: user });
-
-      // Load today's nutrition using the correct API endpoint
-      const today = new Date().toISOString().split('T')[0];
-      const nutritionResponse = await fetch(`/api/meals/date/${today}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data') || localStorage.getItem('authToken')}`
-        }
-      });
+      console.log('📊 Feed: Loading sidebar data...');
       
-      if (nutritionResponse.ok) {
-        const nutritionData = await nutritionResponse.json();
-        console.log('📊 Feed: Nutrition data loaded:', nutritionData);
+      // Load profile data using the same API as Overview
+      const profileResponse = await profileAPI.get();
+      if (profileResponse.data.profile) {
+        setProfileData(profileResponse.data);
+        console.log('📊 Feed: Profile data loaded:', profileResponse.data.profile);
+      }
+
+      // Load today's nutrition using the same method as Overview
+      const today = new Date().toISOString().split('T')[0];
+      const mealsResponse = await mealsAPI.getByDate(today);
+      console.log('📊 Feed: Meals response:', mealsResponse.data);
+      
+      if (mealsResponse.data) {
+        // Calculate totals from meals (same as Overview)
+        const meals = mealsResponse.data.meals || [];
+        const totalCalories = meals.reduce((sum: number, meal: any) => sum + (meal.calories || 0), 0);
+        const totalProtein = meals.reduce((sum: number, meal: any) => sum + (meal.protein || 0), 0);
+        const totalCarbs = meals.reduce((sum: number, meal: any) => sum + (meal.carbs || 0), 0);
+        const totalFat = meals.reduce((sum: number, meal: any) => sum + (meal.fat || 0), 0);
+        
+        // Create nutrition data object (same structure as Overview)
+        const nutritionData = {
+          totalCalories: totalCalories,
+          totalProtein: totalProtein,
+          totalCarbs: totalCarbs,
+          totalFat: totalFat,
+          calorieGoal: profileResponse.data.profile?.daily_calories || 2000,
+          proteinGoal: profileResponse.data.profile?.daily_protein || 150,
+        };
+        
+        console.log('📊 Feed: Calculated nutrition data:', nutritionData);
         setTodayNutrition(nutritionData);
-      } else {
-        console.log('📊 Feed: No nutrition data found for today');
       }
 
       // Load month data for calendar
       await loadMonthData();
       
     } catch (error) {
-      console.error('Error loading sidebar data:', error);
+      console.error('📊 Feed: Error loading sidebar data:', error);
     } finally {
       setSidebarLoading(false);
     }
@@ -580,6 +597,33 @@ const Feed: React.FC = () => {
 
             {/* Posts - Original Simple Design */}
             <div className="space-y-6">
+              {posts.length === 0 && !loading && (
+                <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8 text-center">
+                  <div className="mb-4">
+                    <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <MessageCircle className="w-8 h-8 text-orange-500" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No posts yet</h3>
+                    <p className="text-gray-600 mb-6">Your feed is empty. Start connecting with others to see their posts!</p>
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <button
+                      onClick={() => setShowFollowSearch(true)}
+                      className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+                    >
+                      Find Friends
+                    </button>
+                    <button
+                      onClick={() => {/* Navigate to groups when implemented */}}
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                    >
+                      Browse Groups
+                    </button>
+                  </div>
+                </div>
+              )}
+              
               {posts.map(post => (
                 <div key={post.id} className="bg-white border border-gray-200 rounded-lg shadow-sm">
                   {/* Post Header */}

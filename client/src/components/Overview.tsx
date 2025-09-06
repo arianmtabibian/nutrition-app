@@ -875,17 +875,17 @@ const Overview: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Modern Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 text-white shadow-lg">
+      {/* Simple Header with Orange Theme */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Good {getGreeting()}! 👋</h1>
-            <p className="text-blue-100 text-lg">Here's your nutrition snapshot for {format(new Date(), 'MMMM d')}</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">Good {getGreeting()}! 👋</h1>
+            <p className="text-gray-600">Here's your nutrition snapshot for {format(new Date(), 'MMMM d')}</p>
           </div>
           <div className="text-right">
             <button
               onClick={refreshData}
-              className="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 text-white px-4 py-2 rounded-xl transition-all duration-200 flex items-center space-x-2"
+              className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 font-medium"
             >
               <Zap className="h-4 w-4" />
               <span>Refresh</span>
@@ -894,16 +894,16 @@ const Overview: React.FC = () => {
         </div>
       </div>
 
-      {/* Weekly Progress - Modern */}
-      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl p-6 border border-emerald-200">
+      {/* Weekly Progress - Simple */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-emerald-500 rounded-2xl flex items-center justify-center">
-              <BarChart3 className="h-5 w-5 text-white" />
+            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <BarChart3 className="h-5 w-5 text-orange-600" />
             </div>
             <div>
-              <h3 className="text-xl font-semibold text-gray-900">Weekly Progress</h3>
-              <p className="text-sm text-emerald-600">Your 7-day nutrition journey</p>
+              <h3 className="text-lg font-semibold text-gray-900">Weekly Progress</h3>
+              <p className="text-sm text-gray-600">Your 7-day nutrition journey</p>
             </div>
           </div>
           
@@ -914,7 +914,7 @@ const Overview: React.FC = () => {
               <span className="text-gray-600">Goals Met</span>
             </div>
             <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-orange-200 border border-orange-400 rounded"></div>
+              <div className="w-3 h-3 bg-orange-100 border border-orange-300 rounded"></div>
               <span className="text-gray-600">Today</span>
             </div>
             <div className="flex items-center space-x-1">
@@ -953,7 +953,7 @@ const Overview: React.FC = () => {
                 key={day.date}
                 className={`flex flex-col items-center p-3 rounded-lg text-xs font-medium transition-colors flex-1 ${
                   day.isToday 
-                    ? 'bg-orange-200 text-orange-900 ring-2 ring-orange-400' 
+                    ? 'bg-orange-100 text-orange-800 border-2 border-orange-300' 
                     : day.bothMet 
                       ? 'bg-green-100 text-green-800' 
                       : day.hasData 
@@ -999,10 +999,12 @@ const Overview: React.FC = () => {
 
       {/* Weight Loss/Gain Analysis */}
       {profile.weight && profile.target_weight && (
-        <div className="card bg-gray-50">
-          <div className="flex items-center space-x-2 mb-4">
-            <TrendingUp className="h-5 w-5 text-gray-600" />
-            <h3 className="text-lg font-semibold text-gray-700">Weight Progress Analysis</h3>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <TrendingUp className="h-5 w-5 text-orange-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">Weight Progress Analysis</h3>
           </div>
           
           <WeightAnalysis 
@@ -1016,19 +1018,19 @@ const Overview: React.FC = () => {
       {/* Today's Progress Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Calories Card */}
-        <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 border border-orange-200">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center">
-              <Flame className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <Flame className="w-5 h-5 text-orange-600" />
             </div>
             {getStatusIcon(todayNutrition?.calories_met || false)}
           </div>
           <div className="space-y-3">
             <div>
-              <div className="text-2xl font-bold text-gray-900">{currentCalories}</div>
+              <div className="text-xl font-bold text-gray-900">{currentCalories}</div>
               <div className="text-sm text-orange-600 font-medium">of {caloriesGoal} calories</div>
             </div>
-            <div className="w-full bg-orange-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 rounded-full h-2">
               <div
                 className="bg-orange-500 h-2 rounded-full transition-all duration-500"
                 style={{ width: `${Math.min(caloriesProgress, 100)}%` }}
@@ -1038,21 +1040,21 @@ const Overview: React.FC = () => {
         </div>
 
         {/* Protein Card */}
-        <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-6 border border-red-200">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-red-500 rounded-2xl flex items-center justify-center">
-              <Beef className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <Beef className="w-5 h-5 text-green-600" />
             </div>
             {getStatusIcon(todayNutrition?.protein_met || false)}
           </div>
           <div className="space-y-3">
             <div>
-              <div className="text-2xl font-bold text-gray-900">{currentProtein}g</div>
-              <div className="text-sm text-red-600 font-medium">of {proteinGoal}g protein</div>
+              <div className="text-xl font-bold text-gray-900">{currentProtein}g</div>
+              <div className="text-sm text-green-600 font-medium">of {proteinGoal}g protein</div>
             </div>
-            <div className="w-full bg-red-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 rounded-full h-2">
               <div
-                className="bg-red-500 h-2 rounded-full transition-all duration-500"
+                className="bg-green-500 h-2 rounded-full transition-all duration-500"
                 style={{ width: `${Math.min(proteinProgress, 100)}%` }}
               ></div>
             </div>
@@ -1060,36 +1062,36 @@ const Overview: React.FC = () => {
         </div>
 
         {/* Calories Left Card */}
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border border-green-200">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center">
-              <Target className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Target className="w-5 h-5 text-blue-600" />
             </div>
           </div>
           <div className="space-y-3">
             <div>
-              <div className="text-2xl font-bold text-gray-900">{caloriesRemaining}</div>
-              <div className="text-sm text-green-600 font-medium">calories remaining</div>
+              <div className="text-xl font-bold text-gray-900">{caloriesRemaining}</div>
+              <div className="text-sm text-blue-600 font-medium">calories remaining</div>
             </div>
-            <div className="text-xs text-green-700 bg-green-200 px-2 py-1 rounded-full inline-block">
+            <div className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded-full inline-block">
               {Math.round(caloriesProgress)}% complete
             </div>
           </div>
         </div>
 
         {/* Protein Left Card */}
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center">
-              <Zap className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+              <Zap className="w-5 h-5 text-purple-600" />
             </div>
           </div>
           <div className="space-y-3">
             <div>
-              <div className="text-2xl font-bold text-gray-900">{proteinRemaining}g</div>
-              <div className="text-sm text-blue-600 font-medium">protein remaining</div>
+              <div className="text-xl font-bold text-gray-900">{proteinRemaining}g</div>
+              <div className="text-sm text-purple-600 font-medium">protein remaining</div>
             </div>
-            <div className="text-xs text-blue-700 bg-blue-200 px-2 py-1 rounded-full inline-block">
+            <div className="text-xs text-purple-700 bg-purple-100 px-2 py-1 rounded-full inline-block">
               {Math.round(proteinProgress)}% complete
             </div>
           </div>
@@ -1097,7 +1099,7 @@ const Overview: React.FC = () => {
       </div>
 
        {/* Additional Nutrients - Simplified */}
-       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+       <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
          <div className="flex items-center mb-4">
            <div className="w-8 h-8 bg-purple-100 rounded-xl flex items-center justify-center mr-3">
              <BarChart3 className="w-4 h-4 text-purple-600" />
@@ -1128,38 +1130,38 @@ const Overview: React.FC = () => {
          </div>
        </div>
 
-      {/* Quick Actions - Modern Style */}
-      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg">
+      {/* Quick Actions - Simple Style */}
+      <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
         <div className="flex items-center mb-6">
-          <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center mr-3">
-            <Zap className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+            <Zap className="w-4 h-4 text-orange-600" />
           </div>
-          <h3 className="text-xl font-semibold">Quick Actions</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button
             onClick={() => window.location.href = '/dashboard/inputs'}
-            className="flex items-center space-x-4 p-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-2xl border border-white/20 transition-all duration-200 group"
+            className="flex items-center space-x-4 p-4 bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200 transition-all duration-200 group"
           >
-            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Plus className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+              <Plus className="w-6 h-6 text-orange-600" />
             </div>
             <div className="text-left">
-              <div className="font-semibold text-white">Add Meal</div>
-              <div className="text-sm text-white/70">Log your nutrition</div>
+              <div className="font-semibold text-gray-900">Add Meal</div>
+              <div className="text-sm text-gray-600">Log your nutrition</div>
             </div>
           </button>
 
           <button
             onClick={() => window.location.href = '/dashboard/profile'}
-            className="flex items-center space-x-4 p-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-2xl border border-white/20 transition-all duration-200 group"
+            className="flex items-center space-x-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-all duration-200 group"
           >
-            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Target className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+              <Target className="w-6 h-6 text-gray-600" />
             </div>
             <div className="text-left">
-              <div className="font-semibold text-white">Update Goals</div>
-              <div className="text-sm text-white/70">Adjust your targets</div>
+              <div className="font-semibold text-gray-900">Update Goals</div>
+              <div className="text-sm text-gray-600">Adjust your targets</div>
             </div>
           </button>
         </div>
