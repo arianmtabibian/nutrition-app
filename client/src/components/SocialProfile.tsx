@@ -406,12 +406,12 @@ const SocialProfile: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Background Header Section */}
-      <div className="relative h-80 bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 overflow-hidden">
+      <div className="relative h-64 bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 overflow-hidden">
         {/* Background Image Placeholder */}
         <div className="absolute inset-0 bg-black bg-opacity-20"></div>
         
         {/* Profile Picture - Centered */}
-        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2">
+        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 z-20">
           <div className="relative">
             <div className="w-40 h-40 rounded-full bg-white p-1 shadow-xl">
               <div className="w-full h-full rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-5xl font-bold overflow-hidden">
@@ -442,7 +442,7 @@ const SocialProfile: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 pt-24 pb-8">
+      <div className="max-w-6xl mx-auto px-4 pt-20 pb-8">
         {/* Profile Info Section */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-4 mb-4">
@@ -461,9 +461,8 @@ const SocialProfile: React.FC = () => {
                 Edit Profile
               </button>
             )}
-            <button className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md">
-              Follow
-            </button>
+            {/* Only show Follow button if viewing someone else's profile */}
+            {/* For now, we'll hide it since this is typically the user's own profile */}
           </div>
           
           <p className="text-gray-600 mb-2">@{profileData.user.username}</p>
@@ -497,18 +496,24 @@ const SocialProfile: React.FC = () => {
               </div>
             </div>
 
-            {/* Daily Streak */}
-            <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
-              <div className="flex items-center space-x-2 mb-2">
-                <span className="text-orange-500">🔥</span>
-                <span className="font-semibold text-gray-800">Daily Streak</span>
+            {/* Daily Streak - Extended */}
+            <div className="bg-orange-50 rounded-lg p-6 border border-orange-200 flex-1">
+              <div className="flex items-center space-x-2 mb-4">
+                <span className="text-orange-500 text-2xl">🔥</span>
+                <span className="font-semibold text-gray-800 text-lg">Daily Streak</span>
               </div>
               {streakLoading ? (
                 <span className="text-orange-500">Loading...</span>
               ) : streak > 0 ? (
-                <div className="text-3xl font-bold text-orange-500">{streak} {streak === 1 ? 'day' : 'days'}</div>
+                <div>
+                  <div className="text-4xl font-bold text-orange-500 mb-2">{streak} {streak === 1 ? 'day' : 'days'}</div>
+                  <p className="text-sm text-gray-600">Keep it up! You're doing great!</p>
+                </div>
               ) : (
-                <span className="text-orange-500">Start your goal today!</span>
+                <div>
+                  <span className="text-xl text-orange-500 block mb-2">Start your goal today!</span>
+                  <p className="text-sm text-gray-600">Track your nutrition to build a streak</p>
+                </div>
               )}
             </div>
           </div>
@@ -613,11 +618,43 @@ const SocialProfile: React.FC = () => {
         </div>
 
         {/* Two Column Layout - Posts and Groups */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Posts */}
-          <div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Posts (2 columns width) */}
+          <div className="lg:col-span-2">
+            {/* Posts Header with Tabs */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Posts</h2>
+              <div className="flex space-x-6">
+                <button
+                  onClick={() => setActiveTab('posts')}
+                  className={`text-lg font-semibold transition-colors pb-2 border-b-2 ${
+                    activeTab === 'posts' 
+                      ? 'text-orange-600 border-orange-600' 
+                      : 'text-gray-500 border-transparent hover:text-gray-700'
+                  }`}
+                >
+                  Posts
+                </button>
+                <button
+                  onClick={() => setActiveTab('liked')}
+                  className={`text-lg font-semibold transition-colors pb-2 border-b-2 ${
+                    activeTab === 'liked' 
+                      ? 'text-orange-600 border-orange-600' 
+                      : 'text-gray-500 border-transparent hover:text-gray-700'
+                  }`}
+                >
+                  Liked
+                </button>
+                <button
+                  onClick={() => setActiveTab('saved')}
+                  className={`text-lg font-semibold transition-colors pb-2 border-b-2 ${
+                    activeTab === 'saved' 
+                      ? 'text-orange-600 border-orange-600' 
+                      : 'text-gray-500 border-transparent hover:text-gray-700'
+                  }`}
+                >
+                  Saved
+                </button>
+              </div>
               <button
                 onClick={() => setShowCreatePost(true)}
                 className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 shadow-md"
@@ -629,8 +666,11 @@ const SocialProfile: React.FC = () => {
             
             {/* Posts Feed */}
             <div className="space-y-6">
-              {posts.length > 0 ? (
-                posts.map((post) => (
+              {/* Posts Tab */}
+              {activeTab === 'posts' && (
+                <>
+                  {posts.length > 0 ? (
+                    posts.map((post) => (
                   <div key={post.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     {/* Post Header */}
                     <div className="flex items-center justify-between p-4">
@@ -716,19 +756,143 @@ const SocialProfile: React.FC = () => {
                       </button>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-                  <PenTool className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-xl font-medium mb-2 text-gray-600">No posts yet!</h3>
-                  <p className="text-gray-500 mb-4">When you share photos and videos, they'll appear here.</p>
-                  <button
-                    onClick={() => setShowCreatePost(true)}
-                    className="bg-gradient-to-r from-orange-500 to-red-500 text-white py-2 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md"
-                  >
-                    Share your first post
-                  </button>
-                </div>
+                    ))
+                  ) : (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                      <PenTool className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <h3 className="text-xl font-medium mb-2 text-gray-600">No posts yet!</h3>
+                      <p className="text-gray-500 mb-4">When you share photos and videos, they'll appear here.</p>
+                      <button
+                        onClick={() => setShowCreatePost(true)}
+                        className="bg-gradient-to-r from-orange-500 to-red-500 text-white py-2 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-md"
+                      >
+                        Share your first post
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Liked Posts Tab */}
+              {activeTab === 'liked' && (
+                <>
+                  {likedPosts.length > 0 ? (
+                    likedPosts.map((post) => (
+                      <div key={post.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        {/* Post content similar to above */}
+                        <div className="flex items-center justify-between p-4">
+                          <div className="flex items-center space-x-3">
+                            {post.user.profile_picture ? (
+                              <img
+                                src={post.user.profile_picture}
+                                alt={`${post.user.first_name} ${post.user.last_name}`}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-semibold">
+                                {post.user.first_name?.charAt(0) || 'U'}
+                              </div>
+                            )}
+                            <div>
+                              <h3 className="font-semibold text-gray-900">
+                                {post.user.first_name} {post.user.last_name}
+                              </h3>
+                              <p className="text-sm text-gray-500">
+                                {new Date(post.created_at).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: 'numeric',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        {post.content && (
+                          <div className="px-4 pb-3">
+                            <p className="text-gray-900">{post.content}</p>
+                          </div>
+                        )}
+                        {post.image_url && (
+                          <div className="px-4 pb-3">
+                            <img
+                              src={post.image_url}
+                              alt="Post content"
+                              className="w-full rounded-lg object-cover max-h-96"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                      <Heart className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <h3 className="text-xl font-medium mb-2 text-gray-600">No liked posts yet</h3>
+                      <p className="text-gray-500">Posts you like will appear here.</p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Saved Posts Tab */}
+              {activeTab === 'saved' && (
+                <>
+                  {bookmarkedPosts.length > 0 ? (
+                    bookmarkedPosts.map((post) => (
+                      <div key={post.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        {/* Post content similar to above */}
+                        <div className="flex items-center justify-between p-4">
+                          <div className="flex items-center space-x-3">
+                            {post.user.profile_picture ? (
+                              <img
+                                src={post.user.profile_picture}
+                                alt={`${post.user.first_name} ${post.user.last_name}`}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-semibold">
+                                {post.user.first_name?.charAt(0) || 'U'}
+                              </div>
+                            )}
+                            <div>
+                              <h3 className="font-semibold text-gray-900">
+                                {post.user.first_name} {post.user.last_name}
+                              </h3>
+                              <p className="text-sm text-gray-500">
+                                {new Date(post.created_at).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: 'numeric',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        {post.content && (
+                          <div className="px-4 pb-3">
+                            <p className="text-gray-900">{post.content}</p>
+                          </div>
+                        )}
+                        {post.image_url && (
+                          <div className="px-4 pb-3">
+                            <img
+                              src={post.image_url}
+                              alt="Post content"
+                              className="w-full rounded-lg object-cover max-h-96"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                      <Bookmark className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <h3 className="text-xl font-medium mb-2 text-gray-600">No saved posts yet</h3>
+                      <p className="text-gray-500">Posts you save will appear here.</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
