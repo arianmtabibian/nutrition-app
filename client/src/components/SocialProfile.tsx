@@ -525,7 +525,7 @@ const SocialProfile: React.FC = () => {
                   ) : streak > 0 ? (
                     <span className="text-2xl font-bold text-orange-500">{streak} {streak === 1 ? 'day' : 'days'}</span>
                   ) : (
-                    <span className="text-lg text-orange-500">Start your goal today!</span>
+                    <span className="text-orange-500">Start your goal today!</span>
                   )}
                 </div>
                 <div className="text-right">
@@ -722,47 +722,52 @@ const SocialProfile: React.FC = () => {
         </div>
       )}
 
+      </div>
+
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 px-6">
-        <button
-          onClick={() => setActiveTab('posts')}
-          className={`flex items-center space-x-2 px-4 py-5 border-b-2 transition-colors ${
-            activeTab === 'posts' 
-              ? 'border-gray-900 text-gray-900' 
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <Grid className="w-4 h-4" />
-          <span>POSTS</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('liked')}
-          className={`flex items-center space-x-2 px-4 py-5 border-b-2 transition-colors ${
-            activeTab === 'liked' 
-              ? 'border-gray-900 text-gray-900' 
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <Heart className="w-4 h-4" />
-          <span>LIKED</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('saved')}
-          className={`flex items-center space-x-2 px-4 py-5 border-b-2 transition-colors ${
-            activeTab === 'saved' 
-              ? 'border-gray-900 text-gray-900' 
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <Bookmark className="w-4 h-4" />
-          <span>SAVED</span>
-        </button>
+      <div className="max-w-4xl mx-auto">
+        <div className="flex border-b border-gray-200 px-6">
+          <button
+            onClick={() => setActiveTab('posts')}
+            className={`flex items-center space-x-2 px-4 py-5 border-b-2 transition-colors ${
+              activeTab === 'posts' 
+                ? 'border-gray-900 text-gray-900' 
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Grid className="w-4 h-4" />
+            <span>POSTS</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('liked')}
+            className={`flex items-center space-x-2 px-4 py-5 border-b-2 transition-colors ${
+              activeTab === 'liked' 
+                ? 'border-gray-900 text-gray-900' 
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Heart className="w-4 h-4" />
+            <span>LIKED</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('saved')}
+            className={`flex items-center space-x-2 px-4 py-5 border-b-2 transition-colors ${
+              activeTab === 'saved' 
+                ? 'border-gray-900 text-gray-900' 
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Bookmark className="w-4 h-4" />
+            <span>SAVED</span>
+          </button>
+        </div>
       </div>
 
       {/* Posts Feed */}
       {activeTab === 'posts' && (
-        <div className="space-y-6 pt-6 px-6">
-          {posts.map((post) => (
+        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="space-y-6 pt-6 px-6">
+            {posts.map((post) => (
             <div key={post.id} className="border border-gray-200 rounded-lg">
               {/* Post Header */}
               <div className="flex items-center justify-between p-4 pb-3">
@@ -848,14 +853,16 @@ const SocialProfile: React.FC = () => {
                 </button>
               </div>
             </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
       {/* Liked Posts */}
       {activeTab === 'liked' && (
-        <div className="space-y-6 pt-6 px-6">
-          {likedPosts.map((post) => (
+        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="space-y-6 pt-6 px-6">
+            {likedPosts.map((post) => (
             <div key={post.id} className="border border-gray-200 rounded-lg">
               {/* Post Header */}
               <div className="flex items-center justify-between p-4 pb-3">
@@ -938,14 +945,16 @@ const SocialProfile: React.FC = () => {
                 </button>
               </div>
             </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
       {/* Saved Posts */}
       {activeTab === 'saved' && (
-        <div className="space-y-6 pt-6 px-6">
-          {bookmarkedPosts.map((post) => (
+        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="space-y-6 pt-6 px-6">
+            {bookmarkedPosts.map((post) => (
             <div key={post.id} className="border border-gray-200 rounded-lg">
               {/* Post Header */}
               <div className="flex items-center justify-between p-4 pb-3">
@@ -1028,41 +1037,47 @@ const SocialProfile: React.FC = () => {
                 </button>
               </div>
             </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
-
       {/* No Posts Message */}
       {activeTab === 'posts' && posts.length === 0 && (
-        <div className="p-12 text-center text-gray-500 mx-6">
-          <PenTool className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-xl font-medium mb-2">No posts yet!</h3>
-          <p>When you share photos and videos, they'll appear on your profile.</p>
-          <button
-            onClick={() => setShowCreatePost(true)}
-            className="mt-4 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Share your first photo
-          </button>
+        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="p-12 text-center text-gray-500">
+            <PenTool className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-xl font-medium mb-2">No posts yet!</h3>
+            <p>When you share photos and videos, they'll appear on your profile.</p>
+            <button
+              onClick={() => setShowCreatePost(true)}
+              className="mt-4 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Share your first photo
+            </button>
+          </div>
         </div>
       )}
 
       {/* No Liked Posts Message */}
       {activeTab === 'liked' && likedPosts.length === 0 && (
-        <div className="p-12 text-center text-gray-500 mx-6">
-          <Heart className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-xl font-medium mb-2">No liked posts yet</h3>
-          <p>Posts you like will appear here.</p>
+        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="p-12 text-center text-gray-500">
+            <Heart className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-xl font-medium mb-2">No liked posts yet</h3>
+            <p>Posts you like will appear here.</p>
+          </div>
         </div>
       )}
 
       {/* No Saved Posts Message */}
       {activeTab === 'saved' && bookmarkedPosts.length === 0 && (
-        <div className="p-12 text-center text-gray-500 mx-6">
-          <Bookmark className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-xl font-medium mb-2">No saved posts yet</h3>
-          <p>Posts you save will appear here.</p>
+        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="p-12 text-center text-gray-500">
+            <Bookmark className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-xl font-medium mb-2">No saved posts yet</h3>
+            <p>Posts you save will appear here.</p>
+          </div>
         </div>
       )}
 
