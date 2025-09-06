@@ -207,8 +207,10 @@ const Dashboard: React.FC = () => {
       if (!target.closest('.profile-dropdown')) {
         setShowProfileDropdown(false);
       }
-      if (!target.closest('.search-dropdown')) {
+      // Close search when clicking outside the inline search bar
+      if (showSearchDropdown && !target.closest('.inline-search-bar')) {
         setShowSearchDropdown(false);
+        setSearchQuery('');
       }
     };
 
@@ -284,6 +286,55 @@ const Dashboard: React.FC = () => {
               </h1>
             </button>
             
+            {/* Inline Search Bar */}
+            <div className="flex items-center space-x-4">
+              {showSearchDropdown ? (
+                <div className="flex items-center bg-white border border-gray-300 rounded-lg shadow-sm inline-search-bar">
+                  {/* Search Filter Dropdown */}
+                  <div className="relative">
+                    <select
+                      value={searchFilter}
+                      onChange={(e) => setSearchFilter(e.target.value)}
+                      className="appearance-none bg-transparent border-0 rounded-l-lg px-3 py-2 pr-8 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value="Athletes">Athletes</option>
+                      <option value="Groups">Groups</option>
+                    </select>
+                    <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  </div>
+                  
+                  {/* Search Input */}
+                  <input
+                    type="text"
+                    placeholder={`Search ${searchFilter.toLowerCase()}...`}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="border-0 border-l border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm w-64"
+                    autoFocus
+                  />
+                  
+                  {/* Close Button */}
+                  <button
+                    onClick={() => {
+                      setShowSearchDropdown(false);
+                      setSearchQuery('');
+                    }}
+                    className="p-2 hover:bg-gray-100 rounded-r-lg transition-colors border-l border-gray-300"
+                  >
+                    <X className="h-4 w-4 text-gray-400" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowSearchDropdown(true)}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 border border-gray-300"
+                >
+                  <Search className="h-4 w-4" />
+                  <span>Search</span>
+                </button>
+              )}
+            </div>
+            
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-700">
                 Welcome, <span className="font-medium">{user?.first_name || 'User'}</span>
@@ -313,72 +364,6 @@ const Dashboard: React.FC = () => {
                 <PenTool className="h-4 w-4" />
                 <span>Post</span>
               </button>
-              
-              {/* Search Dropdown */}
-              <div className="relative search-dropdown">
-                <button
-                  onClick={() => setShowSearchDropdown(!showSearchDropdown)}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 border border-gray-300"
-                >
-                  <Search className="h-4 w-4" />
-                  <span>Search</span>
-                </button>
-                
-                {showSearchDropdown && (
-                  <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                    <div className="p-4">
-                      {/* Search Filter Dropdown */}
-                      <div className="flex items-center mb-3">
-                        <div className="relative">
-                          <select
-                            value={searchFilter}
-                            onChange={(e) => setSearchFilter(e.target.value)}
-                            className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm font-medium text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                          >
-                            <option value="Athletes">Athletes</option>
-                            <option value="Groups">Groups</option>
-                          </select>
-                          <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                        </div>
-                        <button
-                          onClick={() => setShowSearchDropdown(false)}
-                          className="ml-auto p-1 hover:bg-gray-100 rounded-full transition-colors"
-                        >
-                          <X className="h-4 w-4 text-gray-400" />
-                        </button>
-                      </div>
-                      
-                      {/* Search Input */}
-                      <div className="relative">
-                        <input
-                          type="text"
-                          placeholder={`Search ${searchFilter.toLowerCase()}...`}
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full pl-4 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
-                          autoFocus
-                        />
-                      </div>
-                      
-                      {/* Search Results Placeholder */}
-                      <div className="mt-3 text-center text-gray-500 text-sm py-8">
-                        {searchQuery ? (
-                          <div>
-                            <Search className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                            <p>Search functionality coming soon!</p>
-                            <p className="text-xs mt-1">Looking for "{searchQuery}" in {searchFilter.toLowerCase()}</p>
-                          </div>
-                        ) : (
-                          <div>
-                            <Search className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                            <p>Start typing to search for {searchFilter.toLowerCase()}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
               {/* Profile Dropdown */}
               <div className="relative profile-dropdown">
                 <button

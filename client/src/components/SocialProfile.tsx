@@ -411,7 +411,7 @@ const SocialProfile: React.FC = () => {
         <div className="absolute inset-0 bg-black bg-opacity-20"></div>
         
         {/* Profile Picture - Centered */}
-        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 z-20">
+        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 z-30">
           <div className="relative">
             <div className="w-40 h-40 rounded-full bg-white p-1 shadow-xl">
               <div className="w-full h-full rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-5xl font-bold overflow-hidden">
@@ -428,7 +428,7 @@ const SocialProfile: React.FC = () => {
                 )}
               </div>
             </div>
-            <button className="absolute bottom-2 right-2 bg-gradient-to-r from-orange-500 to-red-500 text-white p-3 rounded-full hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-lg">
+            <button className="absolute bottom-2 right-2 bg-gradient-to-r from-orange-500 to-red-500 text-white p-3 rounded-full hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-lg z-10">
               <PenTool className="w-5 h-5" />
             </button>
           </div>
@@ -442,7 +442,7 @@ const SocialProfile: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 pt-20 pb-8">
+      <div className="max-w-6xl mx-auto px-4 pt-24 pb-8">
         {/* Profile Info Section */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-4 mb-4">
@@ -497,24 +497,34 @@ const SocialProfile: React.FC = () => {
             </div>
 
             {/* Daily Streak - Extended */}
-            <div className="bg-orange-50 rounded-lg p-6 border border-orange-200 flex-1">
-              <div className="flex items-center space-x-2 mb-4">
-                <span className="text-orange-500 text-2xl">🔥</span>
-                <span className="font-semibold text-gray-800 text-lg">Daily Streak</span>
+            <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-xl p-8 flex-1 shadow-lg">
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-3 mb-6">
+                  <span className="text-white text-4xl">🔥</span>
+                  <span className="font-bold text-white text-2xl">Daily Streak</span>
+                </div>
+                {streakLoading ? (
+                  <div className="text-white text-xl">Loading...</div>
+                ) : streak > 0 ? (
+                  <div>
+                    <div className="text-6xl font-black text-white mb-4">{streak}</div>
+                    <div className="text-xl font-semibold text-orange-100 mb-3">
+                      {streak === 1 ? 'Day' : 'Days'} Strong!
+                    </div>
+                    <p className="text-orange-100 text-sm leading-relaxed">
+                      Amazing consistency! Keep tracking your nutrition to maintain this streak.
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="text-5xl font-black text-white mb-4">0</div>
+                    <div className="text-xl font-semibold text-orange-100 mb-3">Start Today!</div>
+                    <p className="text-orange-100 text-sm leading-relaxed">
+                      Begin your nutrition journey and build an impressive streak!
+                    </p>
+                  </div>
+                )}
               </div>
-              {streakLoading ? (
-                <span className="text-orange-500">Loading...</span>
-              ) : streak > 0 ? (
-                <div>
-                  <div className="text-4xl font-bold text-orange-500 mb-2">{streak} {streak === 1 ? 'day' : 'days'}</div>
-                  <p className="text-sm text-gray-600">Keep it up! You're doing great!</p>
-                </div>
-              ) : (
-                <div>
-                  <span className="text-xl text-orange-500 block mb-2">Start your goal today!</span>
-                  <p className="text-sm text-gray-600">Track your nutrition to build a streak</p>
-                </div>
-              )}
             </div>
           </div>
 
