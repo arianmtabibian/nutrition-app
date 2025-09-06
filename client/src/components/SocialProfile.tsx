@@ -726,7 +726,7 @@ const SocialProfile: React.FC = () => {
       <div className="flex border-b border-gray-200 px-6">
         <button
           onClick={() => setActiveTab('posts')}
-          className={`flex items-center space-x-2 px-8 py-5 border-b-2 transition-colors ${
+          className={`flex items-center space-x-2 px-4 py-5 border-b-2 transition-colors ${
             activeTab === 'posts' 
               ? 'border-gray-900 text-gray-900' 
               : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -737,7 +737,7 @@ const SocialProfile: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('liked')}
-          className={`flex items-center space-x-2 px-8 py-5 border-b-2 transition-colors ${
+          className={`flex items-center space-x-2 px-4 py-5 border-b-2 transition-colors ${
             activeTab === 'liked' 
               ? 'border-gray-900 text-gray-900' 
               : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -748,7 +748,7 @@ const SocialProfile: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('saved')}
-          className={`flex items-center space-x-2 px-8 py-5 border-b-2 transition-colors ${
+          className={`flex items-center space-x-2 px-4 py-5 border-b-2 transition-colors ${
             activeTab === 'saved' 
               ? 'border-gray-900 text-gray-900' 
               : 'border-transparent text-gray-500 hover:text-gray-700'
