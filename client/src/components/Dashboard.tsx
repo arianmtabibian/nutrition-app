@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserSession } from '../hooks/useUserSession';
 import { LogOut, User, Calendar, Plus, BarChart3, Home, Target, PenTool, Image, X, ChevronDown, UserPlus, Settings, Utensils, Search } from 'lucide-react';
-import { profileAPI } from '../services/api';
+import { profileAPI, socialAPI } from '../services/api';
 import Overview from './Overview';
 import SocialProfile from './SocialProfile';
 import Feed from './Feed';
@@ -55,20 +55,15 @@ const Dashboard: React.FC = () => {
         console.log('Added image file:', newPost.imageFile.name);
       }
 
-      console.log('Sending request to /api/social/posts from Dashboard');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-          // Don't set Content-Type header - let the browser set it for FormData
-        },
-        body: formData
-      });
+      console.log('Sending request to socialAPI.createPost from Dashboard');
+      
+      // Use the centralized socialAPI instead of direct fetch
+      const response = await socialAPI.createPost(formData);
 
       console.log('Dashboard response status:', response.status);
 
-      if (response.ok) {
-        const result = await response.json();
+      if (response && (response.status === 200 || response.status === 201)) {
+        const result = response.data;
         console.log('Dashboard post created successfully:', result);
         setNewPost({ content: '', imageFile: null, allowComments: true, hideLikeCount: false });
         setShowNewPostModal(false);
@@ -79,9 +74,8 @@ const Dashboard: React.FC = () => {
         // Navigate to feed to see the new post
         navigate('/dashboard/feed');
       } else {
-        const errorText = await response.text();
-        console.error('Dashboard failed to create post. Status:', response.status, 'Response:', errorText);
-        alert(`Failed to create post: ${response.status} - ${errorText}`);
+        console.error('Dashboard failed to create post. Status:', response?.status, 'Response:', response);
+        alert(`Failed to create post: ${response?.status || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Dashboard error creating post:', error);

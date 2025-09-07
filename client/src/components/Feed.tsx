@@ -399,7 +399,9 @@ const Feed: React.FC = () => {
         console.warn('⚠️ socialAPI.createPost failed, trying direct API call:', socialAPIError);
         
         // Fallback to direct API call
-        const token = localStorage.getItem('token');
+        // Get token from proper auth system
+        const authData = JSON.parse(localStorage.getItem('nutritrack_auth_data') || '{}');
+        const token = authData.token || localStorage.getItem('token');
         if (!token) {
           throw new Error('No authentication token found');
         }
@@ -534,9 +536,13 @@ const Feed: React.FC = () => {
 
     setSearchLoading(true);
     try {
+      // Get token from proper auth system
+      const authData = JSON.parse(localStorage.getItem('nutritrack_auth_data') || '{}');
+      const token = authData.token || localStorage.getItem('token');
+      
       const response = await fetch(`/api/social/users/search?q=${encodeURIComponent(query)}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data')}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -553,10 +559,14 @@ const Feed: React.FC = () => {
 
   const handleFollow = async (userId: number) => {
     try {
+      // Get token from proper auth system
+      const authData = JSON.parse(localStorage.getItem('nutritrack_auth_data') || '{}');
+      const token = authData.token || localStorage.getItem('token');
+      
       const response = await fetch(`/api/social/users/${userId}/follow`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data')}`
+          'Authorization': `Bearer ${token}`
         }
       });
 

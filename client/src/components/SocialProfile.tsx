@@ -381,7 +381,9 @@ const SocialProfile: React.FC = () => {
 
   const handleEditProfile = async () => {
     try {
-      const token = localStorage.getItem('token');
+      // Get token from proper auth system
+      const authData = JSON.parse(localStorage.getItem('nutritrack_auth_data') || '{}');
+      const token = authData.token || localStorage.getItem('token');
       if (!token || !user?.id) return;
 
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/profile`, {
@@ -616,7 +618,7 @@ const SocialProfile: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 pt-32 pb-8">
+      <div className="max-w-6xl mx-auto px-4 pt-24 pb-8">
         {/* Profile Info Section - Compressed Layout */}
         <div className="text-center mb-4">
           {/* Name and Edit Button Row */}
