@@ -375,18 +375,22 @@ router.post('/posts/:postId/like', auth, (req, res) => {
         // Unlike
         db.run('DELETE FROM post_likes WHERE post_id = ? AND user_id = ?', [postId, userId], function(err) {
           if (err) {
+            console.error('❌ Failed to unlike post:', err);
             return res.status(500).json({ error: 'Failed to unlike post' });
           }
           
+          console.log('✅ Post unliked successfully:', postId, 'by user:', userId);
           res.json({ message: 'Post unliked', liked: false });
         });
       } else {
         // Like
         db.run('INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)', [postId, userId], function(err) {
           if (err) {
+            console.error('❌ Failed to like post:', err);
             return res.status(500).json({ error: 'Failed to like post' });
           }
           
+          console.log('✅ Post liked successfully:', postId, 'by user:', userId);
           res.json({ message: 'Post liked', liked: true });
         });
       }
@@ -414,18 +418,22 @@ router.post('/posts/:postId/favorite', auth, (req, res) => {
         // Unfavorite
         db.run('DELETE FROM post_favorites WHERE post_id = ? AND user_id = ?', [postId, userId], function(err) {
           if (err) {
+            console.error('❌ Failed to unfavorite post:', err);
             return res.status(500).json({ error: 'Failed to unfavorite post' });
           }
           
+          console.log('✅ Post unfavorited successfully:', postId, 'by user:', userId);
           res.json({ message: 'Post unfavorited', favorited: false });
         });
       } else {
         // Favorite
         db.run('INSERT INTO post_favorites (post_id, user_id) VALUES (?, ?)', [postId, userId], function(err) {
           if (err) {
+            console.error('❌ Failed to favorite post:', err);
             return res.status(500).json({ error: 'Failed to favorite post' });
           }
           
+          console.log('✅ Post favorited successfully:', postId, 'by user:', userId);
           res.json({ message: 'Post favorited', favorited: true });
         });
       }
@@ -567,11 +575,9 @@ router.get('/feed', auth, (req, res) => {
       FROM posts p
       JOIN users u ON p.user_id = u.id
       LEFT JOIN user_profiles up ON u.id = up.user_id
-      WHERE p.user_id IN (
+      WHERE (p.user_id = ? OR p.user_id IN (
         SELECT following_id FROM user_follows WHERE follower_id = ?
-        UNION
-        SELECT ? as user_id
-      )
+      ))
       ORDER BY p.created_at DESC
       LIMIT 20
     `, [userId, userId, userId, userId], (err, posts) => {
@@ -630,8 +636,11 @@ router.get('/profile/:userId/liked-posts', auth, (req, res) => {
     const { userId } = req.params;
     const db = getDatabase();
     
+    console.log('📋 GET /api/social/profile/:userId/liked-posts - Loading liked posts for user:', userId);
+    
     // Verify that the requesting user is authenticated and the userId matches
     if (parseInt(userId) !== req.user.userId) {
+      console.log('❌ Access denied - user mismatch:', parseInt(userId), 'vs', req.user.userId);
       return res.status(403).json({ error: 'Access denied' });
     }
     
@@ -649,8 +658,11 @@ router.get('/profile/:userId/liked-posts', auth, (req, res) => {
       ORDER BY pl.created_at DESC
     `, [userId, userId, userId], (err, posts) => {
       if (err) {
+        console.error('❌ Database error loading liked posts:', err);
         return res.status(500).json({ error: 'Database error' });
       }
+      
+      console.log('📋 Found', posts.length, 'liked posts for user:', userId);
       
       // Parse meal data and format posts
       const formattedPosts = posts.map(post => ({
@@ -665,6 +677,7 @@ router.get('/profile/:userId/liked-posts', auth, (req, res) => {
         }
       }));
       
+      console.log('✅ Returning', formattedPosts.length, 'formatted liked posts');
       res.json({ posts: formattedPosts });
     });
   } catch (error) {
@@ -679,8 +692,11 @@ router.get('/profile/:userId/favorited-posts', auth, (req, res) => {
     const { userId } = req.params;
     const db = getDatabase();
     
+    console.log('📋 GET /api/social/profile/:userId/favorited-posts - Loading bookmarked posts for user:', userId);
+    
     // Verify that the requesting user is authenticated and the userId matches
     if (parseInt(userId) !== req.user.userId) {
+      console.log('❌ Access denied - user mismatch:', parseInt(userId), 'vs', req.user.userId);
       return res.status(403).json({ error: 'Access denied' });
     }
     
@@ -698,8 +714,11 @@ router.get('/profile/:userId/favorited-posts', auth, (req, res) => {
       ORDER BY pf.created_at DESC
     `, [userId, userId, userId], (err, posts) => {
       if (err) {
+        console.error('❌ Database error loading favorited posts:', err);
         return res.status(500).json({ error: 'Database error' });
       }
+      
+      console.log('📋 Found', posts.length, 'favorited posts for user:', userId);
       
       // Parse meal data and format posts
       const formattedPosts = posts.map(post => ({
@@ -714,6 +733,7 @@ router.get('/profile/:userId/favorited-posts', auth, (req, res) => {
         }
       }));
       
+      console.log('✅ Returning', formattedPosts.length, 'formatted favorited posts');
       res.json({ posts: formattedPosts });
     });
   } catch (error) {

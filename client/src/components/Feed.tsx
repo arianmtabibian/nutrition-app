@@ -244,8 +244,9 @@ const Feed: React.FC = () => {
 
   const handleLike = async (postId: number) => {
     try {
-      console.log('👍 Liking post:', postId);
-      await socialAPI.likePost(postId);
+      console.log('👍 Toggling like for post:', postId);
+      const response = await socialAPI.likePost(postId);
+      console.log('👍 Like response:', response.data);
       
       // Update local state optimistically
       setPosts(prevPosts => {
@@ -262,13 +263,15 @@ const Feed: React.FC = () => {
       });
     } catch (error) {
       console.error('❌ Error liking post:', error);
+      alert('Failed to like post. Please try again.');
     }
   };
 
   const handleBookmark = async (postId: number) => {
     try {
-      console.log('🔖 Bookmarking post:', postId);
-      await socialAPI.bookmarkPost(postId);
+      console.log('🔖 Toggling bookmark for post:', postId);
+      const response = await socialAPI.bookmarkPost(postId);
+      console.log('🔖 Bookmark response:', response.data);
       
       // Update local state optimistically
       setPosts(prevPosts => {
@@ -281,6 +284,7 @@ const Feed: React.FC = () => {
       });
     } catch (error) {
       console.error('❌ Error bookmarking post:', error);
+      alert('Failed to bookmark post. Please try again.');
     }
   };
 
@@ -481,11 +485,22 @@ const Feed: React.FC = () => {
           return updatedPosts;
         });
         
-        // Also refresh the feed from server to ensure consistency
+        // Refresh the feed from server but merge with local post to prevent disappearing
         setTimeout(() => {
           console.log('🔄 Refreshing feed from server after post creation');
-          loadPosts();
-        }, 1000);
+          loadPosts().then(() => {
+            // Ensure our new post is still visible after server refresh
+            setPosts(prevPosts => {
+              const postsArray = Array.isArray(prevPosts) ? prevPosts : [];
+              const hasOurPost = postsArray.some(p => p.id === newPostData.id);
+              if (!hasOurPost) {
+                console.log('🔧 Re-adding our post after server refresh');
+                return [newPostData, ...postsArray];
+              }
+              return postsArray;
+            });
+          });
+        }, 2000); // Wait 2 seconds for server to process
         
         // Reset form
         console.log('🧹 Resetting form...');
