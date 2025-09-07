@@ -469,7 +469,7 @@ const Feed: React.FC = () => {
             username: user?.username || `user${user?.id || 0}`,
             first_name: user?.first_name || 'User',
             last_name: user?.last_name || 'User',
-            profile_picture: null
+            profile_picture: user?.profile_picture
           },
           created_at: new Date().toISOString(),
           likes_count: 0,
@@ -543,7 +543,7 @@ const Feed: React.FC = () => {
             username: user?.username || `user${user?.id || 0}`,
             first_name: user?.first_name || 'User',
             last_name: user?.last_name || 'User',
-            profile_picture: null
+            profile_picture: user?.profile_picture
           },
           created_at: new Date().toISOString(),
           likes_count: 0,
