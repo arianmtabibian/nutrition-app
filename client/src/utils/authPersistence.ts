@@ -60,6 +60,7 @@ export const clearAuthData = (): void => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   localStorage.removeItem('domain');
+  localStorage.removeItem('local_posts'); // Clear locally stored posts on logout
   console.log('All auth data cleared');
 };
 

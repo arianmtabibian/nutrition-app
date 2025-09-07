@@ -65,6 +65,24 @@ const Dashboard: React.FC = () => {
       if (response && (response.status === 200 || response.status === 201)) {
         const result = response.data;
         console.log('Dashboard post created successfully:', result);
+        
+        // Ensure the post has proper user information
+        if (!result.user && user) {
+          result.user = {
+            id: user.id,
+            username: user.username,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            profile_picture: user.profile_picture || undefined
+          };
+        }
+        
+        // Store the new post in localStorage for persistence across navigation
+        const existingLocalPosts = JSON.parse(localStorage.getItem('local_posts') || '[]');
+        const updatedLocalPosts = [result, ...existingLocalPosts.filter((p: any) => p.id !== result.id)];
+        localStorage.setItem('local_posts', JSON.stringify(updatedLocalPosts));
+        console.log('💾 Dashboard: Stored post in localStorage for persistence');
+        
         setNewPost({ content: '', imageFile: null, allowComments: true, hideLikeCount: false });
         setShowNewPostModal(false);
         

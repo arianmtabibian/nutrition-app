@@ -538,6 +538,12 @@ const SocialProfile: React.FC = () => {
       });
       setShowCreatePost(false);
       
+      // Store the new post in localStorage for persistence across navigation
+      const existingLocalPosts = JSON.parse(localStorage.getItem('local_posts') || '[]');
+      const updatedLocalPosts = [result, ...existingLocalPosts.filter((p: any) => p.id !== result.id)];
+      localStorage.setItem('local_posts', JSON.stringify(updatedLocalPosts));
+      console.log('💾 SocialProfile: Stored post in localStorage for persistence');
+      
       // Trigger a custom event to update the feed
       window.dispatchEvent(new CustomEvent('postCreated', { detail: result }));
       

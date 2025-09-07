@@ -219,7 +219,43 @@ const Feed: React.FC = () => {
         // Ensure response.data is an array
         if (Array.isArray(response.data)) {
           console.log('🔄 Setting posts from API response:', response.data.length, 'posts');
-          setPosts(response.data);
+          
+          // Merge with locally stored posts to maintain persistence
+          const localPosts = JSON.parse(localStorage.getItem('local_posts') || '[]');
+          console.log('💾 Found local posts:', localPosts.length);
+          
+          // Combine server posts with local posts, removing duplicates
+          const serverPosts = response.data;
+          const mergedPosts = [...localPosts];
+          
+          // Add server posts that aren't already in local posts
+          serverPosts.forEach((serverPost: any) => {
+            const existsInLocal = localPosts.some((localPost: any) => 
+              localPost.id === serverPost.id || 
+              (localPost.content === serverPost.content && 
+               Math.abs(new Date(localPost.created_at).getTime() - new Date(serverPost.created_at).getTime()) < 10000)
+            );
+            
+            if (!existsInLocal) {
+              mergedPosts.push(serverPost);
+            }
+          });
+          
+          // Sort by creation date (newest first)
+          mergedPosts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+          
+          console.log('🔄 Final merged posts:', mergedPosts.length, 'posts (', localPosts.length, 'local +', serverPosts.length, 'server)');
+          setPosts(mergedPosts);
+          
+          // Clean up old local posts that are now confirmed on server (older than 5 minutes)
+          const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+          const recentLocalPosts = localPosts.filter((post: any) => 
+            new Date(post.created_at).getTime() > fiveMinutesAgo
+          );
+          if (recentLocalPosts.length !== localPosts.length) {
+            localStorage.setItem('local_posts', JSON.stringify(recentLocalPosts));
+            console.log('🧹 Cleaned up old local posts');
+          }
         } else {
           console.warn('⚠️ Feed response data is not an array:', typeof response.data, response.data);
           setPosts([]);
@@ -461,6 +497,12 @@ const Feed: React.FC = () => {
         }
         
         console.log('🎯 Final post data to be added to feed:', newPostData);
+        
+        // Store the new post in localStorage for persistence across navigation
+        const existingLocalPosts = JSON.parse(localStorage.getItem('local_posts') || '[]');
+        const updatedLocalPosts = [newPostData, ...existingLocalPosts.filter((p: any) => p.id !== newPostData.id)];
+        localStorage.setItem('local_posts', JSON.stringify(updatedLocalPosts));
+        console.log('💾 Stored post in localStorage for persistence');
         
         // Check for duplicate posts before adding
         setPosts(prevPosts => {
@@ -875,7 +917,7 @@ const Feed: React.FC = () => {
                 </div>
               )}
               
-              {Array.isArray(posts) && posts.length > 0 ? posts.map(post => (
+              {Array.isArray(posts) && posts.length > 0 && posts.map(post => (
                 <div key={post.id} className="bg-white border border-gray-200 rounded-lg shadow-sm">
                   {/* Post Header */}
                   <div className="flex items-center justify-between p-4 border-b border-gray-200">
@@ -1018,27 +1060,7 @@ const Feed: React.FC = () => {
                     </div>
                   )}
                 </div>
-              )) : (
-                // No posts fallback
-                <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8 text-center">
-                  <div className="text-gray-400 mb-4">
-                    <PenTool className="w-12 h-12 mx-auto" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No posts yet</h3>
-                  <p className="text-gray-600 mb-4">
-                    {!Array.isArray(posts) 
-                      ? "There was an issue loading posts. Please refresh the page."
-                      : "Be the first to share something with your community!"
-                    }
-                  </p>
-                  <button
-                    onClick={() => setShowCreatePost(true)}
-                    className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
-                  >
-                    Create Your First Post
-                  </button>
-                </div>
-              )}
+              ))}
             </div>
           </div>
 
