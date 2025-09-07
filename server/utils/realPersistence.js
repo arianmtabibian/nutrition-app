@@ -74,23 +74,32 @@ const simpleBackup = async () => {
               // Continue without meals if there's an error
             }
             
-            const backupData = {
-              users: users,
-              profiles: profiles,
-              meals: meals || [],
-              timestamp: new Date().toISOString()
-            };
+            // CRITICAL FIX: Get all posts (they're not that large and are essential)
+            db.all('SELECT * FROM posts ORDER BY created_at DESC LIMIT 1000', (postErr, posts) => {
+              if (postErr) {
+                console.error('❌ Error getting posts for backup:', postErr);
+                // Continue without posts if there's an error
+              }
+              
+              const backupData = {
+                users: users,
+                profiles: profiles,
+                meals: meals || [],
+                posts: posts || [], // CRITICAL: Include posts in backup
+                timestamp: new Date().toISOString()
+              };
             
             const backupString = JSON.stringify(backupData);
             
-            console.log(`📦 ENHANCED BACKUP: ${users.length} users, ${profiles.length} profiles, ${(meals || []).length} recent meals`);
-            console.log('🔑 To make data persistent, copy this to your Render environment:');
-            console.log('Variable name: USER_BACKUP');
-            console.log('Variable value (first 100 chars):', backupString.substring(0, 100) + '...');
-            console.log('🔑 FULL BACKUP DATA:');
-            console.log(backupString);
-            
-            resolve(backupData);
+              console.log(`📦 ENHANCED BACKUP: ${users.length} users, ${profiles.length} profiles, ${(meals || []).length} recent meals, ${(posts || []).length} posts`);
+              console.log('🔑 To make data persistent, copy this to your Render environment:');
+              console.log('Variable name: USER_BACKUP');
+              console.log('Variable value (first 100 chars):', backupString.substring(0, 100) + '...');
+              console.log('🔑 FULL BACKUP DATA:');
+              console.log(backupString);
+              
+              resolve(backupData);
+            });
           });
         });
       });
@@ -120,18 +129,19 @@ const restoreFromEnv = async () => {
     }
     
     // Handle both formats: array of users OR object with users property
-    let users, profiles = [], meals = [];
+    let users, profiles = [], meals = [], posts = [];
     if (Array.isArray(backupObject)) {
       // Old format: direct array of users
       users = backupObject;
       console.log('📦 Using legacy backup format (direct user array)');
     } else if (backupObject && Array.isArray(backupObject.users)) {
-      // New format: object with users, profiles, meals
+      // New format: object with users, profiles, meals, posts
       users = backupObject.users;
       profiles = backupObject.profiles || [];
       meals = backupObject.meals || [];
-      console.log('📦 Using enhanced backup format (users + profiles + meals)');
-      console.log(`📋 Found ${profiles.length} profiles and ${meals.length} meals to restore`);
+      posts = backupObject.posts || []; // CRITICAL: Include posts in restoration
+      console.log('📦 Using enhanced backup format (users + profiles + meals + posts)');
+      console.log(`📋 Found ${profiles.length} profiles, ${meals.length} meals, and ${posts.length} posts to restore`);
     } else {
       console.error('❌ Invalid backup format. Expected array of users or object with users property');
       return { restored: 0 };
@@ -145,6 +155,62 @@ const restoreFromEnv = async () => {
     return new Promise((resolve, reject) => {
       let restoredProfiles = 0;
       
+      const restorePosts = () => {
+        if (posts.length === 0) {
+          console.log('ℹ️  No posts to restore');
+          resolve({ restored, restoredProfiles, restoredMeals: 0, restoredPosts: 0 });
+          return;
+        }
+        
+        let restoredPosts = 0;
+        
+        const restorePost = (postIndex) => {
+          if (postIndex >= posts.length) {
+            console.log(`✅ Restored ${restoredPosts} posts from backup`);
+            resolve({ restored, restoredProfiles, restoredMeals: 0, restoredPosts });
+            return;
+          }
+          
+          const post = posts[postIndex];
+          
+          if (!post || !post.user_id || !post.content) {
+            console.warn(`⚠️ Invalid post at index ${postIndex}:`, post);
+            restorePost(postIndex + 1);
+            return;
+          }
+          
+          // Check if post exists (by user_id, content, and created_at to avoid duplicates)
+          db.get('SELECT id FROM posts WHERE user_id = ? AND content = ? AND created_at = ?', 
+            [post.user_id, post.content, post.created_at], (err, row) => {
+            if (err) {
+              console.error(`❌ Error checking post for user ${post.user_id}:`, err);
+              restorePost(postIndex + 1);
+              return;
+            }
+            
+            if (!row) {
+              // Post doesn't exist, restore it
+              db.run('INSERT INTO posts (user_id, content, image_url, meal_data, allow_comments, hide_like_count, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [post.user_id, post.content, post.image_url, post.meal_data, post.allow_comments, post.hide_like_count, post.created_at],
+                function(err) {
+                  if (err) {
+                    console.error(`❌ Error restoring post for user ${post.user_id}:`, err);
+                  } else {
+                    console.log(`✅ Restored post: "${post.content.substring(0, 50)}..." (${post.created_at})`);
+                    restoredPosts++;
+                  }
+                  restorePost(postIndex + 1);
+                });
+            } else {
+              console.log(`ℹ️  Post "${post.content.substring(0, 30)}..." already exists, skipping`);
+              restorePost(postIndex + 1);
+            }
+          });
+        };
+        
+        restorePost(0);
+      };
+      
       const restoreMeals = () => {
         if (meals.length === 0) {
           console.log('ℹ️  No meals to restore');
@@ -157,7 +223,8 @@ const restoreFromEnv = async () => {
         const restoreMeal = (mealIndex) => {
           if (mealIndex >= meals.length) {
             console.log(`✅ Restored ${restoredMeals} meals from backup`);
-            resolve({ restored, restoredProfiles, restoredMeals });
+            // Now restore posts
+            restorePosts();
             return;
           }
           

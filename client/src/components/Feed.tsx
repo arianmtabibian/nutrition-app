@@ -520,7 +520,29 @@ const Feed: React.FC = () => {
         stack: error instanceof Error ? error.stack : undefined,
         response: error && typeof error === 'object' && 'response' in error ? (error as any).response : undefined
       });
-      alert('Failed to create post. Please check your connection and try again.');
+      // Better error handling
+      let errorMessage = 'Failed to create post. Please try again.';
+      if (error instanceof Error) {
+        if (error.message.includes('timeout') || error.message.includes('network')) {
+          errorMessage = 'Network timeout. Saving post locally...';
+          // Save offline and show immediately
+          const offlinePost = {
+            id: Date.now(),
+            content: newPost.content,
+            image_url: null,
+            meal_data: newPost.mealData,
+            user: { id: user.id, username: user.username || `user${user.id}`, first_name: user.first_name || 'User', last_name: user.last_name || 'User' },
+            created_at: new Date().toISOString(),
+            likes_count: 0, comments_count: 0, is_liked: false, is_bookmarked: false,
+            _offline: true
+          };
+          savePostLocally(offlinePost);
+          setPosts(prev => [offlinePost, ...(Array.isArray(prev) ? prev : [])]);
+          setNewPost({ content: '', imageFile: null, mealData: null, allowComments: true, hideLikeCount: false });
+          setShowNewPostModal(false);
+        }
+      }
+      alert(errorMessage);
     } finally {
       // Always reset creating post state
       setCreatingPost(false);

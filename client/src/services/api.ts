@@ -3,7 +3,7 @@ import axios from 'axios';
 // Create axios instance with timeout for better performance
 export const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com',
-  timeout: 12000, // 12 second timeout - allows for slower login/register calls
+  timeout: 30000, // 30 second timeout for post creation with images
   headers: {
     'Content-Type': 'application/json',
   },
@@ -121,6 +121,8 @@ export const socialAPI = {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 45000, // Extra long timeout for post creation
+      retry: 2, // Retry failed requests
     });
   },
   getUserPosts: (userId: number) => api.get(`/api/social/posts/${userId}`),

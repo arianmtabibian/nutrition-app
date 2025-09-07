@@ -244,6 +244,10 @@ router.get('/profile/:userId', auth, (req, res) => {
 // Create a post with file upload
 router.post('/posts', auth, upload.single('image'), (req, res) => {
   try {
+    console.log('📝 POST /api/social/posts - Creating post for user:', req.user.userId);
+    console.log('📝 Request body:', req.body);
+    console.log('📝 File uploaded:', req.file ? req.file.filename : 'none');
+    
     const { content, mealData, allowComments, hideLikeCount } = req.body;
     const userId = req.user.userId;
     
@@ -251,32 +255,72 @@ router.post('/posts', auth, upload.single('image'), (req, res) => {
     let imageUrl = null;
     if (req.file) {
       imageUrl = `/api/social/uploads/${req.file.filename}`;
+      console.log('📝 Image URL set to:', imageUrl);
     }
     
     if (!content && !imageUrl && !mealData) {
+      console.log('❌ Post validation failed - no content, image, or meal data');
       return res.status(400).json({ error: 'Post must have content, image, or meal data' });
     }
     
     const db = getDatabase();
-    db.run(
-      'INSERT INTO posts (user_id, content, image_url, meal_data, allow_comments, hide_like_count) VALUES (?, ?, ?, ?, ?, ?)',
-      [userId, content, imageUrl, mealData ? JSON.stringify(mealData) : null, allowComments !== 'false', hideLikeCount === 'true'],
-      function(err) {
-        if (err) {
-          console.error('Database error creating post:', err);
-          return res.status(500).json({ error: 'Failed to create post' });
-        }
-        
-        res.status(201).json({
-          message: 'Post created successfully',
-          postId: this.lastID,
-          imageUrl: imageUrl
-        });
+    
+    // First verify the posts table exists
+    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='posts'", (err, table) => {
+      if (err || !table) {
+        console.error('❌ Posts table does not exist!', err);
+        return res.status(500).json({ error: 'Database not properly initialized' });
       }
-    );
+      
+      console.log('✅ Posts table verified, inserting post...');
+      
+      db.run(
+        'INSERT INTO posts (user_id, content, image_url, meal_data, allow_comments, hide_like_count) VALUES (?, ?, ?, ?, ?, ?)',
+        [userId, content, imageUrl, mealData ? JSON.stringify(mealData) : null, allowComments !== 'false', hideLikeCount === 'true'],
+        function(err) {
+          if (err) {
+            console.error('❌ Database error creating post:', err);
+            return res.status(500).json({ error: 'Failed to create post', details: err.message });
+          }
+          
+          console.log('✅ Post created successfully with ID:', this.lastID);
+          
+          // Trigger backup after post creation
+          setTimeout(async () => {
+            try {
+              const { simpleBackup } = require('../utils/realPersistence');
+              await simpleBackup();
+              console.log('✅ Auto-backup completed after post creation');
+            } catch (backupErr) {
+              console.error('❌ Auto-backup failed after post creation:', backupErr);
+            }
+          }, 2000);
+          
+          res.status(201).json({
+            message: 'Post created successfully',
+            postId: this.lastID,
+            imageUrl: imageUrl,
+            post: {
+              id: this.lastID,
+              user_id: userId,
+              content: content,
+              image_url: imageUrl,
+              meal_data: mealData ? JSON.parse(mealData) : null,
+              allow_comments: allowComments !== 'false',
+              hide_like_count: hideLikeCount === 'true',
+              created_at: new Date().toISOString(),
+              likes_count: 0,
+              comments_count: 0,
+              is_liked: false,
+              is_bookmarked: false
+            }
+          });
+        }
+      );
+    });
   } catch (error) {
-    console.error('Create post error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('❌ Create post error:', error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
