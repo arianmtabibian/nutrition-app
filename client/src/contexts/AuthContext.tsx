@@ -50,6 +50,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       setIsCheckingAuth(true);
       
+      // Add safety timeout to prevent app from hanging indefinitely
+      const safetyTimeout = setTimeout(() => {
+        console.log('🔐 Safety timeout reached - forcing app to proceed');
+        setLoading(false);
+        setIsCheckingAuth(false);
+      }, 6000); // 6 second safety net
+      
       // Check if user is already logged in - DOMAIN FLEXIBLE
       const authData = getAuthData();
       const currentDomain = window.location.origin;
@@ -63,7 +70,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Verify token and get user info from the auth verify endpoint
         api.get('/api/auth/verify', { 
-          timeout: 8000 // 8 second timeout, no AbortController to avoid cancellation issues
+          timeout: 5000 // Reduced to 5 second timeout for faster login access
         })
           .then(response => {
             console.log('🔐 Verify response in AuthContext:', response.data);
@@ -94,16 +101,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               clearAuthData();
               delete api.defaults.headers.common['Authorization'];
             } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout') || error.code === 'NETWORK_ERROR') {
-              console.log('🔐 Network/timeout error during auth verification, keeping auth data');
-              // Keep user logged in during network issues
-              if (retryCount < 1) {
-                console.log('🔐 Retrying auth verification in 3 seconds...');
-                setTimeout(() => {
-                  setRetryCount(prev => prev + 1);
-                }, 3000);
-                return; // Don't proceed to finally block yet
+              console.log('🔐 Network/timeout error during auth verification');
+              
+              // For timeout errors, don't retry - just proceed to allow login screen access
+              if (error.code === 'ECONNABORTED' && error.message?.includes('timeout')) {
+                console.log('🔐 Timeout detected - clearing auth data to allow fresh login');
+                clearAuthData();
+                delete api.defaults.headers.common['Authorization'];
               } else {
-                console.log('🔐 Max retries reached, proceeding without verification');
+                // For other network errors, keep auth data but don't retry
+                console.log('🔐 Network error - keeping auth data but proceeding');
               }
             } else if (error.response?.status >= 500) {
               console.log('🔐 Server error (5xx) during auth verification, keeping auth data');
@@ -121,11 +128,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
           })
           .finally(() => {
+            clearTimeout(safetyTimeout);
             setLoading(false);
             setIsCheckingAuth(false);
           });
       } else {
         console.log('🔐 No valid auth data found, user not logged in');
+        clearTimeout(safetyTimeout);
         setLoading(false);
         setIsCheckingAuth(false);
       }
