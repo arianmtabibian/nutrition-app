@@ -556,6 +556,8 @@ router.get('/feed', auth, (req, res) => {
     const userId = req.user.userId;
     const db = getDatabase();
     
+    console.log('📡 GET /api/social/feed - Loading feed for user:', userId);
+    
     db.all(`
       SELECT p.*, u.username, u.first_name, u.last_name, up.profile_picture,
              (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as likes_count,
@@ -574,8 +576,12 @@ router.get('/feed', auth, (req, res) => {
       LIMIT 20
     `, [userId, userId, userId, userId], (err, posts) => {
       if (err) {
+        console.error('❌ Database error loading feed:', err);
         return res.status(500).json({ error: 'Database error' });
       }
+      
+      console.log('📡 Feed query returned', posts.length, 'posts');
+      console.log('📡 Posts for user', userId, ':', posts.map(p => `ID:${p.id} by user:${p.user_id}`));
       
       // Parse meal data and format posts
       const formattedPosts = posts.map(post => ({
@@ -590,6 +596,7 @@ router.get('/feed', auth, (req, res) => {
         }
       }));
       
+      console.log('✅ Returning', formattedPosts.length, 'formatted posts to feed');
       res.json({ posts: formattedPosts });
     });
   } catch (error) {

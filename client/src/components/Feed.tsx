@@ -472,27 +472,20 @@ const Feed: React.FC = () => {
         savePostLocally(newPostData);
         console.log('💾 Stored post using persistence hook');
         
-        // Check for duplicate posts before adding
+        // Add post to feed immediately (no duplicate check for immediate feedback)
         setPosts(prevPosts => {
-          // Ensure prevPosts is an array
           const postsArray = Array.isArray(prevPosts) ? prevPosts : [];
-          
-          const isDuplicate = postsArray.some(existingPost => 
-            existingPost.id === newPostData.id || 
-            (existingPost.content === newPostData.content && 
-             Math.abs(new Date(existingPost.created_at).getTime() - new Date(newPostData.created_at).getTime()) < 5000)
-          );
-          
-          if (isDuplicate) {
-            console.warn('⚠️ Duplicate post detected, not adding to feed');
-            return postsArray;
-          }
-          
           console.log('✅ Adding new post to feed. Current posts:', postsArray.length, 'New post ID:', newPostData.id);
           const updatedPosts = [newPostData, ...postsArray];
           console.log('🎯 Updated posts array will have:', updatedPosts.length, 'posts');
           return updatedPosts;
         });
+        
+        // Also refresh the feed from server to ensure consistency
+        setTimeout(() => {
+          console.log('🔄 Refreshing feed from server after post creation');
+          loadPosts();
+        }, 1000);
         
         // Reset form
         console.log('🧹 Resetting form...');
