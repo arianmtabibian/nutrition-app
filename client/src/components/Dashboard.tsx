@@ -71,8 +71,8 @@ const Dashboard: React.FC = () => {
         // Trigger a custom event to update the feed
         window.dispatchEvent(new CustomEvent('postCreated', { detail: result }));
         
-        // Navigate to feed to see the new post
-        navigate('/dashboard/feed');
+        // Don't navigate - let the user stay on current page
+        console.log('🎉 Post created successfully from Dashboard!');
       } else {
         console.error('Dashboard failed to create post. Status:', response?.status, 'Response:', response);
         alert(`Failed to create post: ${response?.status || 'Unknown error'}`);

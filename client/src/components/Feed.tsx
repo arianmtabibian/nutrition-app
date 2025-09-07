@@ -218,6 +218,7 @@ const Feed: React.FC = () => {
         console.log('✅ Posts loaded successfully:', response.data);
         // Ensure response.data is an array
         if (Array.isArray(response.data)) {
+          console.log('🔄 Setting posts from API response:', response.data.length, 'posts');
           setPosts(response.data);
         } else {
           console.warn('⚠️ Feed response data is not an array:', typeof response.data, response.data);
@@ -477,8 +478,10 @@ const Feed: React.FC = () => {
             return postsArray;
           }
           
-          console.log('✅ Adding new post to feed');
-          return [newPostData, ...postsArray];
+          console.log('✅ Adding new post to feed. Current posts:', postsArray.length, 'New post ID:', newPostData.id);
+          const updatedPosts = [newPostData, ...postsArray];
+          console.log('🎯 Updated posts array will have:', updatedPosts.length, 'posts');
+          return updatedPosts;
         });
         
         // Reset form
@@ -495,12 +498,6 @@ const Feed: React.FC = () => {
         // Trigger event for other components to refresh
         window.dispatchEvent(new CustomEvent('postCreated', { detail: newPostData }));
         console.log('🎉 Post created successfully!');
-        
-        // Reload feed after a short delay to ensure consistency
-        setTimeout(() => {
-          console.log('🔄 Reloading feed to ensure consistency...');
-          loadPosts();
-        }, 1000);
       } else {
         console.error('❌ Unexpected response status:', response?.status);
         console.error('❌ Full response:', response);
