@@ -216,7 +216,13 @@ const Feed: React.FC = () => {
       
       if (response && response.data) {
         console.log('✅ Posts loaded successfully:', response.data);
-        setPosts(response.data);
+        // Ensure response.data is an array
+        if (Array.isArray(response.data)) {
+          setPosts(response.data);
+        } else {
+          console.warn('⚠️ Feed response data is not an array:', typeof response.data, response.data);
+          setPosts([]);
+        }
       } else {
         console.warn('⚠️ No data in feed response');
         setPosts([]);
@@ -235,15 +241,18 @@ const Feed: React.FC = () => {
       await socialAPI.likePost(postId);
       
       // Update local state optimistically
-      setPosts(posts.map(post => 
-        post.id === postId 
-          ? { 
-              ...post, 
-              is_liked: !post.is_liked,
-              likes_count: post.is_liked ? post.likes_count - 1 : post.likes_count + 1
-            }
-          : post
-      ));
+      setPosts(prevPosts => {
+        const postsArray = Array.isArray(prevPosts) ? prevPosts : [];
+        return postsArray.map(post => 
+          post.id === postId 
+            ? { 
+                ...post, 
+                is_liked: !post.is_liked,
+                likes_count: post.is_liked ? post.likes_count - 1 : post.likes_count + 1
+              }
+            : post
+        );
+      });
     } catch (error) {
       console.error('❌ Error liking post:', error);
     }
@@ -255,11 +264,14 @@ const Feed: React.FC = () => {
       await socialAPI.bookmarkPost(postId);
       
       // Update local state optimistically
-      setPosts(posts.map(post => 
-        post.id === postId 
-          ? { ...post, is_bookmarked: !post.is_bookmarked }
-          : post
-      ));
+      setPosts(prevPosts => {
+        const postsArray = Array.isArray(prevPosts) ? prevPosts : [];
+        return postsArray.map(post => 
+          post.id === postId 
+            ? { ...post, is_bookmarked: !post.is_bookmarked }
+            : post
+        );
+      });
     } catch (error) {
       console.error('❌ Error bookmarking post:', error);
     }
@@ -324,11 +336,14 @@ const Feed: React.FC = () => {
         }));
         setNewComments(prev => ({ ...prev, [postId]: '' }));
         
-        setPosts(posts.map(post => 
-          post.id === postId 
-            ? { ...post, comments_count: post.comments_count + 1 }
-            : post
-        ));
+        setPosts(prevPosts => {
+          const postsArray = Array.isArray(prevPosts) ? prevPosts : [];
+          return postsArray.map(post => 
+            post.id === postId 
+              ? { ...post, comments_count: post.comments_count + 1 }
+              : post
+          );
+        });
       }
     } catch (error) {
       console.error('❌ Error adding comment:', error);
@@ -446,7 +461,10 @@ const Feed: React.FC = () => {
         
         // Check for duplicate posts before adding
         setPosts(prevPosts => {
-          const isDuplicate = prevPosts.some(existingPost => 
+          // Ensure prevPosts is an array
+          const postsArray = Array.isArray(prevPosts) ? prevPosts : [];
+          
+          const isDuplicate = postsArray.some(existingPost => 
             existingPost.id === newPostData.id || 
             (existingPost.content === newPostData.content && 
              Math.abs(new Date(existingPost.created_at).getTime() - new Date(newPostData.created_at).getTime()) < 5000)
@@ -454,11 +472,11 @@ const Feed: React.FC = () => {
           
           if (isDuplicate) {
             console.warn('⚠️ Duplicate post detected, not adding to feed');
-            return prevPosts;
+            return postsArray;
           }
           
           console.log('✅ Adding new post to feed');
-          return [newPostData, ...prevPosts];
+          return [newPostData, ...postsArray];
         });
         
         // Reset form
@@ -850,7 +868,7 @@ const Feed: React.FC = () => {
                 </div>
               )}
               
-              {posts.map(post => (
+              {Array.isArray(posts) && posts.length > 0 ? posts.map(post => (
                 <div key={post.id} className="bg-white border border-gray-200 rounded-lg shadow-sm">
                   {/* Post Header */}
                   <div className="flex items-center justify-between p-4 border-b border-gray-200">
@@ -993,7 +1011,27 @@ const Feed: React.FC = () => {
                     </div>
                   )}
                 </div>
-              ))}
+              )) : (
+                // No posts fallback
+                <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8 text-center">
+                  <div className="text-gray-400 mb-4">
+                    <PenTool className="w-12 h-12 mx-auto" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No posts yet</h3>
+                  <p className="text-gray-600 mb-4">
+                    {!Array.isArray(posts) 
+                      ? "There was an issue loading posts. Please refresh the page."
+                      : "Be the first to share something with your community!"
+                    }
+                  </p>
+                  <button
+                    onClick={() => setShowCreatePost(true)}
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-2 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+                  >
+                    Create Your First Post
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
