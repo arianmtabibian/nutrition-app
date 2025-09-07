@@ -385,6 +385,11 @@ const Feed: React.FC = () => {
       return;
     }
 
+    if (!user) {
+      alert('You must be logged in to create a post.');
+      return;
+    }
+
     // Use separate loading state to prevent UI blanking
     setCreatingPost(true);
 
