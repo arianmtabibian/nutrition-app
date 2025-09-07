@@ -547,7 +547,7 @@ const Feed: React.FC = () => {
           savePostLocally(offlinePost);
           setPosts(prev => [offlinePost, ...(Array.isArray(prev) ? prev : [])]);
           setNewPost({ content: '', imageFile: null, mealData: null, allowComments: true, hideLikeCount: false });
-          setShowNewPostModal(false);
+          setShowCreatePost(false);
         }
       }
       alert(errorMessage);
