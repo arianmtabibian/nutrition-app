@@ -4,6 +4,7 @@ import { Heart, MessageCircle, Share, MoreHorizontal, PenTool, Bookmark, Image, 
 import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { diaryAPI, mealsAPI, profileAPI, socialAPI } from '../services/api';
+import { usePostPersistence } from '../hooks/usePostPersistence';
 
 interface Post {
   id: number;
@@ -43,6 +44,7 @@ const Feed: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
+  const { localPosts, savePostLocally, mergeWithServerPosts, clearLocalPosts } = usePostPersistence();
   const [loading, setLoading] = useState(true);
   const [creatingPost, setCreatingPost] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
@@ -211,6 +213,7 @@ const Feed: React.FC = () => {
   const loadPosts = async () => {
     try {
       console.log('📡 Loading posts from feed...');
+      console.log('💾 Current localStorage posts:', JSON.parse(localStorage.getItem('local_posts') || '[]'));
       const response = await socialAPI.getFeed();
       console.log('📡 Feed response:', response);
       
@@ -220,42 +223,9 @@ const Feed: React.FC = () => {
         if (Array.isArray(response.data)) {
           console.log('🔄 Setting posts from API response:', response.data.length, 'posts');
           
-          // Merge with locally stored posts to maintain persistence
-          const localPosts = JSON.parse(localStorage.getItem('local_posts') || '[]');
-          console.log('💾 Found local posts:', localPosts.length);
-          
-          // Combine server posts with local posts, removing duplicates
-          const serverPosts = response.data;
-          const mergedPosts = [...localPosts];
-          
-          // Add server posts that aren't already in local posts
-          serverPosts.forEach((serverPost: any) => {
-            const existsInLocal = localPosts.some((localPost: any) => 
-              localPost.id === serverPost.id || 
-              (localPost.content === serverPost.content && 
-               Math.abs(new Date(localPost.created_at).getTime() - new Date(serverPost.created_at).getTime()) < 10000)
-            );
-            
-            if (!existsInLocal) {
-              mergedPosts.push(serverPost);
-            }
-          });
-          
-          // Sort by creation date (newest first)
-          mergedPosts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-          
-          console.log('🔄 Final merged posts:', mergedPosts.length, 'posts (', localPosts.length, 'local +', serverPosts.length, 'server)');
+          // Use the dedicated hook to merge posts
+          const mergedPosts = mergeWithServerPosts(response.data);
           setPosts(mergedPosts);
-          
-          // Clean up old local posts that are now confirmed on server (older than 5 minutes)
-          const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-          const recentLocalPosts = localPosts.filter((post: any) => 
-            new Date(post.created_at).getTime() > fiveMinutesAgo
-          );
-          if (recentLocalPosts.length !== localPosts.length) {
-            localStorage.setItem('local_posts', JSON.stringify(recentLocalPosts));
-            console.log('🧹 Cleaned up old local posts');
-          }
         } else {
           console.warn('⚠️ Feed response data is not an array:', typeof response.data, response.data);
           setPosts([]);
@@ -498,11 +468,9 @@ const Feed: React.FC = () => {
         
         console.log('🎯 Final post data to be added to feed:', newPostData);
         
-        // Store the new post in localStorage for persistence across navigation
-        const existingLocalPosts = JSON.parse(localStorage.getItem('local_posts') || '[]');
-        const updatedLocalPosts = [newPostData, ...existingLocalPosts.filter((p: any) => p.id !== newPostData.id)];
-        localStorage.setItem('local_posts', JSON.stringify(updatedLocalPosts));
-        console.log('💾 Stored post in localStorage for persistence');
+        // Store the new post using the dedicated hook
+        savePostLocally(newPostData);
+        console.log('💾 Stored post using persistence hook');
         
         // Check for duplicate posts before adding
         setPosts(prevPosts => {
@@ -624,9 +592,21 @@ const Feed: React.FC = () => {
   useEffect(() => {
     if (user) {
       console.log('🔧 Feed: Loading posts...');
+      // First, immediately show local posts if available
+      if (localPosts.length > 0) {
+        console.log('⚡ Feed: Showing local posts immediately:', localPosts.length);
+        setPosts(localPosts);
+      }
+      // Then load from server and merge
       loadPosts();
     }
-  }, [user]);
+  }, [user, localPosts]);
+
+  // Debug posts state changes
+  useEffect(() => {
+    console.log('🎯 Posts state changed:', posts.length, 'posts');
+    console.log('📊 Current posts:', posts);
+  }, [posts]);
 
   useEffect(() => {
     console.log('🔧 Feed: Month data effect triggered');
