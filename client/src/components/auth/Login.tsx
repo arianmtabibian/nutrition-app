@@ -9,6 +9,7 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [loginStatus, setLoginStatus] = useState('');
   
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -17,15 +18,32 @@ const Login: React.FC = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    setLoginStatus('Connecting to server...');
 
     try {
+      // Add progress updates
+      setTimeout(() => {
+        if (loading) setLoginStatus('Authenticating credentials...');
+      }, 2000);
+      
+      setTimeout(() => {
+        if (loading) setLoginStatus('Server might be starting up, please wait...');
+      }, 5000);
+      
+      setTimeout(() => {
+        if (loading) setLoginStatus('Almost there, finalizing login...');
+      }, 10000);
+
       await login(email, password);
+      setLoginStatus('Login successful! Redirecting...');
       // Use replace to prevent back button issues
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       setError(err.message);
+      setLoginStatus('');
     } finally {
       setLoading(false);
+      setLoginStatus('');
     }
   };
 
@@ -135,7 +153,7 @@ const Login: React.FC = () => {
                 {loading ? (
                   <div className="flex items-center justify-center space-x-2">
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Signing In...</span>
+                    <span>{loginStatus || 'Signing In...'}</span>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center space-x-2">

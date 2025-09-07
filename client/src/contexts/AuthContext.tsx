@@ -55,7 +55,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('🔐 Safety timeout reached - forcing app to proceed');
         setLoading(false);
         setIsCheckingAuth(false);
-      }, 6000); // 6 second safety net
+      }, 3000); // 3 second safety net - faster access to login
       
       // Check if user is already logged in - DOMAIN FLEXIBLE
       const authData = getAuthData();
@@ -68,9 +68,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('🔐 Found valid auth data, verifying with backend...');
         api.defaults.headers.common['Authorization'] = `Bearer ${authData.token}`;
         
+        // Skip verification if we've had recent timeouts
+        const recentTimeouts = localStorage.getItem('auth_timeout_count');
+        const timeoutCount = recentTimeouts ? parseInt(recentTimeouts) : 0;
+        
+        if (timeoutCount >= 3) {
+          console.log('🔐 Skipping auth verification due to recent timeouts, proceeding to login screen');
+          clearTimeout(safetyTimeout);
+          setLoading(false);
+          setIsCheckingAuth(false);
+          return;
+        }
+        
         // Verify token and get user info from the auth verify endpoint
         api.get('/api/auth/verify', { 
-          timeout: 5000 // Reduced to 5 second timeout for faster login access
+          timeout: 2000 // Very aggressive 2 second timeout for faster login access
         })
           .then(response => {
             console.log('🔐 Verify response in AuthContext:', response.data);
@@ -80,6 +92,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               storeAuthData(authData.token, response.data.user);
               console.log('🔐 User logged in successfully on domain:', currentDomain);
               console.log('🔐 Auth data migrated to current domain');
+              
+              // Reset timeout counter on successful verification
+              localStorage.removeItem('auth_timeout_count');
             } else {
               console.log('🔐 No user data in response, clearing auth');
               clearAuthData();
@@ -106,6 +121,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               // For timeout errors, don't retry - just proceed to allow login screen access
               if (error.code === 'ECONNABORTED' && error.message?.includes('timeout')) {
                 console.log('🔐 Timeout detected - clearing auth data to allow fresh login');
+                
+                // Increment timeout counter
+                const currentCount = parseInt(localStorage.getItem('auth_timeout_count') || '0');
+                localStorage.setItem('auth_timeout_count', (currentCount + 1).toString());
+                
                 clearAuthData();
                 delete api.defaults.headers.common['Authorization'];
               } else {
@@ -166,25 +186,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('🔐 API Base URL:', api.defaults.baseURL);
       console.log('🔐 Network status:', navigator.onLine ? 'Online' : 'Offline');
       
-      // Try to wake up the server first with a quick health check
-      try {
-        console.log('🔐 Checking server status...');
-        await api.get('/api/health', { timeout: 5000 });
-        console.log('🔐 Server is responsive');
-      } catch (healthError) {
-        console.warn('🔐 Server health check failed, but continuing with login:', healthError);
+      // Skip health check if we've had recent timeouts to speed up login
+      const recentTimeouts = localStorage.getItem('auth_timeout_count');
+      const timeoutCount = recentTimeouts ? parseInt(recentTimeouts) : 0;
+      
+      if (timeoutCount < 2) {
+        // Try to wake up the server first with a quick health check
+        try {
+          console.log('🔐 Checking server status...');
+          await api.get('/api/health', { timeout: 3000 });
+          console.log('🔐 Server is responsive');
+        } catch (healthError) {
+          console.warn('🔐 Server health check failed, but continuing with login:', healthError);
+        }
+      } else {
+        console.log('🔐 Skipping health check due to recent timeouts');
       }
       
       const startTime = Date.now();
       let response;
       
       try {
-        // Primary attempt with axios
+        // Primary attempt with axios - adjust timeout based on recent performance
+        const loginTimeout = timeoutCount >= 2 ? 10000 : 20000; // Shorter timeout if issues persist
+        console.log(`🔐 Using ${loginTimeout}ms timeout for login (timeout count: ${timeoutCount})`);
+        
         response = await api.post('/api/auth/login', { 
           email, 
           password 
         }, {
-          timeout: 20000 // 20 second timeout for login - server might be cold
+          timeout: loginTimeout
         });
       } catch (axiosError: any) {
         console.warn('🔐 Axios login failed, trying direct fetch:', axiosError);
@@ -209,6 +240,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       const endTime = Date.now();
       console.log(`🔐 Login request completed in ${endTime - startTime}ms`);
+      
+      // Reset timeout counter on successful login
+      localStorage.removeItem('auth_timeout_count');
+      
       const { token, user: userData } = response.data;
       
       // Store authentication data using the new persistence system
