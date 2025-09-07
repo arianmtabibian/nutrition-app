@@ -410,12 +410,24 @@ const SocialProfile: React.FC = () => {
 
   const loadPosts = async (retryCount = 0) => {
     try {
-      if (!user?.id) return;
+      if (!user?.id) {
+        console.log('❌ No user ID available for loading posts');
+        return;
+      }
       
+      console.log('📋 Loading posts for user:', user.id);
       const response = await socialAPI.getUserPosts(user.id);
-      setPosts(response.data.posts);
+      console.log('📋 Posts response:', response);
+      
+      if (response && response.data && response.data.posts) {
+        console.log('✅ Loaded', response.data.posts.length, 'posts for profile');
+        setPosts(response.data.posts);
+      } else {
+        console.log('⚠️ No posts data in response');
+        setPosts([]);
+      }
     } catch (error) {
-      console.error('Error loading posts:', error);
+      console.error('❌ Error loading posts:', error);
       
       // Retry logic for network errors
       if (retryCount < 3 && (error instanceof Error && (error.message?.includes('Failed to fetch') || error.name === 'TypeError'))) {
@@ -430,23 +442,49 @@ const SocialProfile: React.FC = () => {
 
   const loadLikedPosts = async () => {
     try {
-      if (!user?.id) return;
+      if (!user?.id) {
+        console.log('❌ No user ID available for loading liked posts');
+        return;
+      }
       
+      console.log('❤️ Loading liked posts for user:', user.id);
       const response = await socialAPI.getLikedPosts(user.id);
-      setLikedPosts(response.data.posts);
+      console.log('❤️ Liked posts response:', response);
+      
+      if (response && response.data && response.data.posts) {
+        console.log('✅ Loaded', response.data.posts.length, 'liked posts');
+        setLikedPosts(response.data.posts);
+      } else {
+        console.log('⚠️ No liked posts data in response');
+        setLikedPosts([]);
+      }
     } catch (error) {
-      console.error('Error loading liked posts:', error);
+      console.error('❌ Error loading liked posts:', error);
+      setLikedPosts([]);
     }
   };
 
   const loadBookmarkedPosts = async () => {
     try {
-      if (!user?.id) return;
+      if (!user?.id) {
+        console.log('❌ No user ID available for loading bookmarked posts');
+        return;
+      }
       
+      console.log('🔖 Loading bookmarked posts for user:', user.id);
       const response = await socialAPI.getBookmarkedPosts(user.id);
-      setBookmarkedPosts(response.data.posts);
+      console.log('🔖 Bookmarked posts response:', response);
+      
+      if (response && response.data && response.data.posts) {
+        console.log('✅ Loaded', response.data.posts.length, 'bookmarked posts');
+        setBookmarkedPosts(response.data.posts);
+      } else {
+        console.log('⚠️ No bookmarked posts data in response');
+        setBookmarkedPosts([]);
+      }
     } catch (error) {
-      console.error('Error loading bookmarked posts:', error);
+      console.error('❌ Error loading bookmarked posts:', error);
+      setBookmarkedPosts([]);
     }
   };
 

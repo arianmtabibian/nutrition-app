@@ -230,16 +230,10 @@ const Feed: React.FC = () => {
         console.log('🔄 Server returned', serverPosts.length, 'posts');
         console.log('💾 Local posts:', localPosts.length);
         
-        // CRITICAL FIX: If server has no posts but we have local posts, prioritize local posts
-        if (serverPosts.length === 0 && localPosts.length > 0) {
-          console.log('⚡ Server empty but local posts exist - using local posts');
-          setPosts(localPosts);
-        } else {
-          // Use the persistence hook to merge posts properly
-          const mergedPosts = mergeWithServerPosts(serverPosts);
-          console.log('✅ Merged posts:', mergedPosts.length, 'total posts');
-          setPosts(mergedPosts);
-        }
+        // ALWAYS merge server and local posts properly
+        const mergedPosts = mergeWithServerPosts(serverPosts);
+        console.log('✅ Merged posts:', mergedPosts.length, 'total posts');
+        setPosts(mergedPosts);
       } else {
         console.warn('⚠️ No data in feed response');
         // Don't clear posts if server fails - keep local posts
@@ -496,9 +490,21 @@ const Feed: React.FC = () => {
         savePostLocally(newPostData);
         console.log('💾 Stored post using persistence hook');
         
-        // Add post to feed immediately (no duplicate check for immediate feedback)
+        // Add post to feed with duplicate check
         setPosts(prevPosts => {
           const postsArray = Array.isArray(prevPosts) ? prevPosts : [];
+          
+          // Check if this post already exists (by ID or content)
+          const postExists = postsArray.some(p => 
+            p.id === newPostData.id || 
+            (p.content === newPostData.content && Math.abs(new Date(p.created_at).getTime() - new Date(newPostData.created_at).getTime()) < 10000)
+          );
+          
+          if (postExists) {
+            console.log('⚠️ Post already exists in feed, not adding duplicate');
+            return postsArray;
+          }
+          
           console.log('✅ Adding new post to feed. Current posts:', postsArray.length, 'New post ID:', newPostData.id);
           const updatedPosts = [newPostData, ...postsArray];
           console.log('🎯 Updated posts array will have:', updatedPosts.length, 'posts');
@@ -654,10 +660,18 @@ const Feed: React.FC = () => {
   useEffect(() => {
     if (user) {
       console.log('🔧 Feed: User available, loading data immediately...');
+      
+      // Clear any stale local posts to prevent duplicates on login
+      if (localPosts.length > 0) {
+        console.log('🧹 Clearing stale local posts to prevent duplicates');
+        clearLocalPosts();
+      }
+      
       loadSidebarData();
       loadMonthData();
+      loadPosts();
     }
-  }, [user]); // Trigger when user changes
+  }, [user, clearLocalPosts]); // Trigger when user changes
 
   // Enhanced automatic syncing with Overview page - IMPROVED
   useEffect(() => {
