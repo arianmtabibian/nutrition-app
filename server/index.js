@@ -69,7 +69,11 @@ app.use('/api/favorites', favoritesRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    message: 'Post creation fixes deployed successfully' 
+  });
 });
 
 // Error handling middleware
