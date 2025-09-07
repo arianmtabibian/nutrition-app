@@ -122,7 +122,6 @@ export const socialAPI = {
         'Content-Type': 'multipart/form-data',
       },
       timeout: 45000, // Extra long timeout for post creation
-      retry: 2, // Retry failed requests
     });
   },
   getUserPosts: (userId: number) => api.get(`/api/social/posts/${userId}`),
