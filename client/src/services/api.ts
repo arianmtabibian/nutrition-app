@@ -3,7 +3,7 @@ import axios from 'axios';
 // Create axios instance with timeout for better performance
 export const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com',
-  timeout: 15000, // 15 second timeout - faster startup while still reliable
+  timeout: 8000, // 8 second timeout - consistent with auth verification
   headers: {
     'Content-Type': 'application/json',
   },
@@ -61,8 +61,8 @@ api.interceptors.response.use(
         }
       }, 100); // Small delay to prevent race conditions
     } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-      // Network timeout - don't log out, just let the error propagate
-      console.warn('🌐 Network timeout, keeping user logged in');
+      // Network timeout - let AuthContext handle auth decisions, just log here
+      console.warn('🌐 Network timeout detected, letting AuthContext handle auth state');
     } else if (error.response?.status >= 500) {
       // Server errors shouldn't cause logout
       console.warn('🌐 Server error, keeping user logged in');

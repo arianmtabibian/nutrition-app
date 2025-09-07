@@ -162,7 +162,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await api.post('/api/auth/login', { email, password });
+      console.log('🔐 Starting login process...');
+      const response = await api.post('/api/auth/login', { 
+        email, 
+        password 
+      }, {
+        timeout: 10000 // 10 second timeout for login specifically
+      });
       const { token, user: userData } = response.data;
       
       // Store authentication data using the new persistence system
@@ -178,7 +184,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         profile_picture: userData.profile_picture
       });
     } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Login failed');
+      console.error('🔐 Login error:', error);
+      
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        throw new Error('Login timed out. Please check your connection and try again.');
+      } else if (error.response?.status === 401) {
+        throw new Error('Invalid email or password.');
+      } else if (error.response?.status === 429) {
+        throw new Error('Too many login attempts. Please try again later.');
+      } else if (error.response?.status >= 500) {
+        throw new Error('Server error. Please try again later.');
+      } else if (!navigator.onLine) {
+        throw new Error('No internet connection. Please check your network.');
+      } else {
+        throw new Error(error.response?.data?.error || error.message || 'Login failed. Please try again.');
+      }
     }
   };
 
