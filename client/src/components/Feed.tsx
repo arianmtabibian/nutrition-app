@@ -220,23 +220,43 @@ const Feed: React.FC = () => {
       if (response && response.data) {
         console.log('✅ Posts loaded successfully:', response.data);
         // Ensure response.data is an array
+        let serverPosts = [];
         if (Array.isArray(response.data)) {
-          console.log('🔄 Setting posts from API response:', response.data.length, 'posts');
-          
-          // Use the dedicated hook to merge posts
-          const mergedPosts = mergeWithServerPosts(response.data);
-          setPosts(mergedPosts);
+          serverPosts = response.data;
+        } else if (response.data.posts && Array.isArray(response.data.posts)) {
+          serverPosts = response.data.posts;
+        }
+        
+        console.log('🔄 Server returned', serverPosts.length, 'posts');
+        console.log('💾 Local posts:', localPosts.length);
+        
+        // CRITICAL FIX: If server has no posts but we have local posts, prioritize local posts
+        if (serverPosts.length === 0 && localPosts.length > 0) {
+          console.log('⚡ Server empty but local posts exist - using local posts');
+          setPosts(localPosts);
         } else {
-          console.warn('⚠️ Feed response data is not an array:', typeof response.data, response.data);
-          setPosts([]);
+          // Use the persistence hook to merge posts properly
+          const mergedPosts = mergeWithServerPosts(serverPosts);
+          console.log('✅ Merged posts:', mergedPosts.length, 'total posts');
+          setPosts(mergedPosts);
         }
       } else {
         console.warn('⚠️ No data in feed response');
-        setPosts([]);
+        // Don't clear posts if server fails - keep local posts
+        if (localPosts.length > 0) {
+          console.log('📱 Using local posts as fallback:', localPosts.length);
+          setPosts(localPosts);
+        } else {
+          setPosts([]);
+        }
       }
     } catch (error) {
       console.error('❌ Error loading posts:', error);
-      // Don't clear posts on error, keep existing ones
+      // On error, use local posts as fallback
+      if (localPosts.length > 0) {
+        console.log('📱 Using local posts due to error:', localPosts.length);
+        setPosts(localPosts);
+      }
     } finally {
       setLoading(false);
     }
@@ -485,22 +505,9 @@ const Feed: React.FC = () => {
           return updatedPosts;
         });
         
-        // Refresh the feed from server but merge with local post to prevent disappearing
-        setTimeout(() => {
-          console.log('🔄 Refreshing feed from server after post creation');
-          loadPosts().then(() => {
-            // Ensure our new post is still visible after server refresh
-            setPosts(prevPosts => {
-              const postsArray = Array.isArray(prevPosts) ? prevPosts : [];
-              const hasOurPost = postsArray.some(p => p.id === newPostData.id);
-              if (!hasOurPost) {
-                console.log('🔧 Re-adding our post after server refresh');
-                return [newPostData, ...postsArray];
-              }
-              return postsArray;
-            });
-          });
-        }, 2000); // Wait 2 seconds for server to process
+        // Don't refresh from server immediately - let the post stay visible
+        // The server backup will handle persistence for future sessions
+        console.log('✅ Post added to feed and will be backed up automatically');
         
         // Reset form
         console.log('🧹 Resetting form...');
