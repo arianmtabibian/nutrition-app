@@ -163,12 +163,52 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     try {
       console.log('🔐 Starting login process...');
-      const response = await api.post('/api/auth/login', { 
-        email, 
-        password 
-      }, {
-        timeout: 10000 // 10 second timeout for login specifically
-      });
+      console.log('🔐 API Base URL:', api.defaults.baseURL);
+      console.log('🔐 Network status:', navigator.onLine ? 'Online' : 'Offline');
+      
+      // Try to wake up the server first with a quick health check
+      try {
+        console.log('🔐 Checking server status...');
+        await api.get('/api/health', { timeout: 5000 });
+        console.log('🔐 Server is responsive');
+      } catch (healthError) {
+        console.warn('🔐 Server health check failed, but continuing with login:', healthError);
+      }
+      
+      const startTime = Date.now();
+      let response;
+      
+      try {
+        // Primary attempt with axios
+        response = await api.post('/api/auth/login', { 
+          email, 
+          password 
+        }, {
+          timeout: 20000 // 20 second timeout for login - server might be cold
+        });
+      } catch (axiosError: any) {
+        console.warn('🔐 Axios login failed, trying direct fetch:', axiosError);
+        
+        // Fallback with direct fetch
+        const fetchResponse = await fetch(`${api.defaults.baseURL}/api/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+          signal: AbortSignal.timeout(25000) // 25 second timeout
+        });
+        
+        if (!fetchResponse.ok) {
+          throw new Error(`HTTP ${fetchResponse.status}: ${fetchResponse.statusText}`);
+        }
+        
+        const data = await fetchResponse.json();
+        response = { data };
+      }
+      
+      const endTime = Date.now();
+      console.log(`🔐 Login request completed in ${endTime - startTime}ms`);
       const { token, user: userData } = response.data;
       
       // Store authentication data using the new persistence system
@@ -185,9 +225,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
     } catch (error: any) {
       console.error('🔐 Login error:', error);
+      console.error('🔐 Error details:', {
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+        data: error.response?.data,
+        timeout: error.timeout,
+        config: error.config?.timeout
+      });
       
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-        throw new Error('Login timed out. Please check your connection and try again.');
+        // Try to provide more specific timeout information
+        const timeoutMsg = error.config?.timeout ? 
+          `Login timed out after ${error.config.timeout}ms. ` : 'Login timed out. ';
+        throw new Error(timeoutMsg + 'The server might be slow to respond. Please try again in a moment.');
       } else if (error.response?.status === 401) {
         throw new Error('Invalid email or password.');
       } else if (error.response?.status === 429) {
@@ -196,6 +247,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('Server error. Please try again later.');
       } else if (!navigator.onLine) {
         throw new Error('No internet connection. Please check your network.');
+      } else if (error.code === 'NETWORK_ERROR' || error.message?.includes('Network Error')) {
+        throw new Error('Network connection failed. Please check your internet connection and try again.');
       } else {
         throw new Error(error.response?.data?.error || error.message || 'Login failed. Please try again.');
       }
