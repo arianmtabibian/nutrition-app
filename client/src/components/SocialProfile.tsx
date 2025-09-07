@@ -617,9 +617,10 @@ const SocialProfile: React.FC = () => {
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 pt-32 pb-8">
-        {/* Profile Info Section */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center space-x-4 mb-3">
+        {/* Profile Info Section - Compressed Layout */}
+        <div className="text-center mb-4">
+          {/* Name and Edit Button Row */}
+          <div className="flex items-center justify-center space-x-4 mb-2">
             <h1 className="text-3xl font-bold text-gray-900">{profileData.user.first_name} {profileData.user.last_name}</h1>
             {!profileData.profile.daily_calories && !profileData.profile.weight ? (
               <button className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md">
@@ -635,49 +636,47 @@ const SocialProfile: React.FC = () => {
                 Edit Profile
               </button>
             )}
-            {/* Only show Follow button if viewing someone else's profile */}
-            {/* For now, we'll hide it since this is typically the user's own profile */}
           </div>
           
-          <p className="text-gray-600 mb-3">@{profileData.user.username}</p>
-          
-          {/* Posts, Followers, Following Stats */}
-          <div className="flex justify-center items-center space-x-8 mb-5">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{profileData.stats.posts}</div>
-              <div className="text-sm text-gray-600">Posts</div>
+          {/* Username and Stats Row */}
+          <div className="flex items-center justify-center space-x-6 mb-3">
+            <p className="text-gray-600">@{profileData.user.username}</p>
+            
+            {/* Stats inline with username */}
+            <div className="flex items-center space-x-4">
+              <div className="text-center">
+                <span className="text-lg font-bold text-orange-600">{profileData.stats.posts}</span>
+                <span className="text-sm text-gray-600 ml-1">Posts</span>
+              </div>
+              <div className="w-px h-4 bg-gray-300"></div>
+              <button 
+                className="text-center hover:bg-gray-50 rounded-lg px-2 py-1 transition-colors"
+                onClick={() => setShowFollowersModal(true)}
+              >
+                <span className="text-lg font-bold text-orange-600 hover:text-orange-700">{profileData.stats.followers}</span>
+                <span className="text-sm text-gray-600 ml-1">Followers</span>
+              </button>
+              <div className="w-px h-4 bg-gray-300"></div>
+              <button 
+                className="text-center hover:bg-gray-50 rounded-lg px-2 py-1 transition-colors"
+                onClick={() => setShowFollowingModal(true)}
+              >
+                <span className="text-lg font-bold text-orange-600 hover:text-orange-700">{profileData.stats.following}</span>
+                <span className="text-sm text-gray-600 ml-1">Following</span>
+              </button>
             </div>
-            <div className="w-px h-8 bg-gray-300"></div>
-            <button 
-              className="text-center hover:bg-gray-50 rounded-lg p-2 transition-colors"
-              onClick={() => setShowFollowersModal(true)}
-            >
-              <div className="text-2xl font-bold text-orange-600 hover:text-orange-700">
-                {profileData.stats.followers}
-              </div>
-              <div className="text-sm text-gray-600">Followers</div>
-            </button>
-            <div className="w-px h-8 bg-gray-300"></div>
-            <button 
-              className="text-center hover:bg-gray-50 rounded-lg p-2 transition-colors"
-              onClick={() => setShowFollowingModal(true)}
-            >
-              <div className="text-2xl font-bold text-orange-600 hover:text-orange-700">
-                {profileData.stats.following}
-              </div>
-              <div className="text-sm text-gray-600">Following</div>
-            </button>
           </div>
           
+          {/* Bio */}
           {profileData.profile.bio ? (
-            <p className="text-gray-700 max-w-md mx-auto">{profileData.profile.bio}</p>
+            <p className="text-gray-700 max-w-md mx-auto text-sm">{profileData.profile.bio}</p>
           ) : (
-            <p className="text-gray-500 italic">No bio yet</p>
+            <p className="text-gray-500 italic text-sm">No bio yet</p>
           )}
         </div>
 
         {/* Stats and Progress Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* Left Column - Activity & Streak */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Activity</h3>
@@ -872,11 +871,11 @@ const SocialProfile: React.FC = () => {
         </div>
 
         {/* Two Column Layout - Posts and Groups */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Posts (2 columns width) */}
           <div className="lg:col-span-2">
             {/* Posts Header with Tabs */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex space-x-6">
                 <button
                   onClick={() => setActiveTab('posts')}

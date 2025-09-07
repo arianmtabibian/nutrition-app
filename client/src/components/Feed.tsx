@@ -210,18 +210,20 @@ const Feed: React.FC = () => {
 
   const loadPosts = async () => {
     try {
-      const response = await fetch('/api/social/feed', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data')}`
-        }
-      });
+      console.log('📡 Loading posts from feed...');
+      const response = await socialAPI.getFeed();
+      console.log('📡 Feed response:', response);
       
-      if (response.ok) {
-        const data = await response.json();
-        setPosts(data);
+      if (response && response.data) {
+        console.log('✅ Posts loaded successfully:', response.data);
+        setPosts(response.data);
+      } else {
+        console.warn('⚠️ No data in feed response');
+        setPosts([]);
       }
     } catch (error) {
-      console.error('Error loading posts:', error);
+      console.error('❌ Error loading posts:', error);
+      // Don't clear posts on error, keep existing ones
     } finally {
       setLoading(false);
     }
@@ -229,45 +231,37 @@ const Feed: React.FC = () => {
 
   const handleLike = async (postId: number) => {
     try {
-      const response = await fetch(`/api/social/posts/${postId}/like`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data')}`
-        }
-      });
+      console.log('👍 Liking post:', postId);
+      await socialAPI.likePost(postId);
       
-      if (response.ok) {
-        const data = await response.json();
-        setPosts(posts.map(post => 
-          post.id === postId 
-            ? { ...post, is_liked: data.is_liked, likes_count: data.likes_count }
-            : post
-        ));
-      }
+      // Update local state optimistically
+      setPosts(posts.map(post => 
+        post.id === postId 
+          ? { 
+              ...post, 
+              is_liked: !post.is_liked,
+              likes_count: post.is_liked ? post.likes_count - 1 : post.likes_count + 1
+            }
+          : post
+      ));
     } catch (error) {
-      console.error('Error liking post:', error);
+      console.error('❌ Error liking post:', error);
     }
   };
 
   const handleBookmark = async (postId: number) => {
     try {
-      const response = await fetch(`/api/social/posts/${postId}/bookmark`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data')}`
-        }
-      });
+      console.log('🔖 Bookmarking post:', postId);
+      await socialAPI.bookmarkPost(postId);
       
-      if (response.ok) {
-        const data = await response.json();
-        setPosts(posts.map(post => 
-          post.id === postId 
-            ? { ...post, is_bookmarked: data.is_bookmarked }
-            : post
-        ));
-      }
+      // Update local state optimistically
+      setPosts(posts.map(post => 
+        post.id === postId 
+          ? { ...post, is_bookmarked: !post.is_bookmarked }
+          : post
+      ));
     } catch (error) {
-      console.error('Error bookmarking post:', error);
+      console.error('❌ Error bookmarking post:', error);
     }
   };
 
@@ -293,18 +287,15 @@ const Feed: React.FC = () => {
         });
         
         try {
-          const response = await fetch(`/api/social/posts/${postId}/comments`, {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data')}`
-            }
-          });
+          console.log('💬 Loading comments for post:', postId);
+          const response = await socialAPI.getComments(postId);
           
-          if (response.ok) {
-            const data = await response.json();
-            setComments(prev => ({ ...prev, [postId]: data }));
+          if (response && response.data) {
+            console.log('✅ Comments loaded:', response.data);
+            setComments(prev => ({ ...prev, [postId]: response.data }));
           }
         } catch (error) {
-          console.error('Error loading comments:', error);
+          console.error('❌ Error loading comments:', error);
         } finally {
           setLoadingComments(prev => {
             const newSet = new Set(prev);
@@ -321,17 +312,12 @@ const Feed: React.FC = () => {
     if (!content) return;
 
     try {
-      const response = await fetch(`/api/social/posts/${postId}/comments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('nutritrack_auth_data')}`
-        },
-        body: JSON.stringify({ content })
-      });
-
-      if (response.ok) {
-        const newComment = await response.json();
+      console.log('💬 Adding comment to post:', postId, 'Content:', content);
+      const response = await socialAPI.addComment(postId, content);
+      
+      if (response && response.data) {
+        console.log('✅ Comment added:', response.data);
+        const newComment = response.data;
         setComments(prev => ({
           ...prev,
           [postId]: [...(prev[postId] || []), newComment]
@@ -345,43 +331,108 @@ const Feed: React.FC = () => {
         ));
       }
     } catch (error) {
-      console.error('Error adding comment:', error);
+      console.error('❌ Error adding comment:', error);
     }
   };
 
   const handleCreatePost = async () => {
-    if (!newPost.content.trim() && !newPost.imageFile) return;
+    console.log('🔄 Starting post creation...');
+    console.log('📝 Current newPost state:', newPost);
+    
+    if (!newPost.content.trim() && !newPost.imageFile) {
+      console.warn('❌ Post creation aborted: No content or image');
+      alert('Please enter some content or add an image before posting.');
+      return;
+    }
 
     // Use separate loading state to prevent UI blanking
     setCreatingPost(true);
 
     const formData = new FormData();
+    
+    // Add content with explicit logging
+    console.log('📝 Adding content to FormData:', `"${newPost.content}"`);
     formData.append('content', newPost.content);
+    
     if (newPost.imageFile) {
+      console.log('🖼️ Adding image to FormData:', newPost.imageFile.name);
       formData.append('image', newPost.imageFile);
     }
+    
     if (newPost.mealData) {
+      console.log('🍽️ Adding meal data to FormData:', newPost.mealData);
       formData.append('meal_data', JSON.stringify(newPost.mealData));
     }
+    
     formData.append('allow_comments', newPost.allowComments.toString());
     formData.append('hide_like_count', newPost.hideLikeCount.toString());
 
+    // Debug FormData contents
+    console.log('📦 FormData contents:');
+    const formDataEntries = Array.from(formData.entries());
+    formDataEntries.forEach(([key, value]) => {
+      console.log(`  ${key}:`, value);
+    });
+
     try {
-      console.log('Creating post with socialAPI...');
-      const response = await socialAPI.createPost(formData);
-      console.log('Post creation response:', response);
+      console.log('🚀 Sending request to socialAPI.createPost...');
+      let response;
+      
+      try {
+        response = await socialAPI.createPost(formData);
+      } catch (socialAPIError) {
+        console.warn('⚠️ socialAPI.createPost failed, trying direct API call:', socialAPIError);
+        
+        // Fallback to direct API call
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No authentication token found');
+        }
+        
+        const directResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+        
+        if (!directResponse.ok) {
+          throw new Error(`HTTP ${directResponse.status}: ${directResponse.statusText}`);
+        }
+        
+        const data = await directResponse.json();
+        response = { status: directResponse.status, data };
+        console.log('✅ Direct API call succeeded:', response);
+      }
+      
+      console.log('✅ Post creation response:', response);
+      console.log('📊 Response status:', response?.status);
+      console.log('📄 Response data:', response?.data);
       
       if (response && (response.status === 200 || response.status === 201)) {
         const newPostData = response.data;
-        console.log('New post data:', newPostData);
+        console.log('✨ Processing new post data:', newPostData);
+        
+        // Validate that the content was preserved
+        if (!newPostData.content && newPost.content.trim()) {
+          console.error('⚠️ WARNING: Post content was lost in API response!');
+          console.log('Original content:', `"${newPost.content}"`);
+          console.log('Response content:', `"${newPostData.content}"`);
+          
+          // Fallback: preserve the original content
+          newPostData.content = newPost.content;
+        }
         
         // Ensure the post has a valid created_at timestamp
         if (!newPostData.created_at) {
+          console.log('🕐 Adding missing created_at timestamp');
           newPostData.created_at = new Date().toISOString();
         }
         
         // Ensure the post has proper user information
         if (!newPostData.user && user) {
+          console.log('👤 Adding missing user information');
           newPostData.user = {
             id: user.id,
             username: user.username,
@@ -391,7 +442,27 @@ const Feed: React.FC = () => {
           };
         }
         
-        setPosts(prevPosts => [newPostData, ...prevPosts]);
+        console.log('🎯 Final post data to be added to feed:', newPostData);
+        
+        // Check for duplicate posts before adding
+        setPosts(prevPosts => {
+          const isDuplicate = prevPosts.some(existingPost => 
+            existingPost.id === newPostData.id || 
+            (existingPost.content === newPostData.content && 
+             Math.abs(new Date(existingPost.created_at).getTime() - new Date(newPostData.created_at).getTime()) < 5000)
+          );
+          
+          if (isDuplicate) {
+            console.warn('⚠️ Duplicate post detected, not adding to feed');
+            return prevPosts;
+          }
+          
+          console.log('✅ Adding new post to feed');
+          return [newPostData, ...prevPosts];
+        });
+        
+        // Reset form
+        console.log('🧹 Resetting form...');
         setNewPost({
           content: '',
           imageFile: null,
@@ -403,16 +474,30 @@ const Feed: React.FC = () => {
         
         // Trigger event for other components to refresh
         window.dispatchEvent(new CustomEvent('postCreated', { detail: newPostData }));
+        console.log('🎉 Post created successfully!');
+        
+        // Reload feed after a short delay to ensure consistency
+        setTimeout(() => {
+          console.log('🔄 Reloading feed to ensure consistency...');
+          loadPosts();
+        }, 1000);
       } else {
-        console.error('Unexpected response status:', response?.status);
+        console.error('❌ Unexpected response status:', response?.status);
+        console.error('❌ Full response:', response);
         alert('Failed to create post. Please try again.');
       }
     } catch (error) {
-      console.error('Error creating post:', error);
+      console.error('💥 Error creating post:', error);
+      console.error('💥 Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        response: error && typeof error === 'object' && 'response' in error ? (error as any).response : undefined
+      });
       alert('Failed to create post. Please check your connection and try again.');
     } finally {
       // Always reset creating post state
       setCreatingPost(false);
+      console.log('🔄 Post creation process completed');
     }
   };
 
