@@ -460,10 +460,10 @@ const Feed: React.FC = () => {
           image_url: response.data?.imageUrl || response.data?.post?.image_url || null,
           meal_data: newPost.mealData,
           user: {
-            id: user.id,
-            username: user.username || `user${user.id}`,
-            first_name: user.first_name || 'User',
-            last_name: user.last_name || 'User',
+            id: user?.id || 0,
+            username: user?.username || `user${user?.id || 0}`,
+            first_name: user?.first_name || 'User',
+            last_name: user?.last_name || 'User',
             profile_picture: null
           },
           created_at: new Date().toISOString(),
@@ -534,10 +534,10 @@ const Feed: React.FC = () => {
           image_url: null,
           meal_data: newPost.mealData,
           user: {
-            id: user.id,
-            username: user.username || `user${user.id}`,
-            first_name: user.first_name || 'User',
-            last_name: user.last_name || 'User',
+            id: user?.id || 0,
+            username: user?.username || `user${user?.id || 0}`,
+            first_name: user?.first_name || 'User',
+            last_name: user?.last_name || 'User',
             profile_picture: null
           },
           created_at: new Date().toISOString(),
