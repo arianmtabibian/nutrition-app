@@ -65,7 +65,7 @@ const Groups: React.FC = () => {
 
   useEffect(() => {
     loadGroups();
-  }, [loadGroups]); // Added missing dependency
+  }, []); // Function is stable, no need to include in deps
 
   const loadGroups = async () => {
     try {

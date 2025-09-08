@@ -598,7 +598,7 @@ const Feed: React.FC = () => {
       // Then load from server and merge
       loadPosts();
     }
-  }, [user, localPosts, loadPosts]); // Added missing dependency
+  }, [user, localPosts]); // Functions are stable
 
   // Debug posts state changes
   useEffect(() => {
@@ -609,7 +609,7 @@ const Feed: React.FC = () => {
   useEffect(() => {
     console.log('🔧 Feed: Month data effect triggered');
     loadMonthData();
-  }, [loadMonthData]);
+  }, []); // Function is stable
 
   // Force data load when user becomes available
   useEffect(() => {
@@ -626,7 +626,7 @@ const Feed: React.FC = () => {
       loadMonthData();
       loadPosts();
     }
-  }, [user, clearLocalPosts, loadMonthData, loadPosts, loadSidebarData, localPosts.length]); // Added missing dependencies
+  }, [user, localPosts.length]); // Functions are stable
 
   // Enhanced automatic syncing with Overview page - IMPROVED
   useEffect(() => {
@@ -663,7 +663,7 @@ const Feed: React.FC = () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('sidebarRefresh', handleMealDataChanged);
     };
-  }, [loadSidebarData, loadMonthData]);
+  }, []); // Functions are stable
 
   if (loading) {
     return (
