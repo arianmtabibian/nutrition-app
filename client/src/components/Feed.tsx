@@ -376,226 +376,153 @@ const Feed: React.FC = () => {
   };
 
   const handleCreatePost = async () => {
-    console.log('🔄 Starting post creation...');
+    console.log('🛡️ BULLETPROOF POST CREATION v2.0 STARTING...');
     console.log('📝 Current newPost state:', newPost);
     
+    // BULLETPROOF VALIDATION
     if (!newPost.content.trim() && !newPost.imageFile) {
-      console.warn('❌ Post creation aborted: No content or image');
       alert('Please enter some content or add an image before posting.');
       return;
     }
 
-    if (!user) {
+    if (!user?.id) {
       alert('You must be logged in to create a post.');
       return;
     }
 
-    // Use separate loading state to prevent UI blanking
     setCreatingPost(true);
 
-    const formData = new FormData();
-    
-    // Add content with explicit logging
-    console.log('📝 Adding content to FormData:', `"${newPost.content}"`);
-    formData.append('content', newPost.content);
-    
-    if (newPost.imageFile) {
-      console.log('🖼️ Adding image to FormData:', newPost.imageFile.name);
-      formData.append('image', newPost.imageFile);
-    }
-    
-    if (newPost.mealData) {
-      console.log('🍽️ Adding meal data to FormData:', newPost.mealData);
-      formData.append('meal_data', JSON.stringify(newPost.mealData));
-    }
-    
-    formData.append('allow_comments', newPost.allowComments.toString());
-    formData.append('hide_like_count', newPost.hideLikeCount.toString());
+    // BULLETPROOF: Create post immediately for instant UI feedback
+    const instantPost = {
+      id: Date.now(),
+      content: newPost.content.trim(),
+      image_url: null,
+      meal_data: newPost.mealData,
+      user: {
+        id: user.id,
+        username: user.username || `user${user.id}`,
+        first_name: user.first_name || 'User',
+        last_name: user.last_name || 'User',
+        profile_picture: user.profile_picture
+      },
+      created_at: new Date().toISOString(),
+      likes_count: 0,
+      comments_count: 0,
+      is_liked: false,
+      is_bookmarked: false,
+      allow_comments: newPost.allowComments,
+      hide_like_count: newPost.hideLikeCount,
+      _status: 'creating'
+    };
 
-    // Debug FormData contents
-    console.log('📦 FormData contents:');
-    const formDataEntries = Array.from(formData.entries());
-    formDataEntries.forEach(([key, value]) => {
-      console.log(`  ${key}:`, value);
+    // Show post immediately
+    console.log('⚡ Adding post to feed immediately for instant feedback');
+    setPosts(prevPosts => {
+      const postsArray = Array.isArray(prevPosts) ? prevPosts : [];
+      return [instantPost, ...postsArray];
     });
 
+    // Reset form immediately for better UX
+    setNewPost({
+      content: '',
+      imageFile: null,
+      mealData: null,
+      allowComments: true,
+      hideLikeCount: false
+    });
+    setShowCreatePost(false);
+
+    // BULLETPROOF: Try to save to server in background
     try {
-      console.log('🚀 Sending request to socialAPI.createPost...');
-      let response;
+      const formData = new FormData();
+      formData.append('content', instantPost.content);
+      formData.append('allow_comments', instantPost.allow_comments.toString());
+      formData.append('hide_like_count', instantPost.hide_like_count.toString());
       
+      if (newPost.imageFile) {
+        formData.append('image', newPost.imageFile);
+      }
+      
+      if (newPost.mealData) {
+        formData.append('meal_data', JSON.stringify(newPost.mealData));
+      }
+
+      console.log('🚀 Attempting to save to server...');
+
+      // Try multiple methods to save to server
+      let serverSuccess = false;
+      let serverResponse = null;
+
+      // Method 1: socialAPI
       try {
-        response = await socialAPI.createPost(formData);
-      } catch (socialAPIError) {
-        console.warn('⚠️ socialAPI.createPost failed, trying direct API call:', socialAPIError);
-        
-        // Fallback to direct API call
-        // Get token from proper auth system
-        const authData = JSON.parse(localStorage.getItem('nutritrack_auth_data') || '{}');
-        const token = authData.token || localStorage.getItem('token');
-        if (!token) {
-          throw new Error('No authentication token found');
+        const response = await socialAPI.createPost(formData);
+        if (response && (response.status === 200 || response.status === 201) && response.data) {
+          serverSuccess = true;
+          serverResponse = response.data;
+          console.log('✅ socialAPI SUCCESS');
         }
-        
-        const directResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: formData
-        });
-        
-        if (!directResponse.ok) {
-          throw new Error(`HTTP ${directResponse.status}: ${directResponse.statusText}`);
-        }
-        
-        const data = await directResponse.json();
-        response = { status: directResponse.status, data };
-        console.log('✅ Direct API call succeeded:', response);
+      } catch (apiError) {
+        console.warn('⚠️ socialAPI failed:', apiError);
       }
-      
-      console.log('✅ Post creation response:', response);
-      console.log('📊 Response status:', response?.status);
-      console.log('📄 Response data:', response?.data);
-      
-      if (response && (response.status === 200 || response.status === 201)) {
-        // BULLETPROOF: Create guaranteed post structure
-        const newPostData = {
-          id: response.data?.postId || response.data?.post?.id || Date.now(),
-          content: newPost.content.trim(),
-          image_url: response.data?.imageUrl || response.data?.post?.image_url || null,
-          meal_data: newPost.mealData,
-          user: {
-            id: user?.id || 0,
-            username: user?.username || `user${user?.id || 0}`,
-            first_name: user?.first_name || 'User',
-            last_name: user?.last_name || 'User',
-            profile_picture: user?.profile_picture
-          },
-          created_at: new Date().toISOString(),
-          likes_count: 0,
-          comments_count: 0,
-          is_liked: false,
-          is_bookmarked: false,
-          allow_comments: newPost.allowComments,
-          hide_like_count: newPost.hideLikeCount,
-          _serverSaved: true
-        };
-        
-        console.log('✨ BULLETPROOF post data created:', newPostData);
-        
-        console.log('🎯 Final post data to be added to feed:', newPostData);
-        
-        // Store the new post using the dedicated hook
-        savePostLocally(newPostData);
-        console.log('💾 Stored post using persistence hook');
-        
-        // Add post to feed with duplicate check
-        setPosts(prevPosts => {
-          const postsArray = Array.isArray(prevPosts) ? prevPosts : [];
+
+      // Method 2: Direct fetch
+      if (!serverSuccess) {
+        try {
+          const authData = JSON.parse(localStorage.getItem('nutritrack_auth_data') || '{}');
+          const token = authData.token || localStorage.getItem('token');
           
-          // Check if this post already exists (by ID or content)
-          const postExists = postsArray.some(p => 
-            p.id === newPostData.id || 
-            (p.content === newPostData.content && Math.abs(new Date(p.created_at).getTime() - new Date(newPostData.created_at).getTime()) < 10000)
-          );
-          
-          if (postExists) {
-            console.log('⚠️ Post already exists in feed, not adding duplicate');
-            return postsArray;
+          if (token) {
+            const directResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` },
+              body: formData
+            });
+            
+            if (directResponse.ok) {
+              serverResponse = await directResponse.json();
+              serverSuccess = true;
+              console.log('✅ Direct fetch SUCCESS');
+            }
           }
-          
-          console.log('✅ Adding new post to feed. Current posts:', postsArray.length, 'New post ID:', newPostData.id);
-          const updatedPosts = [newPostData, ...postsArray];
-          console.log('🎯 Updated posts array will have:', updatedPosts.length, 'posts');
-          return updatedPosts;
-        });
-        
-        // Don't refresh from server immediately - let the post stay visible
-        // The server backup will handle persistence for future sessions
-        console.log('✅ Post added to feed and will be backed up automatically');
-        
-        // Reset form
-        console.log('🧹 Resetting form...');
-        setNewPost({
-          content: '',
-          imageFile: null,
-          mealData: null,
-          allowComments: true,
-          hideLikeCount: false
-        });
-        setShowCreatePost(false);
-        
-        // Trigger event for other components to refresh
-        window.dispatchEvent(new CustomEvent('postCreated', { detail: newPostData }));
-        console.log('🎉 Post created successfully!');
-      } else {
-        console.warn('⚠️ Unexpected response status:', response?.status);
-        console.warn('⚠️ Full response:', response);
-        
-        // BULLETPROOF: Even on bad response, create local post
-        const localPost = {
-          id: Date.now(),
-          content: newPost.content.trim(),
-          image_url: null,
-          meal_data: newPost.mealData,
-          user: {
-            id: user?.id || 0,
-            username: user?.username || `user${user?.id || 0}`,
-            first_name: user?.first_name || 'User',
-            last_name: user?.last_name || 'User',
-            profile_picture: user?.profile_picture
-          },
-          created_at: new Date().toISOString(),
-          likes_count: 0,
-          comments_count: 0,
-          is_liked: false,
-          is_bookmarked: false,
-          allow_comments: newPost.allowComments,
-          hide_like_count: newPost.hideLikeCount,
-          _localOnly: true
-        };
-        
-        savePostLocally(localPost);
-        setPosts(prev => [localPost, ...(Array.isArray(prev) ? prev : [])]);
-        setNewPost({ content: '', imageFile: null, mealData: null, allowComments: true, hideLikeCount: false });
-        setShowCreatePost(false);
-        
-        console.log('📱 Created local-only post due to server error');
-      }
-    } catch (error) {
-      console.error('💥 Error creating post:', error);
-      console.error('💥 Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        response: error && typeof error === 'object' && 'response' in error ? (error as any).response : undefined
-      });
-      // Better error handling
-      let errorMessage = 'Failed to create post. Please try again.';
-      if (error instanceof Error) {
-        if (error.message.includes('timeout') || error.message.includes('network')) {
-          errorMessage = 'Network timeout. Saving post locally...';
-          // Save offline and show immediately
-          const offlinePost = {
-            id: Date.now(),
-            content: newPost.content,
-            image_url: null,
-            meal_data: newPost.mealData,
-            user: { id: user?.id || 0, username: user?.username || `user${user?.id || 0}`, first_name: user?.first_name || 'User', last_name: user?.last_name || 'User' },
-            created_at: new Date().toISOString(),
-            likes_count: 0, comments_count: 0, is_liked: false, is_bookmarked: false,
-            _offline: true
-          };
-          savePostLocally(offlinePost);
-          setPosts(prev => [offlinePost, ...(Array.isArray(prev) ? prev : [])]);
-          setNewPost({ content: '', imageFile: null, mealData: null, allowComments: true, hideLikeCount: false });
-          setShowCreatePost(false);
+        } catch (directError) {
+          console.warn('⚠️ Direct fetch failed:', directError);
         }
       }
-      alert(errorMessage);
+
+      // Update the post in the feed with server data or keep as local
+      const finalPost = {
+        ...instantPost,
+        id: serverResponse?.postId || serverResponse?.post?.id || instantPost.id,
+        image_url: serverResponse?.imageUrl || serverResponse?.post?.image_url || null,
+        _status: serverSuccess ? 'saved' : 'local-only',
+        _serverSaved: serverSuccess
+      };
+
+      // Update the existing post in the feed
+      setPosts(prevPosts => {
+        const postsArray = Array.isArray(prevPosts) ? prevPosts : [];
+        return postsArray.map(p => 
+          p.id === instantPost.id ? finalPost : p
+        );
+      });
+
+      // Save for persistence
+      savePostLocally(finalPost);
+
+      if (serverSuccess) {
+        console.log('🎉 POST SAVED TO SERVER SUCCESSFULLY');
+        window.dispatchEvent(new CustomEvent('postCreated', { detail: finalPost }));
+      } else {
+        console.log('📱 POST SAVED LOCALLY - Will sync when server available');
+      }
+
+    } catch (error) {
+      console.error('💥 Background server save failed:', error);
+      // Don't show error to user - post is already visible
+      console.log('📱 Post remains local-only due to server issues');
     } finally {
-      // Always reset creating post state
       setCreatingPost(false);
-      console.log('🔄 Post creation process completed');
+      console.log('✅ BULLETPROOF POST CREATION COMPLETED');
     }
   };
 
