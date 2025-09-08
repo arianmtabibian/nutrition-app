@@ -58,14 +58,14 @@ const Feed: React.FC = () => {
   const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set());
   const [comments, setComments] = useState<{ [postId: number]: Comment[] }>({});
   const [newComments, setNewComments] = useState<{ [postId: number]: string }>({});
-  const [loadingComments] = useState<Set<number>>(new Set()); // Unused setter
+  const [loadingComments, setLoadingComments] = useState<Set<number>>(new Set());
   
   // Sidebar data states
   const [profileData, setProfileData] = useState<any>(null);
   const [todayNutrition, setTodayNutrition] = useState<any>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [monthData, setMonthData] = useState<any>(null);
-  const [sidebarLoading] = useState(true); // Unused setter
+  const [sidebarLoading, setSidebarLoading] = useState(true);
   
   // Follow people search states
   const [showFollowSearch, setShowFollowSearch] = useState(false);
