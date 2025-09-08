@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { api } from '../services/api';
-import { storeAuthData, getAuthData, clearAuthData, hasValidAuth } from '../utils/authPersistence';
+import { storeAuthData, getAuthData, clearAuthData } from '../utils/authPersistence';
 
 interface User {
   id: number;
@@ -37,8 +37,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [retryCount, setRetryCount] = useState(0);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(false);
+  // Unused state variables removed
 
   useEffect(() => {
     const checkAuth = () => {

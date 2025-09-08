@@ -660,10 +660,10 @@ const Welcome: React.FC = () => {
             <div>
               <h4 className="font-bold text-white mb-4">Product</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Features</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Pricing</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Mobile App</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">API</a></li>
+                <li><button type="button" className="text-gray-300 hover:text-orange-400 transition-colors bg-transparent border-none p-0 cursor-pointer">Features</button></li>
+                <li><button type="button" className="text-gray-300 hover:text-orange-400 transition-colors bg-transparent border-none p-0 cursor-pointer">Pricing</button></li>
+                <li><button type="button" className="text-gray-300 hover:text-orange-400 transition-colors bg-transparent border-none p-0 cursor-pointer">Mobile App</button></li>
+                <li><button type="button" className="text-gray-300 hover:text-orange-400 transition-colors bg-transparent border-none p-0 cursor-pointer">API</button></li>
               </ul>
             </div>
 
@@ -671,10 +671,10 @@ const Welcome: React.FC = () => {
             <div>
               <h4 className="font-bold text-white mb-4">Company</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">About</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Careers</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Blog</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-orange-400 transition-colors">Support</a></li>
+                <li><button type="button" className="text-gray-300 hover:text-orange-400 transition-colors bg-transparent border-none p-0 cursor-pointer">About</button></li>
+                <li><button type="button" className="text-gray-300 hover:text-orange-400 transition-colors bg-transparent border-none p-0 cursor-pointer">Careers</button></li>
+                <li><button type="button" className="text-gray-300 hover:text-orange-400 transition-colors bg-transparent border-none p-0 cursor-pointer">Blog</button></li>
+                <li><button type="button" className="text-gray-300 hover:text-orange-400 transition-colors bg-transparent border-none p-0 cursor-pointer">Support</button></li>
               </ul>
             </div>
           </div>
@@ -686,9 +686,9 @@ const Welcome: React.FC = () => {
                 © 2024 NutriTrack. All rights reserved.
               </div>
               <div className="flex space-x-6 text-sm">
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors">Privacy</a>
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors">Terms</a>
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors">Cookies</a>
+                <button type="button" className="text-gray-400 hover:text-orange-400 transition-colors bg-transparent border-none p-0 cursor-pointer">Privacy</button>
+                <button type="button" className="text-gray-400 hover:text-orange-400 transition-colors bg-transparent border-none p-0 cursor-pointer">Terms</button>
+                <button type="button" className="text-gray-400 hover:text-orange-400 transition-colors bg-transparent border-none p-0 cursor-pointer">Cookies</button>
               </div>
               </div>
             </div>
