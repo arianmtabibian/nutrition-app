@@ -8,7 +8,7 @@ import {
   Share2, 
   UserPlus, 
   Settings, 
-  Calendar,
+  // Calendar, // Unused
   Zap,
   Crown,
   Heart,
@@ -65,7 +65,7 @@ const Groups: React.FC = () => {
 
   useEffect(() => {
     loadGroups();
-  }, []);
+  }, [loadGroups]); // Added missing dependency
 
   const loadGroups = async () => {
     try {

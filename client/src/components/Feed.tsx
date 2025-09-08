@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Heart, MessageCircle, Share, MoreHorizontal, PenTool, Bookmark, Image, X, Plus, UserCircle, Calendar, TrendingUp, TrendingDown, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from 'date-fns';
+import { Heart, MessageCircle, Share, MoreHorizontal, PenTool, Bookmark, Image, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, addMonths, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { diaryAPI, mealsAPI, profileAPI, socialAPI } from '../services/api';
 import { usePostPersistence } from '../hooks/usePostPersistence';
@@ -42,7 +42,7 @@ interface Comment {
 
 const Feed: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // Unused
   const [posts, setPosts] = useState<Post[]>([]);
   const { localPosts, savePostLocally, mergeWithServerPosts, clearLocalPosts } = usePostPersistence();
   const [loading, setLoading] = useState(true);
@@ -58,14 +58,14 @@ const Feed: React.FC = () => {
   const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set());
   const [comments, setComments] = useState<{ [postId: number]: Comment[] }>({});
   const [newComments, setNewComments] = useState<{ [postId: number]: string }>({});
-  const [loadingComments, setLoadingComments] = useState<Set<number>>(new Set());
+  const [loadingComments] = useState<Set<number>>(new Set()); // Unused setter
   
   // Sidebar data states
   const [profileData, setProfileData] = useState<any>(null);
   const [todayNutrition, setTodayNutrition] = useState<any>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [monthData, setMonthData] = useState<any>(null);
-  const [sidebarLoading, setSidebarLoading] = useState(true);
+  const [sidebarLoading] = useState(true); // Unused setter
   
   // Follow people search states
   const [showFollowSearch, setShowFollowSearch] = useState(false);
@@ -598,7 +598,7 @@ const Feed: React.FC = () => {
       // Then load from server and merge
       loadPosts();
     }
-  }, [user, localPosts]);
+  }, [user, localPosts, loadPosts]); // Added missing dependency
 
   // Debug posts state changes
   useEffect(() => {
@@ -626,7 +626,7 @@ const Feed: React.FC = () => {
       loadMonthData();
       loadPosts();
     }
-  }, [user, clearLocalPosts]); // Trigger when user changes
+  }, [user, clearLocalPosts, loadMonthData, loadPosts, loadSidebarData, localPosts.length]); // Added missing dependencies
 
   // Enhanced automatic syncing with Overview page - IMPROVED
   useEffect(() => {
