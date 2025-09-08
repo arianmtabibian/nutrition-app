@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Heart, MessageCircle, Share, MoreHorizontal, PenTool, Edit3, Settings, Grid, Bookmark, UserPlus, UserCheck, UserCircle, Image, X } from 'lucide-react';
 import { formatDistanceToNow, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from 'date-fns';
-import { diaryAPI, mealsAPI, profileAPI, socialAPI } from '../services/api';
+import { diaryAPI, mealsAPI, socialAPI } from '../services/api';
 
 interface Post {
   id: number;
@@ -72,8 +72,8 @@ const SocialProfile: React.FC = () => {
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
-  const [followers, setFollowers] = useState<any[]>([]);
-  const [following, setFollowing] = useState<any[]>([]);
+  const [followers] = useState<any[]>([]);
+  const [following] = useState<any[]>([]);
   const [editProfileData, setEditProfileData] = useState({
     daily_calories: 0,
     daily_protein: 0,
@@ -92,9 +92,9 @@ const SocialProfile: React.FC = () => {
   
   // State for nutrition and calendar data
   const [todayNutrition, setTodayNutrition] = useState<any>(null);
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate] = useState(new Date());
   const [monthData, setMonthData] = useState<any>(null);
-  const [nutritionLoading, setNutritionLoading] = useState(true);
+  const [nutritionLoading] = useState(true);
 
   // SIMPLE streak calculation - just count consecutive yellow/green squares
   const calculateStreak = async () => {
@@ -217,7 +217,7 @@ const SocialProfile: React.FC = () => {
       loadNutritionData();
       loadCalendarData();
     }
-  }, [profileData]);
+  }, [profileData, loadNutritionData, loadCalendarData]);
 
   // Listen for meal updates to refresh data
   useEffect(() => {
@@ -252,14 +252,14 @@ const SocialProfile: React.FC = () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('sidebarRefresh', handleMealDataChanged);
     };
-  }, [profileData]);
+  }, [profileData, loadNutritionData, loadCalendarData]);
 
   useEffect(() => {
     if (user) {
       loadProfile();
       loadPosts();
     }
-  }, [user]);
+  }, [user, loadPosts, loadProfile]);
 
   useEffect(() => {
     if (user && activeTab === 'liked') {
@@ -267,7 +267,7 @@ const SocialProfile: React.FC = () => {
     } else if (user && activeTab === 'saved') {
       loadBookmarkedPosts();
     }
-  }, [user, activeTab]);
+  }, [user, activeTab, loadLikedPosts, loadBookmarkedPosts]);
 
   const loadProfile = async (retryCount = 0) => {
     try {
