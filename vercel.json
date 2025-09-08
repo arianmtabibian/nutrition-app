@@ -17,9 +17,13 @@
     }
   },
   "github": {
-    "autoAlias": true,
-    "autoJobCancelation": false
+    "autoAlias": false,
+    "autoJobCancelation": true,
+    "silent": true
   },
+  "scope": "nutryra",
+  "alias": ["www.nutryra.com", "nutryra.com"],
+  "regions": ["iad1"],
   "cleanUrls": true,
   "trailingSlash": false
 }

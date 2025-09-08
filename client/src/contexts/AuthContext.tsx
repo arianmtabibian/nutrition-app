@@ -218,24 +218,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           timeout: loginTimeout
         });
       } catch (axiosError: any) {
-        console.warn('🔐 Axios login failed, trying direct fetch:', axiosError);
+        console.warn('🔐 Axios login failed:', axiosError);
         
-        // Fallback with direct fetch
-        const fetchResponse = await fetch(`${api.defaults.baseURL}/api/auth/login`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, password }),
-          signal: AbortSignal.timeout(25000) // 25 second timeout
-        });
-        
-        if (!fetchResponse.ok) {
-          throw new Error(`HTTP ${fetchResponse.status}: ${fetchResponse.statusText}`);
+        // Check if it's a CORS error
+        if (axiosError.message?.includes('CORS') || axiosError.code === 'ERR_NETWORK') {
+          throw new Error('CORS_ERROR: Unable to connect to server. Please check your internet connection and try again.');
         }
         
-        const data = await fetchResponse.json();
-        response = { data };
+        // Fallback with direct fetch for other errors
+        try {
+          console.log('🔐 Trying direct fetch as fallback...');
+          const fetchResponse = await fetch(`${api.defaults.baseURL}/api/auth/login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+            signal: AbortSignal.timeout(25000)
+          });
+          
+          if (!fetchResponse.ok) {
+            throw new Error(`HTTP ${fetchResponse.status}: ${fetchResponse.statusText}`);
+          }
+          
+          const data = await fetchResponse.json();
+          response = { data };
+        } catch (fetchError: any) {
+          if (fetchError.message?.includes('CORS')) {
+            throw new Error('CORS_ERROR: Server is not accepting requests from this domain. Please contact support.');
+          }
+          throw fetchError;
+        }
       }
       
       const endTime = Date.now();

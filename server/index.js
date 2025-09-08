@@ -27,32 +27,55 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS configuration - Handle both specific domains and wildcard
-let corsOrigin;
-if (process.env.CORS_ORIGIN === '*') {
-  corsOrigin = true; // Allow all origins
-  console.log('🌐 CORS: Allowing all origins (*)');
-} else if (process.env.CORS_ORIGIN) {
-  corsOrigin = process.env.CORS_ORIGIN.split(',').map(origin => origin.trim());
-  console.log('🌐 CORS: Allowing specific origins:', corsOrigin);
-} else {
-  // Default to allow both www and non-www versions of nutryra.com
-  corsOrigin = [
-    'https://nutryra.com', 
-    'https://www.nutryra.com',
-    'http://localhost:3000', // For development
-    'http://localhost:3001'  // For development
-  ];
-  console.log('🌐 CORS: Using default origins:', corsOrigin);
-}
+// BULLETPROOF CORS CONFIGURATION
+const allowedOrigins = [
+  'https://nutryra.com',
+  'https://www.nutryra.com',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  // Add any Vercel preview domains
+  /\.vercel\.app$/,
+  /\.vercel-preview\.app$/
+];
 
-app.use(cors({
-  origin: corsOrigin,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  optionsSuccessStatus: 200 // For legacy browser support
-}));
+// Custom CORS handler for maximum compatibility
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Allow requests with no origin (like mobile apps or Postman)
+  if (!origin) {
+    res.header('Access-Control-Allow-Origin', '*');
+  } else {
+    // Check if origin is allowed
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') {
+        return origin === allowed;
+      } else if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return false;
+    });
+    
+    if (isAllowed) {
+      res.header('Access-Control-Allow-Origin', origin);
+    }
+  }
+  
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
+  res.header('Access-Control-Max-Age', '3600');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).send();
+    return;
+  }
+  
+  next();
+});
+
+console.log('🌐 BULLETPROOF CORS: Configured for nutryra.com and development');
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
