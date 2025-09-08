@@ -148,12 +148,12 @@ const SocialProfile: React.FC = () => {
   // Load nutrition data (same as Feed component)
   const loadNutritionData = async () => {
     try {
-      setNutritionLoading(true);
+      // setNutritionLoading(true); // Removed - no setter available
       console.log('📊 Profile: Loading nutrition data...');
       
       if (!user?.id || !profileData) {
         console.log('📊 Profile: No user or profile data available');
-        setNutritionLoading(false);
+        // setNutritionLoading(false); // Removed - no setter available
         return;
       }
 
@@ -188,7 +188,7 @@ const SocialProfile: React.FC = () => {
     } catch (error) {
       console.error('Error loading nutrition data:', error);
     } finally {
-      setNutritionLoading(false);
+      // setNutritionLoading(false); // Removed - no setter available
     }
   };
 
