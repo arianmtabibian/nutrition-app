@@ -42,131 +42,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const checkAuth = () => {
-      // Prevent multiple simultaneous auth checks
-      if (isCheckingAuth) {
-        console.log('🔐 Auth check already in progress, skipping...');
-        return;
-      }
+      console.log('🛡️ BULLETPROOF AUTH - NEVER CLEAR DATA');
       
-      setIsCheckingAuth(true);
-      
-      // Add safety timeout to prevent app from hanging indefinitely
-      const safetyTimeout = setTimeout(() => {
-        console.log('🔐 Safety timeout reached - forcing app to proceed');
-        setLoading(false);
-        setIsCheckingAuth(false);
-      }, 3000); // 3 second safety net - faster access to login
-      
-      // Check if user is already logged in - DOMAIN FLEXIBLE
       const authData = getAuthData();
-      const currentDomain = window.location.origin;
       
-      console.log('🔐 Auth check - Domain:', currentDomain);
-      console.log('🔐 Auth data exists:', !!authData);
-      
-      if (authData && hasValidAuth()) {
-        console.log('🔐 Found valid auth data, verifying with backend...');
+      if (authData && authData.user) {
+        console.log('✅ Using cached user data - NO SERVER VERIFICATION');
+        setUser(authData.user);
         api.defaults.headers.common['Authorization'] = `Bearer ${authData.token}`;
-        
-        // Skip verification if we've had recent timeouts
-        const recentTimeouts = localStorage.getItem('auth_timeout_count');
-        const timeoutCount = recentTimeouts ? parseInt(recentTimeouts) : 0;
-        
-        if (timeoutCount >= 3) {
-          console.log('🔐 Skipping auth verification due to recent timeouts, proceeding to login screen');
-          clearTimeout(safetyTimeout);
-          setLoading(false);
-          setIsCheckingAuth(false);
-          return;
-        }
-        
-        // Verify token and get user info from the auth verify endpoint
-        api.get('/api/auth/verify', { 
-          timeout: 10000 // Increased timeout to prevent data loss on refresh
-        })
-          .then(response => {
-            console.log('🔐 Verify response in AuthContext:', response.data);
-            if (response.data && response.data.user) {
-              setUser(response.data.user);
-              // ALWAYS update auth data to current domain (domain migration)
-              storeAuthData(authData.token, response.data.user);
-              console.log('🔐 User logged in successfully on domain:', currentDomain);
-              console.log('🔐 Auth data migrated to current domain');
-              
-              // Reset timeout counter on successful verification
-              localStorage.removeItem('auth_timeout_count');
-            } else {
-              console.log('🔐 No user data in response, clearing auth');
-              clearAuthData();
-              delete api.defaults.headers.common['Authorization'];
-            }
-          })
-          .catch((error) => {
-            console.error('🔐 Error verifying user:', error);
-            console.error('🔐 Error details:', {
-              message: error.message,
-              code: error.code,
-              status: error.response?.status,
-              data: error.response?.data
-            });
-            
-            // Be more specific about what constitutes an auth failure vs network issue
-            if (error.response?.status === 401 || error.response?.status === 403) {
-              console.log('🔐 Token invalid (401/403), clearing auth data');
-              clearAuthData();
-              delete api.defaults.headers.common['Authorization'];
-            } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout') || error.code === 'NETWORK_ERROR') {
-              console.log('🔐 Network/timeout error during auth verification - KEEPING USER LOGGED IN');
-              
-              // CRITICAL FIX: Don't clear auth data on timeout - keep user logged in
-              if (error.code === 'ECONNABORTED' && error.message?.includes('timeout')) {
-                console.log('🔐 Timeout detected - but KEEPING auth data to prevent profile issues');
-                
-                // Keep the user logged in with existing auth data
-                if (authData && authData.user) {
-                  setUser(authData.user);
-                  console.log('🔐 Using cached user data due to timeout');
-                }
-                
-                // Increment timeout counter but don't clear auth
-                const currentCount = parseInt(localStorage.getItem('auth_timeout_count') || '0');
-                localStorage.setItem('auth_timeout_count', (currentCount + 1).toString());
-              } else {
-                // For other network errors, keep auth data and use cached user
-                console.log('🔐 Network error - using cached user data');
-                if (authData && authData.user) {
-                  setUser(authData.user);
-                }
-              }
-            } else if (error.response?.status >= 500) {
-              console.log('🔐 Server error (5xx) during auth verification, keeping auth data');
-              // Server errors shouldn't log users out
-            } else if (error.name === 'CanceledError' || error.message?.includes('canceled')) {
-              console.log('🔐 Request was canceled, likely due to component unmount or navigation');
-              // Don't treat cancellation as an auth failure
-            } else {
-              console.log('🔐 Unknown error during auth verification:', error.message || 'Unknown error');
-              // For unknown errors, try to keep user logged in but clear if it's clearly an auth issue
-              if (error.message?.includes('unauthorized') || error.message?.includes('forbidden')) {
-                clearAuthData();
-                delete api.defaults.headers.common['Authorization'];
-              }
-            }
-          })
-          .finally(() => {
-            clearTimeout(safetyTimeout);
-            setLoading(false);
-            setIsCheckingAuth(false);
-          });
       } else {
-        console.log('🔐 No valid auth data found, user not logged in');
-        clearTimeout(safetyTimeout);
-        setLoading(false);
-        setIsCheckingAuth(false);
+        console.log('❌ No cached data');
+        setUser(null);
       }
+      
+      setLoading(false);
     };
 
-    // Initial check
     checkAuth();
 
     // Listen for logout events from API interceptor

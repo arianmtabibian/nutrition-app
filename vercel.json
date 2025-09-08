@@ -1,7 +1,14 @@
 {
   "version": 2,
-  "buildCommand": "cd client && npm install && npm run build",
-  "outputDirectory": "client/build",
+  "builds": [
+    {
+      "src": "client/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
@@ -10,17 +17,5 @@
   ],
   "env": {
     "REACT_APP_API_URL": "https://nutrition-back-jtf3.onrender.com"
-  },
-  "build": {
-    "env": {
-      "REACT_APP_API_URL": "https://nutrition-back-jtf3.onrender.com"
-    }
-  },
-  "github": {
-    "autoAlias": true,
-    "autoJobCancelation": false
-  },
-  "alias": ["www.nutryra.com", "nutryra.com"],
-  "cleanUrls": true,
-  "trailingSlash": false
+  }
 }
