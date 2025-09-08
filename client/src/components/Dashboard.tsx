@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useUserSession } from '../hooks/useUserSession';
+// import { useUserSession } from '../hooks/useUserSession'; // Unused import removed
 import { LogOut, User, Plus, BarChart3, Home, Target, PenTool, Image, X, ChevronDown, UserPlus, Settings, Utensils, Search } from 'lucide-react';
 import { profileAPI, socialAPI } from '../services/api';
 import Overview from './Overview';
