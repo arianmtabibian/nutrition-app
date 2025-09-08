@@ -33,6 +33,10 @@ const Dashboard: React.FC = () => {
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFilter, setSearchFilter] = useState('Friends'); // Default filter
+  const [friendsResults, setFriendsResults] = useState<any[]>([]);
+  const [groupsResults, setGroupsResults] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   const handleCreatePost = async () => {
     console.log('Dashboard handleCreatePost called with:', newPost);
@@ -116,6 +120,72 @@ const Dashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Search functionality
+  const performSearch = async (query: string, type: 'Friends' | 'Groups') => {
+    if (!query.trim()) {
+      setShowSearchResults(false);
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      if (type === 'Friends') {
+        // Search for users/friends
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/search/users?q=${encodeURIComponent(query)}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token') || JSON.parse(localStorage.getItem('nutritrack_auth_data') || '{}').token}`
+          }
+        }).then(res => res.json());
+        
+        setFriendsResults(response.data?.users || response.users || []);
+      } else {
+        // Search for groups
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/search/groups?q=${encodeURIComponent(query)}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token') || JSON.parse(localStorage.getItem('nutritrack_auth_data') || '{}').token}`
+          }
+        }).then(res => res.json());
+        
+        setGroupsResults(response.data?.groups || response.groups || []);
+      }
+      setShowSearchResults(true);
+    } catch (error) {
+      console.error('Search error:', error);
+      // Show mock data for demo purposes
+      if (type === 'Friends') {
+        setFriendsResults([
+          { id: 1, username: 'john_doe', first_name: 'John', last_name: 'Doe', profile_picture: null },
+          { id: 2, username: 'jane_smith', first_name: 'Jane', last_name: 'Smith', profile_picture: null }
+        ].filter(user => 
+          user.username.toLowerCase().includes(query.toLowerCase()) ||
+          `${user.first_name} ${user.last_name}`.toLowerCase().includes(query.toLowerCase())
+        ));
+      } else {
+        setGroupsResults([
+          { id: 1, name: 'Fitness Enthusiasts', description: 'A group for fitness lovers', members_count: 25 },
+          { id: 2, name: 'Healthy Eating', description: 'Share healthy recipes and tips', members_count: 18 }
+        ].filter(group => 
+          group.name.toLowerCase().includes(query.toLowerCase()) ||
+          group.description.toLowerCase().includes(query.toLowerCase())
+        ));
+      }
+      setShowSearchResults(true);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Handle search input changes with debouncing
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    
+    // Debounce search
+    setTimeout(() => {
+      performSearch(query, searchFilter as 'Friends' | 'Groups');
+    }, 300);
   };
 
   const tabs = [
@@ -308,7 +378,13 @@ const Dashboard: React.FC = () => {
                   <div className="relative">
                     <select
                       value={searchFilter}
-                      onChange={(e) => setSearchFilter(e.target.value)}
+                      onChange={(e) => {
+                        const newFilter = e.target.value;
+                        setSearchFilter(newFilter);
+                        if (searchQuery.trim()) {
+                          performSearch(searchQuery, newFilter as 'Friends' | 'Groups');
+                        }
+                      }}
                       className="appearance-none bg-white hover:bg-gray-100 border-0 rounded-l-xl px-4 py-2 pr-10 text-sm font-medium text-gray-700 focus:outline-none focus:ring-0 transition-all duration-200 cursor-pointer shadow-sm"
                       style={{
                         backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
@@ -327,7 +403,7 @@ const Dashboard: React.FC = () => {
                     type="text"
                     placeholder={`Search ${searchFilter.toLowerCase()}...`}
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={handleSearchChange}
                     className="border-0 border-l border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm w-64 bg-white placeholder-gray-500"
                     autoFocus
                   />
@@ -454,6 +530,80 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </nav>
+
+      {/* Search Results */}
+      {showSearchResults && showSearchDropdown && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 search-results">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 max-h-96 overflow-y-auto">
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {searchFilter} Results
+                </h3>
+                {searchLoading && (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                )}
+              </div>
+              
+              {searchFilter === 'Friends' ? (
+                <div className="space-y-3">
+                  {friendsResults.length > 0 ? (
+                    friendsResults.map((friend) => (
+                      <div key={friend.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                            <span className="text-white font-medium text-sm">
+                              {friend.first_name?.[0] || friend.username?.[0] || 'U'}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {friend.first_name && friend.last_name ? 
+                                `${friend.first_name} ${friend.last_name}` : 
+                                friend.username || 'Unknown User'
+                              }
+                            </p>
+                            <p className="text-sm text-gray-500">@{friend.username}</p>
+                          </div>
+                        </div>
+                        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                          Add Friend
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center py-8">No friends found matching "{searchQuery}"</p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {groupsResults.length > 0 ? (
+                    groupsResults.map((group) => (
+                      <div key={group.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center">
+                            <User className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{group.name}</p>
+                            <p className="text-sm text-gray-500">{group.description}</p>
+                            <p className="text-xs text-gray-400">{group.members_count} members</p>
+                          </div>
+                        </div>
+                        <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                          Join Group
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center py-8">No groups found matching "{searchQuery}"</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">

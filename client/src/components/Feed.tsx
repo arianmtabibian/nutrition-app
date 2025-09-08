@@ -213,7 +213,14 @@ const Feed: React.FC = () => {
   const loadPosts = async () => {
     try {
       console.log('📡 Loading posts from feed...');
-      console.log('💾 Current localStorage posts:', JSON.parse(localStorage.getItem('local_posts') || '[]'));
+      console.log('💾 Current localStorage posts:', JSON.parse(localStorage.getItem('nutritrack_local_posts') || '[]'));
+      
+      // Always show local posts first for instant UI
+      if (localPosts.length > 0) {
+        console.log('⚡ Showing local posts immediately:', localPosts.length);
+        setPosts(localPosts);
+      }
+      
       const response = await socialAPI.getFeed();
       console.log('📡 Feed response:', response);
       
@@ -230,13 +237,13 @@ const Feed: React.FC = () => {
         console.log('🔄 Server returned', serverPosts.length, 'posts');
         console.log('💾 Local posts:', localPosts.length);
         
-        // ALWAYS merge server and local posts properly
+        // ALWAYS merge server and local posts properly - this preserves ALL posts
         const mergedPosts = mergeWithServerPosts(serverPosts);
         console.log('✅ Merged posts:', mergedPosts.length, 'total posts');
         setPosts(mergedPosts);
       } else {
         console.warn('⚠️ No data in feed response');
-        // Don't clear posts if server fails - keep local posts
+        // Keep existing posts if server fails
         if (localPosts.length > 0) {
           console.log('📱 Using local posts as fallback:', localPosts.length);
           setPosts(localPosts);
@@ -246,10 +253,12 @@ const Feed: React.FC = () => {
       }
     } catch (error) {
       console.error('❌ Error loading posts:', error);
-      // On error, use local posts as fallback
+      // On error, keep existing posts
       if (localPosts.length > 0) {
         console.log('📱 Using local posts due to error:', localPosts.length);
         setPosts(localPosts);
+      } else {
+        setPosts([]);
       }
     } finally {
       setLoading(false);
@@ -438,15 +447,15 @@ const Feed: React.FC = () => {
       formData.append('content', instantPost.content);
       formData.append('allow_comments', instantPost.allow_comments.toString());
       formData.append('hide_like_count', instantPost.hide_like_count.toString());
-      
-      if (newPost.imageFile) {
-        formData.append('image', newPost.imageFile);
-      }
-      
-      if (newPost.mealData) {
-        formData.append('meal_data', JSON.stringify(newPost.mealData));
-      }
-
+    
+    if (newPost.imageFile) {
+      formData.append('image', newPost.imageFile);
+    }
+    
+    if (newPost.mealData) {
+      formData.append('meal_data', JSON.stringify(newPost.mealData));
+    }
+    
       console.log('🚀 Attempting to save to server...');
 
       // Try multiple methods to save to server
@@ -468,16 +477,16 @@ const Feed: React.FC = () => {
       // Method 2: Direct fetch
       if (!serverSuccess) {
         try {
-          const authData = JSON.parse(localStorage.getItem('nutritrack_auth_data') || '{}');
-          const token = authData.token || localStorage.getItem('token');
-          
+        const authData = JSON.parse(localStorage.getItem('nutritrack_auth_data') || '{}');
+        const token = authData.token || localStorage.getItem('token');
+        
           if (token) {
-            const directResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts`, {
-              method: 'POST',
+        const directResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts`, {
+          method: 'POST',
               headers: { 'Authorization': `Bearer ${token}` },
-              body: formData
-            });
-            
+          body: formData
+        });
+        
             if (directResponse.ok) {
               serverResponse = await directResponse.json();
               serverSuccess = true;
@@ -499,8 +508,8 @@ const Feed: React.FC = () => {
       };
 
       // Update the existing post in the feed
-      setPosts(prevPosts => {
-        const postsArray = Array.isArray(prevPosts) ? prevPosts : [];
+        setPosts(prevPosts => {
+          const postsArray = Array.isArray(prevPosts) ? prevPosts : [];
         return postsArray.map(p => 
           p.id === instantPost.id ? finalPost : p
         );
@@ -616,17 +625,17 @@ const Feed: React.FC = () => {
     if (user) {
       console.log('🔧 Feed: User available, loading data immediately...');
       
-      // Clear any stale local posts to prevent duplicates on login
-      if (localPosts.length > 0) {
-        console.log('🧹 Clearing stale local posts to prevent duplicates');
-        clearLocalPosts();
-      }
+      // DON'T clear local posts on login - keep them for persistence
+      // if (localPosts.length > 0) {
+      //   console.log('🧹 Clearing stale local posts to prevent duplicates');
+      //   clearLocalPosts();
+      // }
       
       loadSidebarData();
       loadMonthData();
       loadPosts();
     }
-  }, [user, localPosts.length]); // Functions are stable
+  }, [user]); // Functions are stable, removed localPosts.length dependency
 
   // Enhanced automatic syncing with Overview page - IMPROVED
   useEffect(() => {

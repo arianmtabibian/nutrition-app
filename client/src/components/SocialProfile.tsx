@@ -416,15 +416,48 @@ const SocialProfile: React.FC = () => {
       }
       
       console.log('📋 Loading posts for user:', user.id);
+      
+      // Load from localStorage first for instant display
+      const localStoredPosts = JSON.parse(localStorage.getItem('nutritrack_local_posts') || '[]');
+      const userLocalPosts = localStoredPosts.filter((post: any) => post.user?.id === user.id);
+      if (userLocalPosts.length > 0) {
+        console.log('⚡ Showing user local posts immediately:', userLocalPosts.length);
+        setPosts(userLocalPosts);
+      }
+      
       const response = await socialAPI.getUserPosts(user.id);
       console.log('📋 Posts response:', response);
       
       if (response && response.data && response.data.posts) {
-        console.log('✅ Loaded', response.data.posts.length, 'posts for profile');
-        setPosts(response.data.posts);
+        console.log('✅ Loaded', response.data.posts.length, 'posts from server for profile');
+        
+        // Merge server posts with local posts to preserve all data
+        const serverPosts = response.data.posts;
+        const merged = [...userLocalPosts];
+        
+        // Add server posts that aren't already in local storage
+        serverPosts.forEach((serverPost: any) => {
+          const existsLocally = userLocalPosts.some((localPost: any) => 
+            localPost.id === serverPost.id || 
+            (localPost.content === serverPost.content && 
+             Math.abs(new Date(localPost.created_at).getTime() - new Date(serverPost.created_at).getTime()) < 15000)
+          );
+          
+          if (!existsLocally) {
+            merged.push(serverPost);
+          }
+        });
+        
+        // Sort by creation date (newest first)
+        merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        
+        console.log('✅ Final merged posts:', merged.length);
+        setPosts(merged);
       } else {
-        console.log('⚠️ No posts data in response');
-        setPosts([]);
+        console.log('⚠️ No posts data in response, keeping local posts');
+        if (userLocalPosts.length === 0) {
+          setPosts([]);
+        }
       }
     } catch (error) {
       console.error('❌ Error loading posts:', error);
@@ -448,11 +481,13 @@ const SocialProfile: React.FC = () => {
       }
       
       console.log('❤️ Loading liked posts for user:', user.id);
+      
+      // Try to load from server - liked posts are stored in database
       const response = await socialAPI.getLikedPosts(user.id);
       console.log('❤️ Liked posts response:', response);
       
       if (response && response.data && response.data.posts) {
-        console.log('✅ Loaded', response.data.posts.length, 'liked posts');
+        console.log('✅ Loaded', response.data.posts.length, 'liked posts from server');
         setLikedPosts(response.data.posts);
       } else {
         console.log('⚠️ No liked posts data in response');
@@ -460,6 +495,7 @@ const SocialProfile: React.FC = () => {
       }
     } catch (error) {
       console.error('❌ Error loading liked posts:', error);
+      // Keep empty array on error since liked posts are server-side only
       setLikedPosts([]);
     }
   };
@@ -472,11 +508,13 @@ const SocialProfile: React.FC = () => {
       }
       
       console.log('🔖 Loading bookmarked posts for user:', user.id);
+      
+      // Try to load from server - bookmarked posts are stored in database
       const response = await socialAPI.getBookmarkedPosts(user.id);
       console.log('🔖 Bookmarked posts response:', response);
       
       if (response && response.data && response.data.posts) {
-        console.log('✅ Loaded', response.data.posts.length, 'bookmarked posts');
+        console.log('✅ Loaded', response.data.posts.length, 'bookmarked posts from server');
         setBookmarkedPosts(response.data.posts);
       } else {
         console.log('⚠️ No bookmarked posts data in response');
@@ -484,6 +522,7 @@ const SocialProfile: React.FC = () => {
       }
     } catch (error) {
       console.error('❌ Error loading bookmarked posts:', error);
+      // Keep empty array on error since bookmarked posts are server-side only
       setBookmarkedPosts([]);
     }
   };

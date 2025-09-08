@@ -60,9 +60,10 @@ export const clearAuthData = (): void => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   localStorage.removeItem('domain');
-  localStorage.removeItem('local_posts'); // Clear old format
-  localStorage.removeItem('nutritrack_local_posts'); // Clear new format
-  console.log('All auth data cleared');
+  // DON'T clear posts data - let it persist across logins
+  // localStorage.removeItem('local_posts'); // Keep posts
+  // localStorage.removeItem('nutritrack_local_posts'); // Keep posts
+  console.log('Auth data cleared (posts preserved)');
 };
 
 /**
