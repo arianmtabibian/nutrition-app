@@ -397,9 +397,9 @@ const EnhancedRegister: React.FC = () => {
           {/* Terms */}
           <p className="text-xs text-gray-500 text-center mt-6">
             By creating an account, you agree to our{' '}
-            <a href="#" className="text-orange-600 hover:underline">Terms of Service</a>
+            <button type="button" className="text-orange-600 hover:underline bg-transparent border-none p-0 cursor-pointer">Terms of Service</button>
             {' '}and{' '}
-            <a href="#" className="text-orange-600 hover:underline">Privacy Policy</a>
+            <button type="button" className="text-orange-600 hover:underline bg-transparent border-none p-0 cursor-pointer">Privacy Policy</button>
           </p>
         </div>
       </div>

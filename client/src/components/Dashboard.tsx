@@ -3,7 +3,7 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserSession } from '../hooks/useUserSession';
-import { LogOut, User, Calendar, Plus, BarChart3, Home, Target, PenTool, Image, X, ChevronDown, UserPlus, Settings, Utensils, Search } from 'lucide-react';
+import { LogOut, User, Plus, BarChart3, Home, Target, PenTool, Image, X, ChevronDown, UserPlus, Settings, Utensils, Search } from 'lucide-react';
 import { profileAPI, socialAPI } from '../services/api';
 import Overview from './Overview';
 import SocialProfile from './SocialProfile';
@@ -12,13 +12,13 @@ import Inputs from './Inputs';
 import Groups from './Groups';
 import MealPlan from './MealPlan';
 
-import LoadingSpinner from './ui/LoadingSpinner';
+// LoadingSpinner removed - not used in this component
 
 const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasAccessedAppBefore } = useUserSession();
+  // const { hasAccessedAppBefore } = useUserSession(); // Unused variable removed
   const [loading, setLoading] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [showNewPostModal, setShowNewPostModal] = useState(false);
