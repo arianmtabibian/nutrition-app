@@ -82,7 +82,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Verify token and get user info from the auth verify endpoint
         api.get('/api/auth/verify', { 
-          timeout: 2000 // Very aggressive 2 second timeout for faster login access
+          timeout: 10000 // Increased timeout to prevent data loss on refresh
         })
           .then(response => {
             console.log('🔐 Verify response in AuthContext:', response.data);
@@ -116,21 +116,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               clearAuthData();
               delete api.defaults.headers.common['Authorization'];
             } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout') || error.code === 'NETWORK_ERROR') {
-              console.log('🔐 Network/timeout error during auth verification');
+              console.log('🔐 Network/timeout error during auth verification - KEEPING USER LOGGED IN');
               
-              // For timeout errors, don't retry - just proceed to allow login screen access
+              // CRITICAL FIX: Don't clear auth data on timeout - keep user logged in
               if (error.code === 'ECONNABORTED' && error.message?.includes('timeout')) {
-                console.log('🔐 Timeout detected - clearing auth data to allow fresh login');
+                console.log('🔐 Timeout detected - but KEEPING auth data to prevent profile issues');
                 
-                // Increment timeout counter
+                // Keep the user logged in with existing auth data
+                if (authData && authData.user) {
+                  setUser(authData.user);
+                  console.log('🔐 Using cached user data due to timeout');
+                }
+                
+                // Increment timeout counter but don't clear auth
                 const currentCount = parseInt(localStorage.getItem('auth_timeout_count') || '0');
                 localStorage.setItem('auth_timeout_count', (currentCount + 1).toString());
-                
-                clearAuthData();
-                delete api.defaults.headers.common['Authorization'];
               } else {
-                // For other network errors, keep auth data but don't retry
-                console.log('🔐 Network error - keeping auth data but proceeding');
+                // For other network errors, keep auth data and use cached user
+                console.log('🔐 Network error - using cached user data');
+                if (authData && authData.user) {
+                  setUser(authData.user);
+                }
               }
             } else if (error.response?.status >= 500) {
               console.log('🔐 Server error (5xx) during auth verification, keeping auth data');
