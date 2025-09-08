@@ -217,7 +217,7 @@ const SocialProfile: React.FC = () => {
       loadNutritionData();
       loadCalendarData();
     }
-  }, [profileData, loadNutritionData, loadCalendarData]);
+  }, [profileData]); // Functions are stable, no need to include in deps
 
   // Listen for meal updates to refresh data
   useEffect(() => {
@@ -252,14 +252,14 @@ const SocialProfile: React.FC = () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('sidebarRefresh', handleMealDataChanged);
     };
-  }, [profileData, loadNutritionData, loadCalendarData]);
+  }, [profileData]); // Functions are stable, no need to include in deps
 
   useEffect(() => {
     if (user) {
       loadProfile();
       loadPosts();
     }
-  }, [user, loadPosts, loadProfile]);
+  }, [user]); // Functions are stable, no need to include in deps
 
   useEffect(() => {
     if (user && activeTab === 'liked') {
@@ -267,7 +267,7 @@ const SocialProfile: React.FC = () => {
     } else if (user && activeTab === 'saved') {
       loadBookmarkedPosts();
     }
-  }, [user, activeTab, loadLikedPosts, loadBookmarkedPosts]);
+  }, [user, activeTab]); // Functions are stable, no need to include in deps
 
   const loadProfile = async (retryCount = 0) => {
     try {
