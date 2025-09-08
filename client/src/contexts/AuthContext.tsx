@@ -74,7 +74,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => {
       window.removeEventListener('auth-logout', handleLogoutEvent);
     };
-  }, [retryCount]); // Add retryCount as dependency to prevent stale closures
+  }, []); // No dependencies needed for simple auth check
 
   const login = async (email: string, password: string) => {
     try {
