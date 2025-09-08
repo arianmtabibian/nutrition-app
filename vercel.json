@@ -8,12 +8,6 @@
       "destination": "/index.html"
     }
   ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
-  ],
   "env": {
     "REACT_APP_API_URL": "https://nutrition-back-jtf3.onrender.com"
   },
@@ -23,13 +17,10 @@
     }
   },
   "github": {
-    "autoAlias": false,
-    "autoJobCancelation": true,
-    "silent": true
+    "autoAlias": true,
+    "autoJobCancelation": false
   },
-  "scope": "nutryra",
   "alias": ["www.nutryra.com", "nutryra.com"],
-  "regions": ["iad1"],
   "cleanUrls": true,
   "trailingSlash": false
 }
