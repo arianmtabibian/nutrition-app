@@ -12,7 +12,6 @@ const socialRoutes = require('./routes/social');
 const backupRoutes = require('./routes/backup');
 const favoritesRoutes = require('./routes/favorites');
 const { initializeSupabaseDatabase } = require('./database/supabaseInit');
-const { migrateToSupabase } = require('./utils/migrateToSupabase');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -119,18 +118,7 @@ async function startServer() {
     await initializeSupabaseDatabase();
     console.log('✅ Supabase PostgreSQL database initialized successfully');
     
-    // Check if we need to migrate data from SQLite (only run once)
-    if (process.env.MIGRATE_FROM_SQLITE === 'true') {
-      console.log('🔄 Migrating data from SQLite to Supabase...');
-      try {
-        await migrateToSupabase();
-        console.log('✅ Migration completed successfully');
-        console.log('⚠️  Please remove MIGRATE_FROM_SQLITE=true from environment variables');
-      } catch (error) {
-        console.error('❌ Migration failed:', error);
-        console.log('⚠️  Continuing without migration - manual data entry may be needed');
-      }
-    }
+    console.log('✅ Supabase setup complete - ready to accept requests');
     
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);

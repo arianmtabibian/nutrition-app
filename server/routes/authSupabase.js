@@ -6,6 +6,25 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Health check endpoint
+router.get('/health', async (req, res) => {
+  try {
+    const pool = getSupabasePool();
+    
+    // Simple connection test
+    const result = await pool.query('SELECT 1 as test');
+    
+    res.json({
+      message: 'Supabase database connection is working',
+      status: 'healthy',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Database health check error:', error);
+    res.status(500).json({ error: 'Database connection failed', details: error.message });
+  }
+});
+
 // Debug endpoint to check database status
 router.get('/debug/users', async (req, res) => {
   try {
