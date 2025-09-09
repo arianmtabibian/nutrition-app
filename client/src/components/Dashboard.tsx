@@ -203,84 +203,11 @@ const Dashboard: React.FC = () => {
 
   const currentTab = getCurrentTab();
 
-  // Check if user needs onboarding (new users only) - RENDER REDEPLOY PROTECTION
+  // OnboardingGuard now handles all onboarding logic - no need for profile checking here
   useEffect(() => {
-    const checkProfileExists = async (retryCount = 0) => {
-      try {
-        const response = await profileAPI.get();
-        if (!response.data.profile) {
-          // Check if this might be a temporary issue (Render redeploy)
-          const hasAccessedApp = localStorage.getItem('hasAccessedApp');
-          const lastAccess = localStorage.getItem('lastAccess');
-          
-          if (hasAccessedApp === 'true' && lastAccess) {
-            const lastAccessDate = new Date(lastAccess);
-            const hoursSinceAccess = (Date.now() - lastAccessDate.getTime()) / (1000 * 60 * 60);
-            
-            // If user accessed recently (within 24 hours), this is likely a Render redeploy
-            if (hoursSinceAccess < 24) {
-              console.log('🔄 Render redeploy detected - user accessed recently, waiting for database restore...');
-              
-              if (retryCount < 5) {
-                // Wait and retry - database might be restoring
-                setTimeout(() => checkProfileExists(retryCount + 1), 2000 * (retryCount + 1));
-                return;
-              } else {
-                console.log('⚠️ Database still not restored after retries, allowing dashboard access');
-                setCheckingProfile(false);
-                return;
-              }
-            }
-          }
-          
-          // Truly new user - redirect to onboarding
-          console.log('New user with no profile, redirecting to onboarding');
-          navigate('/onboarding');
-          return;
-        }
-        
-        // User has a profile - mark them as having accessed the app
-        localStorage.setItem('hasAccessedApp', 'true');
-        localStorage.setItem('lastAccess', new Date().toISOString());
-        console.log('✅ User has profile, allowing dashboard access');
-        setCheckingProfile(false);
-      } catch (error: any) {
-        console.error('❌ Error checking profile:', error);
-        
-        // Enhanced error handling for Render redeploys
-        const hasAccessedApp = localStorage.getItem('hasAccessedApp');
-        
-        if (error?.response?.status === 404) {
-          // Check if this is a returning user experiencing Render redeploy
-          if (hasAccessedApp === 'true' && retryCount < 3) {
-            console.log('🔄 Returning user, 404 might be temporary (Render redeploy), retrying...');
-            setTimeout(() => checkProfileExists(retryCount + 1), 3000);
-            return;
-          }
-          console.log('Profile not found (404), redirecting to onboarding');
-          navigate('/onboarding');
-        } else {
-          // For network/server errors, be more lenient with existing users
-          if (hasAccessedApp === 'true') {
-            console.log('🔄 Existing user with network error, allowing dashboard access');
-            setCheckingProfile(false);
-          } else if (retryCount < 2) {
-            console.log('🔄 Network error, retrying profile check...');
-            setTimeout(() => checkProfileExists(retryCount + 1), 2000);
-          } else {
-            console.log('⚠️ Network issues persist, allowing onboarding attempt');
-            navigate('/onboarding');
-          }
-        }
-      }
-    };
-    
-    if (user) {
-      checkProfileExists();
-    } else {
-      setCheckingProfile(false);
-    }
-  }, [user, navigate]);
+    console.log('📊 Dashboard: Component loaded - OnboardingGuard has already verified access');
+    setCheckingProfile(false);
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {

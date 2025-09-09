@@ -33,7 +33,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 // OnboardingProtectedRoute removed - OnboardingGuard now handles this logic
 
-// Public route component (redirects if already logged in)
+// Public route component - for unauthenticated users only
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
   
@@ -41,7 +41,12 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return <LoadingSpinner />;
   }
   
-  return user ? <Navigate to="/dashboard" replace /> : <>{children}</>;
+  // If user is authenticated, redirect to onboarding (OnboardingGuard will handle the rest)
+  if (user) {
+    return <Navigate to="/onboarding" replace />;
+  }
+  
+  return <>{children}</>;
 };
 
 function AppRoutes() {

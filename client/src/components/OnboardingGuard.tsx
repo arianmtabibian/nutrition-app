@@ -19,7 +19,12 @@ const OnboardingGuard: React.FC<OnboardingGuardProps> = ({ children, requireOnbo
         console.log('🔍 OnboardingGuard: Checking onboarding status...');
         const response = await profileAPI.get();
         
-        const completed = response.data.hasCompletedOnboarding || false;
+        // Check if user has daily_calories set (key onboarding field)
+        const profile = response.data.profile;
+        const completed = profile && profile.daily_calories !== null && profile.daily_calories !== undefined;
+        
+        console.log('🔍 OnboardingGuard: Profile:', profile);
+        console.log('🔍 OnboardingGuard: daily_calories:', profile?.daily_calories);
         console.log('🔍 OnboardingGuard: Has completed onboarding:', completed);
         
         setHasCompletedOnboarding(completed);
