@@ -568,7 +568,7 @@ const Onboarding: React.FC = () => {
         console.log('📋 Onboarding: Navigating to dashboard...');
         // Redirect to dashboard (OnboardingGuard will now allow access)
         navigate('/dashboard');
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Onboarding: Failed to update profile:', error);
         console.error('❌ Onboarding: Error details:', error.response?.data);
         setError('Failed to save profile. Please try again.');
