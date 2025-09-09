@@ -1,0 +1,128 @@
+const express = require('express');
+const { getSupabasePool } = require('../database/supabaseInit');
+const { authenticateToken } = require('../middleware/auth');
+
+const router = express.Router();
+
+// Get user profile
+router.get('/:userId', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const pool = getSupabasePool();
+
+    // Get user basic info
+    const userResult = await pool.query(
+      'SELECT id, email, first_name, last_name, username FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = userResult.rows[0];
+
+    // Get user profile details
+    const profileResult = await pool.query(
+      'SELECT * FROM user_profiles WHERE user_id = $1',
+      [userId]
+    );
+
+    const profile = profileResult.rows[0] || {};
+
+    res.json({
+      id: user.id,
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      username: user.username,
+      profile: {
+        profilePicture: profile.profile_picture,
+        bio: profile.bio,
+        dailyCalories: profile.daily_calories,
+        dailyProtein: profile.daily_protein,
+        weight: profile.weight,
+        targetWeight: profile.target_weight,
+        height: profile.height,
+        age: profile.age,
+        activityLevel: profile.activity_level,
+        gender: profile.gender
+      }
+    });
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update user profile
+router.put('/:userId', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const {
+      firstName,
+      lastName,
+      username,
+      profilePicture,
+      bio,
+      dailyCalories,
+      dailyProtein,
+      weight,
+      targetWeight,
+      height,
+      age,
+      activityLevel,
+      gender
+    } = req.body;
+
+    const pool = getSupabasePool();
+
+    // Update user basic info
+    if (firstName || lastName || username) {
+      await pool.query(
+        'UPDATE users SET first_name = COALESCE($1, first_name), last_name = COALESCE($2, last_name), username = COALESCE($3, username), updated_at = CURRENT_TIMESTAMP WHERE id = $4',
+        [firstName, lastName, username, userId]
+      );
+    }
+
+    // Check if profile exists
+    const existingProfile = await pool.query(
+      'SELECT id FROM user_profiles WHERE user_id = $1',
+      [userId]
+    );
+
+    if (existingProfile.rows.length === 0) {
+      // Create new profile
+      await pool.query(
+        `INSERT INTO user_profiles (user_id, profile_picture, bio, daily_calories, daily_protein, weight, target_weight, height, age, activity_level, gender)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        [userId, profilePicture, bio, dailyCalories, dailyProtein, weight, targetWeight, height, age, activityLevel, gender]
+      );
+    } else {
+      // Update existing profile
+      await pool.query(
+        `UPDATE user_profiles SET 
+         profile_picture = COALESCE($1, profile_picture),
+         bio = COALESCE($2, bio),
+         daily_calories = COALESCE($3, daily_calories),
+         daily_protein = COALESCE($4, daily_protein),
+         weight = COALESCE($5, weight),
+         target_weight = COALESCE($6, target_weight),
+         height = COALESCE($7, height),
+         age = COALESCE($8, age),
+         activity_level = COALESCE($9, activity_level),
+         gender = COALESCE($10, gender),
+         updated_at = CURRENT_TIMESTAMP
+         WHERE user_id = $11`,
+        [profilePicture, bio, dailyCalories, dailyProtein, weight, targetWeight, height, age, activityLevel, gender, userId]
+      );
+    }
+
+    res.json({ message: 'Profile updated successfully' });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+module.exports = router;

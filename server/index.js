@@ -5,13 +5,11 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authSupabase');
-// Temporarily disable other routes that still use SQLite
-// const profileRoutes = require('./routes/profile');
-// const mealRoutes = require('./routes/meals');
-// const diaryRoutes = require('./routes/diary');
-// const socialRoutes = require('./routes/social');
-// const backupRoutes = require('./routes/backup');
-// const favoritesRoutes = require('./routes/favorites');
+const profileRoutes = require('./routes/profileSupabase');
+const mealRoutes = require('./routes/mealsSupabase');
+const diaryRoutes = require('./routes/diarySupabase');
+const socialRoutes = require('./routes/socialSupabase');
+const favoritesRoutes = require('./routes/favoritesSupabase');
 const { initializeSupabaseDatabase } = require('./database/supabaseInit');
 
 const app = express();
@@ -81,22 +79,29 @@ console.log('🌐 BULLETPROOF CORS: Configured for nutryra.com and development')
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
+// Routes - All using Supabase PostgreSQL
 app.use('/api/auth', authRoutes);
-// Temporarily disable other routes that still use SQLite
-// app.use('/api/profile', profileRoutes);
-// app.use('/api/meals', mealRoutes);
-// app.use('/api/diary', diaryRoutes);
-// app.use('/api/social', socialRoutes);
-// app.use('/api/backup', backupRoutes);
-// app.use('/api/favorites', favoritesRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/meals', mealRoutes);
+app.use('/api/diary', diaryRoutes);
+app.use('/api/social', socialRoutes);
+app.use('/api/favorites', favoritesRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    message: 'Post creation fixes deployed successfully' 
+    message: 'Nutrition app running with permanent Supabase storage',
+    database: 'Supabase PostgreSQL',
+    features: [
+      'User authentication',
+      'Meal tracking', 
+      'Social features',
+      'User profiles',
+      'Favorites',
+      'Diary tracking'
+    ]
   });
 });
 
