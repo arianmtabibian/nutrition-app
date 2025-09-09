@@ -149,6 +149,16 @@ router.put('/', authenticateToken, async (req, res) => {
     console.log('🔧 ProfileSupabase: Profile update request received');
     console.log('🔧 ProfileSupabase: User ID:', userId);
     console.log('🔧 ProfileSupabase: Raw request body:', req.body);
+    
+    // Validate required fields for onboarding
+    if (!finalDailyCalories || !finalDailyProtein) {
+      console.error('❌ ProfileSupabase: Missing required fields');
+      return res.status(400).json({ 
+        error: 'Daily calories and daily protein are required',
+        received: { finalDailyCalories, finalDailyProtein }
+      });
+    }
+
     console.log('🔧 ProfileSupabase: Final values:');
     console.log('  - finalDailyCalories:', finalDailyCalories);
     console.log('  - finalDailyProtein:', finalDailyProtein);
@@ -161,52 +171,87 @@ router.put('/', authenticateToken, async (req, res) => {
 
     const pool = getSupabasePool();
 
-    // Update user basic info
-    if (firstName || lastName || username) {
-      await pool.query(
-        'UPDATE users SET first_name = COALESCE($1, first_name), last_name = COALESCE($2, last_name), username = COALESCE($3, username), updated_at = CURRENT_TIMESTAMP WHERE id = $4',
-        [firstName, lastName, username, userId]
-      );
-    }
+    // Database operations with proper error handling
+    try {
+      // Update user basic info if provided
+      if (firstName || lastName || username) {
+        console.log('🔧 ProfileSupabase: Updating user basic info...');
+        await pool.query(
+          'UPDATE users SET first_name = COALESCE($1, first_name), last_name = COALESCE($2, last_name), username = COALESCE($3, username), updated_at = CURRENT_TIMESTAMP WHERE id = $4',
+          [firstName, lastName, username, userId]
+        );
+        console.log('✅ ProfileSupabase: User basic info updated');
+      }
 
-    // Check if profile exists
-    const existingProfile = await pool.query(
-      'SELECT id FROM user_profiles WHERE user_id = $1',
-      [userId]
-    );
+      // Check if profile exists
+      console.log('🔧 ProfileSupabase: Checking if profile exists...');
+      const existingProfile = await pool.query(
+        'SELECT id FROM user_profiles WHERE user_id = $1',
+        [userId]
+      );
 
-    if (existingProfile.rows.length === 0) {
-      // Create new profile
-      await pool.query(
-        `INSERT INTO user_profiles (user_id, profile_picture, bio, daily_calories, daily_protein, weight, target_weight, height, age, activity_level, gender)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-        [userId, profilePicture, bio, finalDailyCalories, finalDailyProtein, weight, finalTargetWeight, height, age, finalActivityLevel, gender]
-      );
-    } else {
-      // Update existing profile
-      await pool.query(
-        `UPDATE user_profiles SET 
-         profile_picture = COALESCE($1, profile_picture),
-         bio = COALESCE($2, bio),
-         daily_calories = COALESCE($3, daily_calories),
-         daily_protein = COALESCE($4, daily_protein),
-         weight = COALESCE($5, weight),
-         target_weight = COALESCE($6, target_weight),
-         height = COALESCE($7, height),
-         age = COALESCE($8, age),
-         activity_level = COALESCE($9, activity_level),
-         gender = COALESCE($10, gender),
-         updated_at = CURRENT_TIMESTAMP
-         WHERE user_id = $11`,
-        [profilePicture, bio, finalDailyCalories, finalDailyProtein, weight, finalTargetWeight, height, age, finalActivityLevel, gender, userId]
-      );
+      if (existingProfile.rows.length === 0) {
+        // Create new profile with safe defaults
+        console.log('🔧 ProfileSupabase: Creating new profile...');
+        const insertResult = await pool.query(
+          `INSERT INTO user_profiles (user_id, profile_picture, bio, daily_calories, daily_protein, weight, target_weight, height, age, activity_level, gender)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+          [
+            userId, 
+            profilePicture || null, 
+            bio || null, 
+            finalDailyCalories, 
+            finalDailyProtein, 
+            weight || null, 
+            finalTargetWeight || null, 
+            height || null, 
+            age || null, 
+            finalActivityLevel || 'moderate', 
+            gender || 'male'
+          ]
+        );
+        console.log('✅ ProfileSupabase: New profile created:', insertResult.rows[0]);
+      } else {
+        // Update existing profile
+        console.log('🔧 ProfileSupabase: Updating existing profile...');
+        const updateResult = await pool.query(
+          `UPDATE user_profiles SET 
+           profile_picture = COALESCE($1, profile_picture),
+           bio = COALESCE($2, bio),
+           daily_calories = $3,
+           daily_protein = $4,
+           weight = COALESCE($5, weight),
+           target_weight = COALESCE($6, target_weight),
+           height = COALESCE($7, height),
+           age = COALESCE($8, age),
+           activity_level = COALESCE($9, activity_level),
+           gender = COALESCE($10, gender),
+           updated_at = CURRENT_TIMESTAMP
+           WHERE user_id = $11 RETURNING *`,
+          [profilePicture, bio, finalDailyCalories, finalDailyProtein, weight, finalTargetWeight, height, age, finalActivityLevel, gender, userId]
+        );
+        console.log('✅ ProfileSupabase: Profile updated:', updateResult.rows[0]);
+      }
+    } catch (dbError) {
+      console.error('❌ ProfileSupabase: Database operation failed:', dbError);
+      console.error('❌ ProfileSupabase: Error details:', dbError.message);
+      console.error('❌ ProfileSupabase: Error code:', dbError.code);
+      return res.status(500).json({ 
+        error: 'Database operation failed', 
+        details: dbError.message,
+        code: dbError.code
+      });
     }
 
     console.log('✅ ProfileSupabase: Profile update completed successfully');
     res.json({ message: 'Profile updated successfully' });
   } catch (error) {
     console.error('❌ ProfileSupabase: Update profile error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('❌ ProfileSupabase: Full error:', error.stack);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
   }
 });
 
