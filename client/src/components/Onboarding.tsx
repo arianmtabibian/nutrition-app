@@ -553,15 +553,24 @@ const Onboarding: React.FC = () => {
       setError(''); // Clear any general errors when moving to next step
     } else {
       try {
+        console.log('📋 Onboarding: Starting profile save...');
+        console.log('📋 Onboarding: Profile data being sent:', profileData);
+        
         // Update profile with collected data
-        await profileAPI.update(profileData);
+        const response = await profileAPI.update(profileData);
         
-        console.log('✅ Onboarding completed successfully - profile saved to database');
+        console.log('✅ Onboarding: Profile update response:', response);
+        console.log('✅ Onboarding: Profile saved successfully to database');
         
+        // Wait a moment to ensure the database is updated
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        console.log('📋 Onboarding: Navigating to dashboard...');
         // Redirect to dashboard (OnboardingGuard will now allow access)
         navigate('/dashboard');
       } catch (error) {
-        console.error('❌ Failed to update profile:', error);
+        console.error('❌ Onboarding: Failed to update profile:', error);
+        console.error('❌ Onboarding: Error details:', error.response?.data);
         setError('Failed to save profile. Please try again.');
         return; // Don't redirect if profile save failed
       }

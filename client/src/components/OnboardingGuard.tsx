@@ -17,20 +17,27 @@ const OnboardingGuard: React.FC<OnboardingGuardProps> = ({ children, requireOnbo
     const checkOnboardingStatus = async () => {
       try {
         console.log('🔍 OnboardingGuard: Checking onboarding status...');
+        console.log('🔍 OnboardingGuard: requireOnboarding =', requireOnboarding);
+        
         const response = await profileAPI.get();
+        console.log('🔍 OnboardingGuard: Full API response:', response.data);
         
         // Check if user has daily_calories set (key onboarding field)
         const profile = response.data.profile;
+        const hasCompletedOnboardingFromAPI = response.data.hasCompletedOnboarding;
         const completed = profile && profile.daily_calories !== null && profile.daily_calories !== undefined;
         
-        console.log('🔍 OnboardingGuard: Profile:', profile);
-        console.log('🔍 OnboardingGuard: daily_calories:', profile?.daily_calories);
-        console.log('🔍 OnboardingGuard: Has completed onboarding:', completed);
+        console.log('🔍 OnboardingGuard: Profile object:', profile);
+        console.log('🔍 OnboardingGuard: daily_calories value:', profile?.daily_calories);
+        console.log('🔍 OnboardingGuard: hasCompletedOnboarding from API:', hasCompletedOnboardingFromAPI);
+        console.log('🔍 OnboardingGuard: Calculated completed:', completed);
+        console.log('🔍 OnboardingGuard: Final decision - Has completed onboarding:', completed);
         
         setHasCompletedOnboarding(completed);
         setError(null);
       } catch (error: any) {
         console.error('🔍 OnboardingGuard: Error checking onboarding status:', error);
+        console.error('🔍 OnboardingGuard: Error response:', error.response);
         
         if (error?.response?.status === 404) {
           // No profile exists = hasn't completed onboarding
@@ -48,7 +55,7 @@ const OnboardingGuard: React.FC<OnboardingGuardProps> = ({ children, requireOnbo
     };
 
     checkOnboardingStatus();
-  }, []);
+  }, [requireOnboarding]);
 
   if (loading) {
     return <LoadingSpinner />;
@@ -56,13 +63,17 @@ const OnboardingGuard: React.FC<OnboardingGuardProps> = ({ children, requireOnbo
 
   // If we require onboarding to be completed but it's not
   if (requireOnboarding && !hasCompletedOnboarding) {
-    console.log('🚫 OnboardingGuard: Redirecting to onboarding (required but not completed)');
+    console.log('🚫 OnboardingGuard: REDIRECT DECISION - Need onboarding completed but it is not');
+    console.log('🚫 OnboardingGuard: requireOnboarding =', requireOnboarding, 'hasCompletedOnboarding =', hasCompletedOnboarding);
+    console.log('🚫 OnboardingGuard: Redirecting to /onboarding');
     return <Navigate to="/onboarding" replace />;
   }
 
   // If we require onboarding to NOT be completed but it is
   if (!requireOnboarding && hasCompletedOnboarding) {
-    console.log('🚫 OnboardingGuard: Redirecting to dashboard (already completed)');
+    console.log('🚫 OnboardingGuard: REDIRECT DECISION - Onboarding should not be completed but it is');
+    console.log('🚫 OnboardingGuard: requireOnboarding =', requireOnboarding, 'hasCompletedOnboarding =', hasCompletedOnboarding);
+    console.log('🚫 OnboardingGuard: Redirecting to /dashboard');
     return <Navigate to="/dashboard" replace />;
   }
 

@@ -39,13 +39,13 @@ router.get('/', authenticateToken, async (req, res) => {
       profile: {
         profilePicture: profile.profile_picture,
         bio: profile.bio,
-        finalDailyCalories: profile.daily_calories,
-        finalDailyProtein: profile.daily_protein,
+        daily_calories: profile.daily_calories,
+        daily_protein: profile.daily_protein,
         weight: profile.weight,
-        finalTargetWeight: profile.target_weight,
+        target_weight: profile.target_weight,
         height: profile.height,
         age: profile.age,
-        finalActivityLevel: profile.activity_level,
+        activity_level: profile.activity_level,
         gender: profile.gender
       },
       hasCompletedOnboarding: profile.daily_calories !== null && profile.daily_calories !== undefined
@@ -111,6 +111,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
 router.put('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId; // Get from JWT token
+    console.log('🔧 ProfileSupabase: PUT / endpoint hit by user:', userId);
     const {
       firstName,
       lastName,
@@ -137,6 +138,19 @@ router.put('/', authenticateToken, async (req, res) => {
     const finalDailyProtein = dailyProtein || daily_protein;
     const finalTargetWeight = targetWeight || target_weight;
     const finalActivityLevel = activityLevel || activity_level;
+
+    console.log('🔧 ProfileSupabase: Profile update request received');
+    console.log('🔧 ProfileSupabase: User ID:', userId);
+    console.log('🔧 ProfileSupabase: Raw request body:', req.body);
+    console.log('🔧 ProfileSupabase: Final values:');
+    console.log('  - finalDailyCalories:', finalDailyCalories);
+    console.log('  - finalDailyProtein:', finalDailyProtein);
+    console.log('  - weight:', weight);
+    console.log('  - finalTargetWeight:', finalTargetWeight);
+    console.log('  - height:', height);
+    console.log('  - age:', age);
+    console.log('  - finalActivityLevel:', finalActivityLevel);
+    console.log('  - gender:', gender);
 
     const pool = getSupabasePool();
 
@@ -181,9 +195,10 @@ router.put('/', authenticateToken, async (req, res) => {
       );
     }
 
+    console.log('✅ ProfileSupabase: Profile update completed successfully');
     res.json({ message: 'Profile updated successfully' });
   } catch (error) {
-    console.error('Update profile error:', error);
+    console.error('❌ ProfileSupabase: Update profile error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
