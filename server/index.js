@@ -5,12 +5,13 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authSupabase');
-const profileRoutes = require('./routes/profile');
-const mealRoutes = require('./routes/meals');
-const diaryRoutes = require('./routes/diary');
-const socialRoutes = require('./routes/social');
-const backupRoutes = require('./routes/backup');
-const favoritesRoutes = require('./routes/favorites');
+// Temporarily disable other routes that still use SQLite
+// const profileRoutes = require('./routes/profile');
+// const mealRoutes = require('./routes/meals');
+// const diaryRoutes = require('./routes/diary');
+// const socialRoutes = require('./routes/social');
+// const backupRoutes = require('./routes/backup');
+// const favoritesRoutes = require('./routes/favorites');
 const { initializeSupabaseDatabase } = require('./database/supabaseInit');
 
 const app = express();
@@ -82,12 +83,13 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/profile', profileRoutes);
-app.use('/api/meals', mealRoutes);
-app.use('/api/diary', diaryRoutes);
-app.use('/api/social', socialRoutes);
-app.use('/api/backup', backupRoutes);
-app.use('/api/favorites', favoritesRoutes);
+// Temporarily disable other routes that still use SQLite
+// app.use('/api/profile', profileRoutes);
+// app.use('/api/meals', mealRoutes);
+// app.use('/api/diary', diaryRoutes);
+// app.use('/api/social', socialRoutes);
+// app.use('/api/backup', backupRoutes);
+// app.use('/api/favorites', favoritesRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
