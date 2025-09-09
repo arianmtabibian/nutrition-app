@@ -1,19 +1,27 @@
-# Ignore server files (deployed separately)
+# Ignore server folder (deployed to Render)
 server/
+
+# Ignore root node_modules (only client should be deployed)
 node_modules/
-.git/
-.env*
-*.log
-.DS_Store
-Thumbs.db
 
-# Ignore development files
+# Ignore database files
+*.db
+*.db-shm
+*.db-wal
+
+# Ignore deployment scripts
+deploy-*.js
+*.bat
+*.sh
+
+# Ignore documentation
 *.md
-LICENSE
-.gitignore
-.cursorignore
 
-# Ignore build artifacts not needed for deployment
-client/node_modules/
-client/.env*
-client/build/.gitkeep
+# Ignore environment files
+.env
+.env.local
+.env.production
+
+# Ignore build artifacts
+build/
+dist/
