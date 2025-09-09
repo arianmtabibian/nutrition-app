@@ -8,6 +8,7 @@ const router = express.Router();
 router.get('/posts', authenticateToken, async (req, res) => {
   try {
     const { limit = 20, offset = 0 } = req.query;
+    const userId = req.user.userId;
     const pool = getSupabasePool();
 
     const result = await pool.query(`
@@ -16,33 +17,40 @@ router.get('/posts', authenticateToken, async (req, res) => {
         u.first_name,
         u.last_name,
         u.username,
-        up.profile_picture
+        up.profile_picture,
+        (SELECT COUNT(*) FROM likes WHERE post_id = p.id) as likes_count,
+        (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments_count,
+        EXISTS(SELECT 1 FROM likes WHERE post_id = p.id AND user_id = $3) as is_liked,
+        EXISTS(SELECT 1 FROM favorites WHERE post_id = p.id AND user_id = $3) as is_bookmarked
       FROM posts p
       JOIN users u ON p.user_id = u.id
       LEFT JOIN user_profiles up ON p.user_id = up.user_id
       ORDER BY p.created_at DESC
       LIMIT $1 OFFSET $2
-    `, [parseInt(limit), parseInt(offset)]);
+    `, [parseInt(limit), parseInt(offset), userId]);
 
     const posts = result.rows.map(post => ({
       id: post.id,
-      userId: post.user_id,
+      user_id: post.user_id,
       content: post.content,
-      imageUrl: post.image_url,
-      mealId: post.meal_id,
-      likesCount: post.likes_count,
-      commentsCount: post.comments_count,
-      createdAt: post.created_at,
-      updatedAt: post.updated_at,
+      image_url: post.image_url,
+      meal_id: post.meal_id,
+      likes_count: parseInt(post.likes_count) || 0,
+      comments_count: parseInt(post.comments_count) || 0,
+      is_liked: post.is_liked || false,
+      is_bookmarked: post.is_bookmarked || false,
+      created_at: post.created_at,
+      updated_at: post.updated_at,
       user: {
-        firstName: post.first_name,
-        lastName: post.last_name,
+        id: post.user_id,
+        first_name: post.first_name,
+        last_name: post.last_name,
         username: post.username,
-        profilePicture: post.profile_picture
+        profile_picture: post.profile_picture
       }
     }));
 
-    res.json(posts);
+    res.json({ posts });
   } catch (error) {
     console.error('Get posts error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -153,6 +161,38 @@ router.post('/posts/:postId/like', authenticateToken, async (req, res) => {
     }
   } catch (error) {
     console.error('Like post error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Bookmark/favorite post
+router.post('/posts/:postId/favorite', authenticateToken, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user.userId;
+    const pool = getSupabasePool();
+
+    console.log('🔖 Bookmark request:', { postId, userId });
+
+    // Check if already bookmarked
+    const existingFavorite = await pool.query(
+      'SELECT id FROM favorites WHERE user_id = $1 AND post_id = $2',
+      [userId, postId]
+    );
+
+    if (existingFavorite.rows.length > 0) {
+      // Remove bookmark
+      await pool.query('DELETE FROM favorites WHERE user_id = $1 AND post_id = $2', [userId, postId]);
+      console.log('✅ Post unbookmarked:', postId);
+      res.json({ bookmarked: false, message: 'Post unbookmarked' });
+    } else {
+      // Add bookmark
+      await pool.query('INSERT INTO favorites (user_id, post_id) VALUES ($1, $2)', [userId, postId]);
+      console.log('✅ Post bookmarked:', postId);
+      res.json({ bookmarked: true, message: 'Post bookmarked' });
+    }
+  } catch (error) {
+    console.error('❌ Bookmark post error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

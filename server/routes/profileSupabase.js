@@ -30,7 +30,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
     const profile = profileResult.rows[0] || {};
 
-    res.json({
+    const responseData = {
       id: user.id,
       email: user.email,
       firstName: user.first_name,
@@ -49,7 +49,14 @@ router.get('/', authenticateToken, async (req, res) => {
         gender: profile.gender
       },
       hasCompletedOnboarding: profile.daily_calories !== null && profile.daily_calories !== undefined
-    });
+    };
+
+    console.log('🔧 ProfileSupabase: GET response for user', userId);
+    console.log('🔧 ProfileSupabase: User name:', user.first_name, user.last_name);
+    console.log('🔧 ProfileSupabase: Profile data:', profile);
+    console.log('🔧 ProfileSupabase: Full response:', responseData);
+
+    res.json(responseData);
   } catch (error) {
     console.error('Get current user profile error:', error);
     res.status(500).json({ error: 'Internal server error' });

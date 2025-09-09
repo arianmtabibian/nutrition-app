@@ -40,9 +40,10 @@ router.get('/debug/users', async (req, res) => {
       users: result.rows.map(user => ({
         id: user.id,
         email: user.email,
-        name: `${user.first_name} ${user.last_name}`,
+        name: `${user.first_name || 'NULL'} ${user.last_name || 'NULL'}`,
         username: user.username,
-        created_at: user.created_at
+        created_at: user.created_at,
+        hasNullNames: !user.first_name || !user.last_name
       }))
     });
   } catch (error) {
@@ -51,13 +52,79 @@ router.get('/debug/users', async (req, res) => {
   }
 });
 
+// Fix existing users with NULL names - ADMIN ENDPOINT
+router.post('/debug/fix-null-names', async (req, res) => {
+  try {
+    const pool = getSupabasePool();
+    
+    console.log('🔧 Starting to fix users with NULL names...');
+    
+    // Find users with NULL names
+    const usersWithNullNames = await pool.query(
+      'SELECT id, email, first_name, last_name, username FROM users WHERE first_name IS NULL OR last_name IS NULL'
+    );
+    
+    console.log(`🔧 Found ${usersWithNullNames.rows.length} users with NULL names`);
+    
+    let fixedCount = 0;
+    
+    for (const user of usersWithNullNames.rows) {
+      const defaultFirstName = user.first_name || 'User';
+      const defaultLastName = user.last_name || `${user.id}`;
+      
+      await pool.query(
+        'UPDATE users SET first_name = $1, last_name = $2 WHERE id = $3',
+        [defaultFirstName, defaultLastName, user.id]
+      );
+      
+      console.log(`✅ Fixed user ${user.id}: ${user.email} -> ${defaultFirstName} ${defaultLastName}`);
+      fixedCount++;
+    }
+    
+    res.json({
+      message: 'Fixed users with NULL names',
+      usersFound: usersWithNullNames.rows.length,
+      usersFixed: fixedCount,
+      fixedUsers: usersWithNullNames.rows.map(user => ({
+        id: user.id,
+        email: user.email,
+        oldName: `${user.first_name || 'NULL'} ${user.last_name || 'NULL'}`,
+        newName: `${user.first_name || 'User'} ${user.last_name || user.id}`
+      }))
+    });
+  } catch (error) {
+    console.error('Fix NULL names error:', error);
+    res.status(500).json({ error: 'Database error', details: error.message });
+  }
+});
+
 // Register endpoint
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, firstName, lastName, username } = req.body;
+    const { 
+      email, 
+      password, 
+      firstName, 
+      lastName, 
+      username,
+      // Also accept snake_case from frontend
+      first_name,
+      last_name
+    } = req.body;
+
+    // Use snake_case if camelCase not provided (for frontend compatibility)
+    const finalFirstName = firstName || first_name;
+    const finalLastName = lastName || last_name;
+
+    console.log('🔧 Registration request:', { email, firstName, lastName, first_name, last_name, username });
+    console.log('🔧 Final names:', { finalFirstName, finalLastName });
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    if (!finalFirstName || !finalLastName) {
+      return res.status(400).json({ error: 'First name and last name are required' });
     }
 
     const pool = getSupabasePool();
@@ -75,7 +142,7 @@ router.post('/register', async (req, res) => {
     // Create user
     const result = await pool.query(
       'INSERT INTO users (email, password_hash, first_name, last_name, username) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, first_name, last_name, username',
-      [email, hashedPassword, firstName, lastName, username]
+      [email, hashedPassword, finalFirstName, finalLastName, username]
     );
 
     const user = result.rows[0];
@@ -87,7 +154,7 @@ router.post('/register', async (req, res) => {
       { expiresIn: '24h' }
     );
 
-    console.log(`✅ New user registered: ${email}`);
+    console.log(`✅ New user registered: ${email} with name: ${finalFirstName} ${finalLastName}`);
 
     res.status(201).json({
       message: 'User created successfully',
@@ -95,8 +162,8 @@ router.post('/register', async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
+        first_name: user.first_name,
+        last_name: user.last_name,
         username: user.username
       }
     });
