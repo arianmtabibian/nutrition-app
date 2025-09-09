@@ -70,9 +70,10 @@ const Feed: React.FC = () => {
   // Search states - Enhanced
   const [showFollowSearch, setShowFollowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<{users: any[], groups: any[]}>({users: [], groups: []});
+  const [searchResults, setSearchResults] = useState<{users: any[], groups: any[], hasMore: boolean, total: number}>({users: [], groups: [], hasMore: false, total: 0});
   const [searchLoading, setSearchLoading] = useState(false);
   const [activeSearchTab, setActiveSearchTab] = useState<'all' | 'users' | 'groups'>('all');
+  const [searchOffset, setSearchOffset] = useState(0);
 
   const formatPostDate = (dateString: string) => {
     // Handle invalid or missing date strings
@@ -543,29 +544,78 @@ const Feed: React.FC = () => {
     }
   };
 
-  const searchUsersAndGroups = async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults({users: [], groups: []});
-      return;
+  const searchUsersAndGroups = async (query: string, loadMore = false) => {
+    const offset = loadMore ? searchOffset : 0;
+    
+    if (!loadMore) {
+      setSearchOffset(0);
+      if (!query.trim()) {
+        // Load initial users even without query
+        setSearchLoading(true);
+        try {
+          console.log('🔍 Loading initial users...');
+          const response = await socialAPI.search('', 5, 0);
+          
+          if (response && response.data) {
+            console.log('🔍 Initial results:', response.data);
+            setSearchResults({
+              users: response.data.users || [],
+              groups: response.data.groups || [],
+              hasMore: response.data.hasMore || false,
+              total: response.data.total || 0
+            });
+          }
+        } catch (error) {
+          console.error('Error loading initial users:', error);
+          setSearchResults({users: [], groups: [], hasMore: false, total: 0});
+        } finally {
+          setSearchLoading(false);
+        }
+        return;
+      }
     }
 
     setSearchLoading(true);
     try {
-      console.log('🔍 Searching for:', query);
-      const response = await socialAPI.search(query);
+      console.log('🔍 Searching for:', query, 'offset:', offset);
+      const response = await socialAPI.search(query, 5, offset);
       
       if (response && response.data) {
         console.log('🔍 Search results:', response.data);
-        setSearchResults({
-          users: response.data.users || [],
-          groups: response.data.groups || []
-        });
+        
+        if (loadMore) {
+          // Append to existing results
+          setSearchResults(prev => ({
+            users: [...prev.users, ...(response.data.users || [])],
+            groups: [...prev.groups, ...(response.data.groups || [])],
+            hasMore: response.data.hasMore || false,
+            total: response.data.total || 0
+          }));
+          setSearchOffset(prev => prev + 5);
+        } else {
+          // Replace results
+          setSearchResults({
+            users: response.data.users || [],
+            groups: response.data.groups || [],
+            hasMore: response.data.hasMore || false,
+            total: response.data.total || 0
+          });
+          setSearchOffset(5);
+        }
       }
     } catch (error) {
       console.error('Error searching:', error);
-      setSearchResults({users: [], groups: []});
+      if (!loadMore) {
+        setSearchResults({users: [], groups: [], hasMore: false, total: 0});
+      }
     } finally {
       setSearchLoading(false);
+    }
+  };
+
+  const loadMoreResults = () => {
+    if (!searchLoading && searchResults.hasMore) {
+      searchUsersAndGroups(searchQuery, true);
     }
   };
 
@@ -1263,8 +1313,9 @@ const Feed: React.FC = () => {
                 onClick={() => {
                   setShowFollowSearch(false);
                   setSearchQuery('');
-                  setSearchResults({users: [], groups: []});
+                  setSearchResults({users: [], groups: [], hasMore: false, total: 0});
                   setActiveSearchTab('all');
+                  setSearchOffset(0);
                 }}
                 className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
@@ -1416,6 +1467,18 @@ const Feed: React.FC = () => {
                     </div>
                   )}
 
+                  {/* See More Results Button */}
+                  {!searchLoading && searchResults.hasMore && (searchResults.users.length > 0 || searchResults.groups.length > 0) && (
+                    <div className="text-center py-4">
+                      <button
+                        onClick={loadMoreResults}
+                        className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:scale-105"
+                      >
+                        See More Results ({searchResults.total - searchResults.users.length - searchResults.groups.length} more)
+                      </button>
+                    </div>
+                  )}
+
                   {/* No Results */}
                   {!searchLoading && searchQuery && searchResults.users.length === 0 && searchResults.groups.length === 0 && (
                     <div className="text-center py-12">
@@ -1427,14 +1490,20 @@ const Feed: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Empty State */}
-                  {!searchQuery && (
+                  {/* Empty State - Load initial users */}
+                  {!searchQuery && searchResults.users.length === 0 && searchResults.groups.length === 0 && !searchLoading && (
                     <div className="text-center py-12">
                       <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <MessageCircle className="w-8 h-8 text-orange-500" />
                       </div>
                       <h3 className="text-lg font-medium text-gray-900 mb-2">Discover Amazing People & Groups</h3>
-                      <p className="text-gray-500">Search for people to follow or groups to join based on your interests.</p>
+                      <p className="text-gray-500 mb-4">Search for people to follow or groups to join based on your interests.</p>
+                      <button
+                        onClick={() => searchUsersAndGroups('')}
+                        className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                      >
+                        Show Recent Users
+                      </button>
                     </div>
                   )}
                 </div>

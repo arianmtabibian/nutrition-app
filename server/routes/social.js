@@ -745,19 +745,62 @@ router.get('/profile/:userId/favorited-posts', auth, (req, res) => {
 // Search users and groups
 router.get('/search', auth, (req, res) => {
   try {
-    const { q: query } = req.query;
+    const { q: query, limit = 5, offset = 0 } = req.query;
     const currentUserId = req.user.userId;
+    const searchLimit = parseInt(limit);
+    const searchOffset = parseInt(offset);
+    
+    console.log('🔍 Search request for:', query, 'by user:', currentUserId, 'limit:', searchLimit, 'offset:', searchOffset);
     
     if (!query || query.trim().length < 1) {
-      return res.json({ users: [], groups: [] });
+      // Return some sample users even without query for testing
+      const db = getDatabase();
+      db.all(`
+        SELECT u.id, u.username, u.first_name, u.last_name, up.profile_picture,
+               (SELECT COUNT(*) FROM posts WHERE user_id = u.id) as posts_count,
+               EXISTS(SELECT 1 FROM user_follows WHERE follower_id = ? AND following_id = u.id) as is_following
+        FROM users u
+        LEFT JOIN user_profiles up ON u.id = up.user_id
+        WHERE u.id != ?
+        ORDER BY u.created_at DESC
+        LIMIT ?
+        OFFSET ?
+      `, [currentUserId, currentUserId, searchLimit, searchOffset], (err, users) => {
+        if (err) {
+          console.error('❌ Database error getting users:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        const mockGroups = [
+          { id: 1, name: 'Fitness Enthusiasts', description: 'A community for fitness lovers', members_count: 1234, image: '🏃‍♂️', is_member: false },
+          { id: 2, name: 'Healthy Recipes', description: 'Share and discover healthy recipes', members_count: 856, image: '🥗', is_member: false },
+          { id: 3, name: 'Weight Loss Support', description: 'Support group for weight loss journey', members_count: 2341, image: '⚖️', is_member: false },
+          { id: 4, name: 'Marathon Runners', description: 'For serious marathon runners', members_count: 567, image: '🏃‍♀️', is_member: false }
+        ];
+        
+        return res.json({
+          users: users.map(user => ({
+            id: user.id,
+            username: user.username,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            profile_picture: user.profile_picture,
+            posts_count: user.posts_count,
+            is_following: !!user.is_following,
+            type: 'user'
+          })),
+          groups: mockGroups.map(group => ({ ...group, type: 'group' })),
+          hasMore: users.length === searchLimit,
+          total: users.length + mockGroups.length
+        });
+      });
+      return;
     }
-    
-    console.log('🔍 Search request for:', query, 'by user:', currentUserId);
     
     const db = getDatabase();
     const searchTerm = `%${query.trim()}%`;
     
-    // Search users
+    // Search users with pagination
     db.all(`
       SELECT u.id, u.username, u.first_name, u.last_name, up.profile_picture,
              (SELECT COUNT(*) FROM posts WHERE user_id = u.id) as posts_count,
@@ -775,12 +818,14 @@ router.get('/search', auth, (req, res) => {
           ELSE 4
         END,
         u.username ASC
-      LIMIT 20
+      LIMIT ?
+      OFFSET ?
     `, [
       currentUserId, 
       searchTerm, searchTerm, searchTerm, searchTerm, 
       currentUserId,
-      `${query.trim()}%`, `${query.trim()}%`, `${query.trim()}%`
+      `${query.trim()}%`, `${query.trim()}%`, `${query.trim()}%`,
+      searchLimit, searchOffset
     ], (err, users) => {
       if (err) {
         console.error('❌ Database error searching users:', err);
@@ -789,40 +834,12 @@ router.get('/search', auth, (req, res) => {
       
       console.log('🔍 Found', users.length, 'users matching:', query);
       
-      // For now, return mock groups data since we don't have groups table yet
+      // Filter groups by search term
       const mockGroups = [
-        {
-          id: 1,
-          name: 'Fitness Enthusiasts',
-          description: 'A community for fitness lovers',
-          members_count: 1234,
-          image: '🏃‍♂️',
-          is_member: false
-        },
-        {
-          id: 2,
-          name: 'Healthy Recipes',
-          description: 'Share and discover healthy recipes',
-          members_count: 856,
-          image: '🥗',
-          is_member: false
-        },
-        {
-          id: 3,
-          name: 'Weight Loss Support',
-          description: 'Support group for weight loss journey',
-          members_count: 2341,
-          image: '⚖️',
-          is_member: false
-        },
-        {
-          id: 4,
-          name: 'Marathon Runners',
-          description: 'For serious marathon runners',
-          members_count: 567,
-          image: '🏃‍♀️',
-          is_member: false
-        }
+        { id: 1, name: 'Fitness Enthusiasts', description: 'A community for fitness lovers', members_count: 1234, image: '🏃‍♂️', is_member: false },
+        { id: 2, name: 'Healthy Recipes', description: 'Share and discover healthy recipes', members_count: 856, image: '🥗', is_member: false },
+        { id: 3, name: 'Weight Loss Support', description: 'Support group for weight loss journey', members_count: 2341, image: '⚖️', is_member: false },
+        { id: 4, name: 'Marathon Runners', description: 'For serious marathon runners', members_count: 567, image: '🏃‍♀️', is_member: false }
       ].filter(group => 
         group.name.toLowerCase().includes(query.toLowerCase()) ||
         group.description.toLowerCase().includes(query.toLowerCase())
@@ -839,10 +856,9 @@ router.get('/search', auth, (req, res) => {
           is_following: !!user.is_following,
           type: 'user'
         })),
-        groups: mockGroups.map(group => ({
-          ...group,
-          type: 'group'
-        }))
+        groups: mockGroups.map(group => ({ ...group, type: 'group' })),
+        hasMore: users.length === searchLimit,
+        total: users.length + mockGroups.length
       });
     });
   } catch (error) {

@@ -201,8 +201,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (email: string, password: string, first_name: string, last_name: string, username: string) => {
     try {
-      const response = await api.post('/api/auth/register', { email, password, first_name, last_name, username });
+      console.log('🔐 Starting registration process for:', email);
+      console.log('🔐 Registration data:', { email, first_name, last_name, username });
+      console.log('🔐 API Base URL:', api.defaults.baseURL);
+      
+      const response = await api.post('/api/auth/register', { 
+        email, 
+        password, 
+        first_name, 
+        last_name, 
+        username 
+      });
+      
+      console.log('🔐 Registration response:', response.data);
+      
       const { token, user: userData } = response.data;
+      
+      if (!token || !userData) {
+        console.error('🔐 Invalid registration response - missing token or user data');
+        throw new Error('Invalid response from server');
+      }
+      
+      console.log('🔐 Storing auth data for new user:', userData);
       
       // Store authentication data using the new persistence system
       storeAuthData(token, userData);
@@ -216,8 +236,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         username: userData.username,
         profile_picture: userData.profile_picture
       });
+      
+      console.log('🔐 Registration successful! User logged in:', userData.email);
     } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Registration failed');
+      console.error('🔐 Registration error:', error);
+      console.error('🔐 Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+      throw new Error(error.response?.data?.error || error.message || 'Registration failed');
     }
   };
 

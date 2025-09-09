@@ -140,7 +140,8 @@ export const socialAPI = {
     api.post(`/api/social/posts/${postId}/comments`, { content }),
   
   // Search
-  search: (query: string) => api.get(`/api/social/search?q=${encodeURIComponent(query)}`),
+  search: (query: string, limit: number = 5, offset: number = 0) => 
+    api.get(`/api/social/search?q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}`),
   
   // Follow/Unfollow
   followUser: (userId: number) => api.post(`/api/social/follow/${userId}`),
