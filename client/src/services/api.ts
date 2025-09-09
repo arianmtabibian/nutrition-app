@@ -138,4 +138,10 @@ export const socialAPI = {
   getComments: (postId: number) => api.get(`/api/social/posts/${postId}/comments`),
   addComment: (postId: number, content: string) => 
     api.post(`/api/social/posts/${postId}/comments`, { content }),
+  
+  // Search
+  search: (query: string) => api.get(`/api/social/search?q=${encodeURIComponent(query)}`),
+  
+  // Follow/Unfollow
+  followUser: (userId: number) => api.post(`/api/social/follow/${userId}`),
 };

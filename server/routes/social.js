@@ -742,4 +742,113 @@ router.get('/profile/:userId/favorited-posts', auth, (req, res) => {
   }
 });
 
+// Search users and groups
+router.get('/search', auth, (req, res) => {
+  try {
+    const { q: query } = req.query;
+    const currentUserId = req.user.userId;
+    
+    if (!query || query.trim().length < 1) {
+      return res.json({ users: [], groups: [] });
+    }
+    
+    console.log('🔍 Search request for:', query, 'by user:', currentUserId);
+    
+    const db = getDatabase();
+    const searchTerm = `%${query.trim()}%`;
+    
+    // Search users
+    db.all(`
+      SELECT u.id, u.username, u.first_name, u.last_name, up.profile_picture,
+             (SELECT COUNT(*) FROM posts WHERE user_id = u.id) as posts_count,
+             EXISTS(SELECT 1 FROM user_follows WHERE follower_id = ? AND following_id = u.id) as is_following
+      FROM users u
+      LEFT JOIN user_profiles up ON u.id = up.user_id
+      WHERE (u.username LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ? OR 
+             (u.first_name || ' ' || u.last_name) LIKE ?)
+        AND u.id != ?
+      ORDER BY 
+        CASE 
+          WHEN u.username LIKE ? THEN 1
+          WHEN u.first_name LIKE ? THEN 2
+          WHEN u.last_name LIKE ? THEN 3
+          ELSE 4
+        END,
+        u.username ASC
+      LIMIT 20
+    `, [
+      currentUserId, 
+      searchTerm, searchTerm, searchTerm, searchTerm, 
+      currentUserId,
+      `${query.trim()}%`, `${query.trim()}%`, `${query.trim()}%`
+    ], (err, users) => {
+      if (err) {
+        console.error('❌ Database error searching users:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      console.log('🔍 Found', users.length, 'users matching:', query);
+      
+      // For now, return mock groups data since we don't have groups table yet
+      const mockGroups = [
+        {
+          id: 1,
+          name: 'Fitness Enthusiasts',
+          description: 'A community for fitness lovers',
+          members_count: 1234,
+          image: '🏃‍♂️',
+          is_member: false
+        },
+        {
+          id: 2,
+          name: 'Healthy Recipes',
+          description: 'Share and discover healthy recipes',
+          members_count: 856,
+          image: '🥗',
+          is_member: false
+        },
+        {
+          id: 3,
+          name: 'Weight Loss Support',
+          description: 'Support group for weight loss journey',
+          members_count: 2341,
+          image: '⚖️',
+          is_member: false
+        },
+        {
+          id: 4,
+          name: 'Marathon Runners',
+          description: 'For serious marathon runners',
+          members_count: 567,
+          image: '🏃‍♀️',
+          is_member: false
+        }
+      ].filter(group => 
+        group.name.toLowerCase().includes(query.toLowerCase()) ||
+        group.description.toLowerCase().includes(query.toLowerCase())
+      );
+      
+      res.json({
+        users: users.map(user => ({
+          id: user.id,
+          username: user.username,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          profile_picture: user.profile_picture,
+          posts_count: user.posts_count,
+          is_following: !!user.is_following,
+          type: 'user'
+        })),
+        groups: mockGroups.map(group => ({
+          ...group,
+          type: 'group'
+        }))
+      });
+    });
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

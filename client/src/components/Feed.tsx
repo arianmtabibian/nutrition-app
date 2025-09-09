@@ -67,11 +67,12 @@ const Feed: React.FC = () => {
   const [monthData, setMonthData] = useState<any>(null);
   const [sidebarLoading, setSidebarLoading] = useState(true);
   
-  // Follow people search states
+  // Search states - Enhanced
   const [showFollowSearch, setShowFollowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<{users: any[], groups: any[]}>({users: [], groups: []});
   const [searchLoading, setSearchLoading] = useState(false);
+  const [activeSearchTab, setActiveSearchTab] = useState<'all' | 'users' | 'groups'>('all');
 
   const formatPostDate = (dateString: string) => {
     // Handle invalid or missing date strings
@@ -542,30 +543,27 @@ const Feed: React.FC = () => {
     }
   };
 
-  const searchUsers = async (query: string) => {
+  const searchUsersAndGroups = async (query: string) => {
     if (!query.trim()) {
-      setSearchResults([]);
+      setSearchResults({users: [], groups: []});
       return;
     }
 
     setSearchLoading(true);
     try {
-      // Get token from proper auth system
-      const authData = JSON.parse(localStorage.getItem('nutritrack_auth_data') || '{}');
-      const token = authData.token || localStorage.getItem('token');
+      console.log('🔍 Searching for:', query);
+      const response = await socialAPI.search(query);
       
-      const response = await fetch(`/api/social/users/search?q=${encodeURIComponent(query)}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSearchResults(data);
+      if (response && response.data) {
+        console.log('🔍 Search results:', response.data);
+        setSearchResults({
+          users: response.data.users || [],
+          groups: response.data.groups || []
+        });
       }
     } catch (error) {
-      console.error('Error searching users:', error);
+      console.error('Error searching:', error);
+      setSearchResults({users: [], groups: []});
     } finally {
       setSearchLoading(false);
     }
@@ -573,27 +571,36 @@ const Feed: React.FC = () => {
 
   const handleFollow = async (userId: number) => {
     try {
-      // Get token from proper auth system
-      const authData = JSON.parse(localStorage.getItem('nutritrack_auth_data') || '{}');
-      const token = authData.token || localStorage.getItem('token');
+      console.log('👥 Following/unfollowing user:', userId);
+      const response = await socialAPI.followUser(userId);
       
-      const response = await fetch(`/api/social/users/${userId}/follow`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        setSearchResults(searchResults.map(user =>
-          user.id === userId
-            ? { ...user, is_following: !user.is_following }
-            : user
-        ));
+      if (response) {
+        console.log('👥 Follow response:', response.data);
+        // Update the search results to reflect the new follow status
+        setSearchResults(prev => ({
+          ...prev,
+          users: prev.users.map(user =>
+            user.id === userId
+              ? { ...user, is_following: !user.is_following }
+              : user
+          )
+        }));
       }
     } catch (error) {
       console.error('Error following user:', error);
     }
+  };
+
+  const handleVisitProfile = (userId: number, username: string) => {
+    console.log('👤 Visiting profile for user:', userId, username);
+    // For now, just close the modal and show a message
+    setShowFollowSearch(false);
+    alert(`Profile visit for @${username} - This will navigate to their profile page when implemented!`);
+  };
+
+  const handleJoinGroup = (groupId: number, groupName: string) => {
+    console.log('🏘️ Joining group:', groupId, groupName);
+    alert(`Joining group "${groupName}" - Group functionality will be implemented soon!`);
   };
 
   useEffect(() => {
@@ -1245,14 +1252,20 @@ const Feed: React.FC = () => {
         </div>
       )}
 
-      {/* Follow People Search Modal */}
+      {/* Enhanced Search Modal */}
       {showFollowSearch && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <h2 className="text-xl font-semibold text-gray-900">Find People</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Discover People & Groups</h2>
               <button
-                onClick={() => setShowFollowSearch(false)}
+                onClick={() => {
+                  setShowFollowSearch(false);
+                  setSearchQuery('');
+                  setSearchResults({users: [], groups: []});
+                  setActiveSearchTab('all');
+                }}
                 className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -1260,50 +1273,170 @@ const Feed: React.FC = () => {
             </div>
             
             <div className="p-6">
+              {/* Search Input */}
               <div className="mb-6">
                 <input
                   type="text"
-                  placeholder="Search for people..."
+                  placeholder="Search for people, groups, or interests..."
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
-                    searchUsers(e.target.value);
+                    searchUsersAndGroups(e.target.value);
                   }}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-300"
                 />
               </div>
 
+              {/* Search Tabs */}
+              <div className="flex space-x-1 mb-6 bg-gray-100 rounded-lg p-1">
+                {[
+                  { key: 'all', label: 'All', count: searchResults.users.length + searchResults.groups.length },
+                  { key: 'users', label: 'People', count: searchResults.users.length },
+                  { key: 'groups', label: 'Groups', count: searchResults.groups.length }
+                ].map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveSearchTab(tab.key as any)}
+                    className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      activeSearchTab === tab.key
+                        ? 'bg-white text-orange-600 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    {tab.label} {tab.count > 0 && `(${tab.count})`}
+                  </button>
+                ))}
+              </div>
+
               {searchLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {searchResults.map(user => (
-                    <div key={user.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition-colors">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
-                          {user?.first_name?.charAt(0) || user?.username?.charAt(0) || 'U'}
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900">
-                            {user?.first_name || 'Unknown'} {user?.last_name || 'User'}
+                <div className="space-y-4">
+                  {/* Users Section */}
+                  {(activeSearchTab === 'all' || activeSearchTab === 'users') && searchResults.users.length > 0 && (
+                    <div>
+                      {activeSearchTab === 'all' && (
+                        <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                          <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
+                          People
+                        </h3>
+                      )}
+                      <div className="space-y-3">
+                        {searchResults.users.map(user => (
+                          <div key={user.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition-colors border border-gray-100">
+                            <div className="flex items-center space-x-4">
+                              {user.profile_picture ? (
+                                <img
+                                  src={user.profile_picture}
+                                  alt={`${user.first_name} ${user.last_name}`}
+                                  className="w-12 h-12 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center text-white font-semibold">
+                                  {user?.first_name?.charAt(0) || user?.username?.charAt(0) || 'U'}
+                                </div>
+                              )}
+                              <div>
+                                <div className="font-semibold text-gray-900">
+                                  {user?.first_name || 'Unknown'} {user?.last_name || 'User'}
+                                </div>
+                                <div className="text-sm text-gray-500">@{user.username}</div>
+                                <div className="text-xs text-gray-400">{user.posts_count} posts</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => handleVisitProfile(user.id, user.username)}
+                                className="px-3 py-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg font-medium transition-all duration-200"
+                              >
+                                View Profile
+                              </button>
+                              <button
+                                onClick={() => handleFollow(user.id)}
+                                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                                  user.is_following
+                                    ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 shadow-md hover:shadow-lg'
+                                }`}
+                              >
+                                {user.is_following ? 'Following' : 'Follow'}
+                              </button>
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-500">@{user.username}</div>
-                        </div>
+                        ))}
                       </div>
-                      <button
-                        onClick={() => handleFollow(user.id)}
-                        className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
-                          user.is_following
-                            ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 shadow-md hover:shadow-lg'
-                        }`}
-                      >
-                        {user.is_following ? 'Following' : 'Follow'}
-                      </button>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Groups Section */}
+                  {(activeSearchTab === 'all' || activeSearchTab === 'groups') && searchResults.groups.length > 0 && (
+                    <div className={activeSearchTab === 'all' && searchResults.users.length > 0 ? 'mt-8' : ''}>
+                      {activeSearchTab === 'all' && (
+                        <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                          Groups
+                        </h3>
+                      )}
+                      <div className="space-y-3">
+                        {searchResults.groups.map(group => (
+                          <div key={group.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-xl transition-colors border border-gray-100">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xl shadow-md">
+                                {group.image}
+                              </div>
+                              <div>
+                                <div className="font-semibold text-gray-900">{group.name}</div>
+                                <div className="text-sm text-gray-500">{group.description}</div>
+                                <div className="text-xs text-gray-400">{group.members_count.toLocaleString()} members</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => handleJoinGroup(group.id, group.name)}
+                                className="px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition-all duration-200"
+                              >
+                                View Group
+                              </button>
+                              <button
+                                onClick={() => handleJoinGroup(group.id, group.name)}
+                                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                                  group.is_member
+                                    ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    : 'bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 shadow-md hover:shadow-lg'
+                                }`}
+                              >
+                                {group.is_member ? 'Member' : 'Join'}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No Results */}
+                  {!searchLoading && searchQuery && searchResults.users.length === 0 && searchResults.groups.length === 0 && (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <MessageCircle className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No results found</h3>
+                      <p className="text-gray-500">Try searching for different keywords or check your spelling.</p>
+                    </div>
+                  )}
+
+                  {/* Empty State */}
+                  {!searchQuery && (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <MessageCircle className="w-8 h-8 text-orange-500" />
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Discover Amazing People & Groups</h3>
+                      <p className="text-gray-500">Search for people to follow or groups to join based on your interests.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
