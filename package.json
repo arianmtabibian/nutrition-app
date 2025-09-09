@@ -4,7 +4,7 @@
   "description": "Nutrition tracking app",
   "scripts": {
     "start": "cd server && npm start",
-    "build": "cd server && npm install && npm run build",
+    "build": "cd server && npm install",
     "install": "cd server && npm install"
   },
   "engines": {
