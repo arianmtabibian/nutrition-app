@@ -39,13 +39,13 @@ router.get('/', authenticateToken, async (req, res) => {
       profile: {
         profilePicture: profile.profile_picture,
         bio: profile.bio,
-        dailyCalories: profile.daily_calories,
-        dailyProtein: profile.daily_protein,
+        finalDailyCalories: profile.daily_calories,
+        finalDailyProtein: profile.daily_protein,
         weight: profile.weight,
-        targetWeight: profile.target_weight,
+        finalTargetWeight: profile.target_weight,
         height: profile.height,
         age: profile.age,
-        activityLevel: profile.activity_level,
+        finalActivityLevel: profile.activity_level,
         gender: profile.gender
       },
       hasCompletedOnboarding: profile.daily_calories !== null && profile.daily_calories !== undefined
@@ -91,13 +91,13 @@ router.get('/:userId', authenticateToken, async (req, res) => {
       profile: {
         profilePicture: profile.profile_picture,
         bio: profile.bio,
-        dailyCalories: profile.daily_calories,
-        dailyProtein: profile.daily_protein,
+        finalDailyCalories: profile.daily_calories,
+        finalDailyProtein: profile.daily_protein,
         weight: profile.weight,
-        targetWeight: profile.target_weight,
+        finalTargetWeight: profile.target_weight,
         height: profile.height,
         age: profile.age,
-        activityLevel: profile.activity_level,
+        finalActivityLevel: profile.activity_level,
         gender: profile.gender
       }
     });
@@ -124,8 +124,19 @@ router.put('/', authenticateToken, async (req, res) => {
       height,
       age,
       activityLevel,
-      gender
+      gender,
+      // Also accept snake_case from onboarding
+      daily_calories,
+      daily_protein,
+      target_weight,
+      activity_level
     } = req.body;
+
+    // Use snake_case values if camelCase not provided (for onboarding compatibility)
+    const finalDailyCalories = dailyCalories || daily_calories;
+    const finalDailyProtein = dailyProtein || daily_protein;
+    const finalTargetWeight = targetWeight || target_weight;
+    const finalActivityLevel = activityLevel || activity_level;
 
     const pool = getSupabasePool();
 
@@ -148,7 +159,7 @@ router.put('/', authenticateToken, async (req, res) => {
       await pool.query(
         `INSERT INTO user_profiles (user_id, profile_picture, bio, daily_calories, daily_protein, weight, target_weight, height, age, activity_level, gender)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-        [userId, profilePicture, bio, dailyCalories, dailyProtein, weight, targetWeight, height, age, activityLevel, gender]
+        [userId, profilePicture, bio, finalDailyCalories, finalDailyProtein, weight, finalTargetWeight, height, age, finalActivityLevel, gender]
       );
     } else {
       // Update existing profile
@@ -166,7 +177,7 @@ router.put('/', authenticateToken, async (req, res) => {
          gender = COALESCE($10, gender),
          updated_at = CURRENT_TIMESTAMP
          WHERE user_id = $11`,
-        [profilePicture, bio, dailyCalories, dailyProtein, weight, targetWeight, height, age, activityLevel, gender, userId]
+        [profilePicture, bio, finalDailyCalories, finalDailyProtein, weight, finalTargetWeight, height, age, finalActivityLevel, gender, userId]
       );
     }
 
@@ -187,13 +198,13 @@ router.put('/:userId', authenticateToken, async (req, res) => {
       username,
       profilePicture,
       bio,
-      dailyCalories,
-      dailyProtein,
+      finalDailyCalories,
+      finalDailyProtein,
       weight,
-      targetWeight,
+      finalTargetWeight,
       height,
       age,
-      activityLevel,
+      finalActivityLevel,
       gender
     } = req.body;
 
@@ -218,7 +229,7 @@ router.put('/:userId', authenticateToken, async (req, res) => {
       await pool.query(
         `INSERT INTO user_profiles (user_id, profile_picture, bio, daily_calories, daily_protein, weight, target_weight, height, age, activity_level, gender)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-        [userId, profilePicture, bio, dailyCalories, dailyProtein, weight, targetWeight, height, age, activityLevel, gender]
+        [userId, profilePicture, bio, finalDailyCalories, finalDailyProtein, weight, finalTargetWeight, height, age, finalActivityLevel, gender]
       );
     } else {
       // Update existing profile
@@ -236,7 +247,7 @@ router.put('/:userId', authenticateToken, async (req, res) => {
          gender = COALESCE($10, gender),
          updated_at = CURRENT_TIMESTAMP
          WHERE user_id = $11`,
-        [profilePicture, bio, dailyCalories, dailyProtein, weight, targetWeight, height, age, activityLevel, gender, userId]
+        [profilePicture, bio, finalDailyCalories, finalDailyProtein, weight, finalTargetWeight, height, age, finalActivityLevel, gender, userId]
       );
     }
 
