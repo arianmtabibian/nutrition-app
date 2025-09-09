@@ -1,41 +1,29 @@
 {
-  "name": "nutrition-tracker",
+  "name": "nutrition-backend",
   "version": "1.0.0",
-  "description": "A comprehensive nutrition tracking web application with AI-powered meal analysis",
+  "description": "Nutrition tracking backend with Supabase",
   "main": "server/index.js",
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "nodemon server/index.js",
-    "client": "cd client && npm start",
-    "build": "node vercel-build.js",
-    "build:vercel": "node vercel-build.js",
-    "deploy": "node deploy-vercel.js",
-    "deploy:prod": "vercel --prod",
-    "install-all": "npm install && cd client && npm install",
-    "install:vercel": "npm install && cd client && npm install",
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js",
+    "vercel-build": "echo 'Build complete'"
   },
-  "keywords": ["nutrition", "tracking", "calories", "protein", "ai"],
-  "author": "Your Name",
-  "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
+    "helmet": "^7.0.0",
+    "express-rate-limit": "^6.7.0",
+    "dotenv": "^16.0.3",
     "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2",
+    "jsonwebtoken": "^9.0.0",
     "sqlite3": "^5.1.6",
-    "openai": "^4.20.1",
-    "dotenv": "^16.3.1",
-    "helmet": "^7.1.0",
-    "express-rate-limit": "^7.1.5",
+    "pg": "^8.11.3",
     "multer": "^1.4.5-lts.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2",
-    "concurrently": "^8.2.2"
+    "nodemon": "^2.0.22"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "18.x"
   }
 }
-

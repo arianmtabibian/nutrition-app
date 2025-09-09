@@ -6,28 +6,53 @@ const fs = require('fs');
 // Use external database service for true persistence
 const getDatabaseConfig = () => {
   if (process.env.NODE_ENV === 'production') {
-    // For production, try multiple persistent storage options
-    const possiblePaths = [
-      '/opt/render/project/data/nutrition.db',      // Render persistent disk
-      '/var/data/nutrition.db',                     // Alternative persistent path
-      process.env.DATABASE_URL,                     // External database URL
-      process.env.DB_PATH                           // Custom path from env
+    // RENDER FREE TIER ISSUE: Filesystem is ephemeral!
+    // We need to use an external database service
+    
+    // Try environment variables first
+    if (process.env.DATABASE_URL) {
+      console.log('🔄 Using DATABASE_URL from environment');
+      return process.env.DATABASE_URL;
+    }
+    
+    if (process.env.DB_PATH) {
+      console.log('🔄 Using DB_PATH from environment:', process.env.DB_PATH);
+      return process.env.DB_PATH;
+    }
+    
+    // For Render, try persistent disk mount points
+    const renderPaths = [
+      '/opt/render/project/data/nutrition.db',      // Render persistent disk (paid)
+      '/tmp/nutrition.db',                          // Temporary but better than nothing
+      './data/nutrition.db'                         // Relative path
     ];
     
-    // Use the first available path
-    for (const dbPath of possiblePaths) {
-      if (dbPath) {
+    for (const dbPath of renderPaths) {
+      const dir = path.dirname(dbPath);
+      try {
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
         console.log('🔄 Attempting to use database path:', dbPath);
         return dbPath;
+      } catch (error) {
+        console.log('⚠️  Cannot use path:', dbPath, error.message);
+        continue;
       }
     }
     
-    // Fallback to current directory (last resort)
-    console.log('⚠️  Using fallback database path in current directory');
+    // CRITICAL: Warn about data persistence issue
+    console.log('🚨 WARNING: Using ephemeral storage! Data will be lost on restart!');
+    console.log('🚨 Consider upgrading to Render paid plan or using external DB service');
     return './nutrition.db';
   } else {
-    // Local development
-    return path.join(__dirname, '..', 'nutrition.db');
+    // Local development - use persistent local file
+    const localPath = path.join(__dirname, '..', 'database', 'nutrition.db');
+    const dir = path.dirname(localPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    return localPath;
   }
 };
 

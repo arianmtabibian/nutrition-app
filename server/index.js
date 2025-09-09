@@ -4,15 +4,15 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
-const authRoutes = require('./routes/auth');
+const authRoutes = require('./routes/authSupabase');
 const profileRoutes = require('./routes/profile');
 const mealRoutes = require('./routes/meals');
 const diaryRoutes = require('./routes/diary');
 const socialRoutes = require('./routes/social');
 const backupRoutes = require('./routes/backup');
 const favoritesRoutes = require('./routes/favorites');
-const { initializeDatabase } = require('./database/init');
-const { restoreFromEnv, simpleBackup } = require('./utils/realPersistence');
+const { initializeSupabaseDatabase } = require('./database/supabaseInit');
+const { migrateToSupabase } = require('./utils/migrateToSupabase');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -116,40 +116,26 @@ app.use('*', (req, res) => {
 // Initialize database and start server
 async function startServer() {
   try {
-    await initializeDatabase();
-    console.log('✅ Database initialized successfully');
+    await initializeSupabaseDatabase();
+    console.log('✅ Supabase PostgreSQL database initialized successfully');
     
-    // CRITICAL: Always restore users on startup to prevent onboarding redirects
-    console.log('🔄 Restoring user data from environment backup...');
-    await restoreFromEnv();
-    console.log('✅ User data restoration complete');
-    
-    // BACKUP USERS on startup (for next deployment) - Non-blocking with longer delay
-    setTimeout(async () => {
+    // Check if we need to migrate data from SQLite (only run once)
+    if (process.env.MIGRATE_FROM_SQLITE === 'true') {
+      console.log('🔄 Migrating data from SQLite to Supabase...');
       try {
-        console.log('💾 Creating backup of current user data...');
-        await simpleBackup();
-        console.log('✅ Backup created successfully');
+        await migrateToSupabase();
+        console.log('✅ Migration completed successfully');
+        console.log('⚠️  Please remove MIGRATE_FROM_SQLITE=true from environment variables');
       } catch (error) {
-        console.error('❌ Backup failed:', error);
+        console.error('❌ Migration failed:', error);
+        console.log('⚠️  Continuing without migration - manual data entry may be needed');
       }
-    }, 30000); // Wait 30 seconds after startup to not block initial requests
-    
-    // BACKUP USERS every 4 hours to prevent data loss (reduced frequency for better performance)
-    setInterval(async () => {
-      try {
-        console.log('🔄 Periodic backup starting...');
-        await simpleBackup();
-        console.log('✅ Periodic backup complete');
-      } catch (error) {
-        console.error('❌ Periodic backup failed:', error);
-      }
-    }, 4 * 60 * 60 * 1000); // Every 4 hours
+    }
     
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`📁 Database path: ${process.env.DB_PATH || 'default'}`);
+      console.log(`🗄️  Database: Supabase PostgreSQL`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

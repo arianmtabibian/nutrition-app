@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { getDatabase } = require('../database/init');
+const { getSupabasePool } = require('../database/supabaseInit');
 const { authenticateToken } = require('../middleware/auth');
 const { simpleBackup } = require('../utils/realPersistence');
 
