@@ -4,7 +4,7 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get all posts (feed)
+// Get all posts (feed) - both /posts and /feed should work
 router.get('/posts', authenticateToken, async (req, res) => {
   try {
     const { limit = 20, offset = 0 } = req.query;
@@ -45,6 +45,51 @@ router.get('/posts', authenticateToken, async (req, res) => {
     res.json(posts);
   } catch (error) {
     console.error('Get posts error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get feed (alias for /posts - frontend expects this)
+router.get('/feed', authenticateToken, async (req, res) => {
+  try {
+    const { limit = 20, offset = 0 } = req.query;
+    const pool = getSupabasePool();
+
+    const result = await pool.query(`
+      SELECT 
+        p.*,
+        u.first_name,
+        u.last_name,
+        u.username,
+        up.profile_picture
+      FROM posts p
+      JOIN users u ON p.user_id = u.id
+      LEFT JOIN user_profiles up ON p.user_id = up.user_id
+      ORDER BY p.created_at DESC
+      LIMIT $1 OFFSET $2
+    `, [parseInt(limit), parseInt(offset)]);
+
+    const posts = result.rows.map(post => ({
+      id: post.id,
+      userId: post.user_id,
+      content: post.content,
+      imageUrl: post.image_url,
+      mealId: post.meal_id,
+      likesCount: post.likes_count,
+      commentsCount: post.comments_count,
+      createdAt: post.created_at,
+      updatedAt: post.updated_at,
+      user: {
+        firstName: post.first_name,
+        lastName: post.last_name,
+        username: post.username,
+        profilePicture: post.profile_picture
+      }
+    }));
+
+    res.json(posts);
+  } catch (error) {
+    console.error('Get feed error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

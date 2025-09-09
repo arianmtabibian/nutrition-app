@@ -4,7 +4,7 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get meals for a user
+// Get all meals for a user (with optional date filter)
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const { date, limit = 50 } = req.query;
@@ -23,6 +23,78 @@ router.get('/', authenticateToken, async (req, res) => {
     params.push(parseInt(limit));
 
     const result = await pool.query(query, params);
+
+    const meals = result.rows.map(meal => ({
+      id: meal.id,
+      userId: meal.user_id,
+      mealDate: meal.meal_date,
+      mealType: meal.meal_type,
+      title: meal.title,
+      description: meal.description,
+      calories: meal.calories,
+      protein: meal.protein,
+      carbs: meal.carbs,
+      fat: meal.fat,
+      fiber: meal.fiber,
+      sugar: meal.sugar,
+      sodium: meal.sodium,
+      createdAt: meal.created_at
+    }));
+
+    res.json(meals);
+  } catch (error) {
+    console.error('Get meals error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get meals for a specific date (frontend expects this route)
+router.get('/:date', authenticateToken, async (req, res) => {
+  try {
+    const { date } = req.params;
+    const userId = req.user.userId;
+    const pool = getSupabasePool();
+
+    const result = await pool.query(
+      'SELECT * FROM meals WHERE user_id = $1 AND meal_date = $2 ORDER BY created_at DESC',
+      [userId, date]
+    );
+
+    const meals = result.rows.map(meal => ({
+      id: meal.id,
+      userId: meal.user_id,
+      mealDate: meal.meal_date,
+      mealType: meal.meal_type,
+      title: meal.title,
+      description: meal.description,
+      calories: meal.calories,
+      protein: meal.protein,
+      carbs: meal.carbs,
+      fat: meal.fat,
+      fiber: meal.fiber,
+      sugar: meal.sugar,
+      sodium: meal.sodium,
+      createdAt: meal.created_at
+    }));
+
+    res.json(meals);
+  } catch (error) {
+    console.error('Get meals by date error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get meals for a date range (frontend expects this route)
+router.get('/range/:startDate/:endDate', authenticateToken, async (req, res) => {
+  try {
+    const { startDate, endDate } = req.params;
+    const userId = req.user.userId;
+    const pool = getSupabasePool();
+
+    const result = await pool.query(
+      'SELECT * FROM meals WHERE user_id = $1 AND meal_date >= $2 AND meal_date <= $3 ORDER BY meal_date DESC, created_at DESC',
+      [userId, startDate, endDate]
+    );
 
     const meals = result.rows.map(meal => ({
       id: meal.id,

@@ -1,0 +1,13 @@
+{
+  "name": "nutrition-app",
+  "version": "1.0.0",
+  "description": "Nutrition tracking app",
+  "scripts": {
+    "start": "cd server && npm start",
+    "install": "cd server && npm install",
+    "build": "cd server && npm install"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}

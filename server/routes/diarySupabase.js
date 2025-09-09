@@ -5,7 +5,7 @@ const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
 // Get diary entries (meals) for a specific date
-router.get('/:date', authenticateToken, async (req, res) => {
+router.get('/date/:date', authenticateToken, async (req, res) => {
   try {
     const { date } = req.params;
     const userId = req.user.userId;
@@ -110,6 +110,141 @@ router.get('/summary/:startDate/:endDate', authenticateToken, async (req, res) =
     res.json(summary);
   } catch (error) {
     console.error('Get diary summary error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get diary for a specific month (frontend expects this)
+router.get('/:year/:month', authenticateToken, async (req, res) => {
+  try {
+    const { year, month } = req.params;
+    const userId = req.user.userId;
+    const pool = getSupabasePool();
+
+    // Get first and last day of the month
+    const startDate = `${year}-${month.padStart(2, '0')}-01`;
+    const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+    const endDate = `${year}-${month.padStart(2, '0')}-${lastDay.toString().padStart(2, '0')}`;
+
+    const result = await pool.query(`
+      SELECT 
+        meal_date,
+        SUM(calories) as total_calories,
+        SUM(protein) as total_protein,
+        SUM(carbs) as total_carbs,
+        SUM(fat) as total_fat,
+        COUNT(*) as meal_count
+      FROM meals 
+      WHERE user_id = $1 AND meal_date >= $2 AND meal_date <= $3
+      GROUP BY meal_date
+      ORDER BY meal_date ASC
+    `, [userId, startDate, endDate]);
+
+    const monthData = result.rows.map(day => ({
+      date: day.meal_date,
+      totals: {
+        calories: parseInt(day.total_calories),
+        protein: parseFloat(day.total_protein),
+        carbs: parseFloat(day.total_carbs),
+        fat: parseFloat(day.total_fat)
+      },
+      mealCount: parseInt(day.meal_count)
+    }));
+
+    res.json(monthData);
+  } catch (error) {
+    console.error('Get month diary error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get week summary (frontend expects this)
+router.get('/week/:startDate', authenticateToken, async (req, res) => {
+  try {
+    const { startDate } = req.params;
+    const userId = req.user.userId;
+    const pool = getSupabasePool();
+
+    // Calculate end date (6 days after start date)
+    const start = new Date(startDate);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    const endDate = end.toISOString().split('T')[0];
+
+    const result = await pool.query(`
+      SELECT 
+        meal_date,
+        SUM(calories) as total_calories,
+        SUM(protein) as total_protein,
+        SUM(carbs) as total_carbs,
+        SUM(fat) as total_fat,
+        COUNT(*) as meal_count
+      FROM meals 
+      WHERE user_id = $1 AND meal_date >= $2 AND meal_date <= $3
+      GROUP BY meal_date
+      ORDER BY meal_date ASC
+    `, [userId, startDate, endDate]);
+
+    const weekData = result.rows.map(day => ({
+      date: day.meal_date,
+      totals: {
+        calories: parseInt(day.total_calories),
+        protein: parseFloat(day.total_protein),
+        carbs: parseFloat(day.total_carbs),
+        fat: parseFloat(day.total_fat)
+      },
+      mealCount: parseInt(day.meal_count)
+    }));
+
+    res.json(weekData);
+  } catch (error) {
+    console.error('Get week diary error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get month summary (frontend expects this)
+router.get('/month/:year/:month/summary', authenticateToken, async (req, res) => {
+  try {
+    const { year, month } = req.params;
+    const userId = req.user.userId;
+    const pool = getSupabasePool();
+
+    // Get first and last day of the month
+    const startDate = `${year}-${month.padStart(2, '0')}-01`;
+    const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+    const endDate = `${year}-${month.padStart(2, '0')}-${lastDay.toString().padStart(2, '0')}`;
+
+    const result = await pool.query(`
+      SELECT 
+        AVG(calories) as avg_calories,
+        AVG(protein) as avg_protein,
+        AVG(carbs) as avg_carbs,
+        AVG(fat) as avg_fat,
+        SUM(calories) as total_calories,
+        COUNT(DISTINCT meal_date) as days_logged
+      FROM meals 
+      WHERE user_id = $1 AND meal_date >= $2 AND meal_date <= $3
+    `, [userId, startDate, endDate]);
+
+    const summary = result.rows[0];
+
+    res.json({
+      month: parseInt(month),
+      year: parseInt(year),
+      averages: {
+        calories: Math.round(parseFloat(summary.avg_calories) || 0),
+        protein: Math.round(parseFloat(summary.avg_protein) || 0),
+        carbs: Math.round(parseFloat(summary.avg_carbs) || 0),
+        fat: Math.round(parseFloat(summary.avg_fat) || 0)
+      },
+      totals: {
+        calories: parseInt(summary.total_calories) || 0
+      },
+      daysLogged: parseInt(summary.days_logged) || 0
+    });
+  } catch (error) {
+    console.error('Get month summary error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

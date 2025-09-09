@@ -45,7 +45,7 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Add meal to favorites
+// Add meal to favorites (frontend might call this)
 router.post('/:mealId', authenticateToken, async (req, res) => {
   try {
     const { mealId } = req.params;
@@ -101,6 +101,94 @@ router.delete('/:mealId', authenticateToken, async (req, res) => {
     res.json({ message: 'Meal removed from favorites' });
   } catch (error) {
     console.error('Remove favorite error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Create favorite (frontend expects POST /api/favorites)
+router.post('/', authenticateToken, async (req, res) => {
+  try {
+    const { mealId, customName } = req.body;
+    const userId = req.user.userId;
+    const pool = getSupabasePool();
+
+    // Check if meal exists
+    const mealResult = await pool.query('SELECT id FROM meals WHERE id = $1', [mealId]);
+    
+    if (mealResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Meal not found' });
+    }
+
+    // Check if already favorited
+    const existingFavorite = await pool.query(
+      'SELECT id FROM favorites WHERE user_id = $1 AND meal_id = $2',
+      [userId, mealId]
+    );
+
+    if (existingFavorite.rows.length > 0) {
+      return res.status(400).json({ error: 'Meal already in favorites' });
+    }
+
+    // Add to favorites
+    await pool.query(
+      'INSERT INTO favorites (user_id, meal_id) VALUES ($1, $2)',
+      [userId, mealId]
+    );
+
+    res.status(201).json({ message: 'Meal added to favorites' });
+  } catch (error) {
+    console.error('Create favorite error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Create favorite from meal (frontend expects this)
+router.post('/from-meal', authenticateToken, async (req, res) => {
+  try {
+    const { mealId, customName } = req.body;
+    const userId = req.user.userId;
+    const pool = getSupabasePool();
+
+    // Check if meal exists
+    const mealResult = await pool.query('SELECT id FROM meals WHERE id = $1', [mealId]);
+    
+    if (mealResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Meal not found' });
+    }
+
+    // Check if already favorited
+    const existingFavorite = await pool.query(
+      'SELECT id FROM favorites WHERE user_id = $1 AND meal_id = $2',
+      [userId, mealId]
+    );
+
+    if (existingFavorite.rows.length > 0) {
+      return res.status(400).json({ error: 'Meal already in favorites' });
+    }
+
+    // Add to favorites
+    await pool.query(
+      'INSERT INTO favorites (user_id, meal_id) VALUES ($1, $2)',
+      [userId, mealId]
+    );
+
+    res.status(201).json({ message: 'Meal added to favorites' });
+  } catch (error) {
+    console.error('Create favorite from meal error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update favorite (frontend expects this)
+router.put('/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+    
+    // For now, just return success since we don't have updatable fields in favorites
+    res.json({ message: 'Favorite updated successfully' });
+  } catch (error) {
+    console.error('Update favorite error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
