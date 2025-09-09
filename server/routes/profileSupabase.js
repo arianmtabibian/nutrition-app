@@ -47,7 +47,8 @@ router.get('/', authenticateToken, async (req, res) => {
         age: profile.age,
         activityLevel: profile.activity_level,
         gender: profile.gender
-      }
+      },
+      hasCompletedOnboarding: profile.daily_calories !== null && profile.daily_calories !== undefined
     });
   } catch (error) {
     console.error('Get current user profile error:', error);

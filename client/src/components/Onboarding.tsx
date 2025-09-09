@@ -516,47 +516,11 @@ const Onboarding: React.FC = () => {
     }
   ];
 
-  // SMART PROTECTION: Only prevent users who have COMPLETED onboarding from returning
+  // Initialize onboarding - OnboardingGuard handles access control
   useEffect(() => {
-    const checkExistingProfile = async () => {
-      try {
-        const response = await profileAPI.get();
-        if (response.data.profile) {
-          // User already has a completed profile - they shouldn't be here
-          console.log('User has completed profile, redirecting to dashboard');
-          // Mark them as having accessed the app to prevent future redirects
-          localStorage.setItem('hasAccessedApp', 'true');
-          navigate('/dashboard', { replace: true });
-          return;
-        }
-        // No profile exists - new user can continue with onboarding
-        console.log('New user with no profile, allowing onboarding');
-        setLoading(false);
-      } catch (error: any) {
-        console.log('Profile check error in onboarding:', error);
-        
-        if (error?.response?.status === 404) {
-          // Confirmed no profile exists - new user can continue
-          console.log('Confirmed no profile exists (404), continuing with onboarding');
-          setLoading(false);
-        } else {
-          // For other errors, check if they've completed onboarding before
-          const hasAccessedApp = localStorage.getItem('hasAccessedApp');
-          if (hasAccessedApp === 'true') {
-            // User has accessed app before - they shouldn't be in onboarding
-            console.log('Existing user trying to access onboarding, redirecting to dashboard');
-            navigate('/dashboard', { replace: true });
-          } else {
-            // Could be a new user with network issues - let them try onboarding
-            console.log('Network error for potentially new user, allowing onboarding attempt');
-            setLoading(false);
-          }
-        }
-      }
-    };
-    
-    checkExistingProfile();
-  }, [navigate]);
+    console.log('📋 Onboarding: Component initialized for new user');
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     if (timeRemaining > 0 && currentStep < steps.length - 1) {
@@ -590,22 +554,14 @@ const Onboarding: React.FC = () => {
         // Update profile with collected data
         await profileAPI.update(profileData);
         
-        // Mark user as having completed onboarding and accessed the app
-        localStorage.setItem('hasAccessedApp', 'true');
-        localStorage.setItem('onboardingCompleted', new Date().toISOString());
-        console.log('Onboarding completed successfully');
+        console.log('✅ Onboarding completed successfully - profile saved to database');
         
-        // Redirect to dashboard
+        // Redirect to dashboard (OnboardingGuard will now allow access)
         navigate('/dashboard');
       } catch (error) {
-        console.error('Failed to update profile:', error);
-        
-        // Even if profile update fails, mark as completed to prevent redirect loops
-        localStorage.setItem('hasAccessedApp', 'true');
-        localStorage.setItem('onboardingCompleted', new Date().toISOString());
-        
-        // Still redirect to dashboard
-        navigate('/dashboard');
+        console.error('❌ Failed to update profile:', error);
+        setError('Failed to save profile. Please try again.');
+        return; // Don't redirect if profile save failed
       }
     }
   };
