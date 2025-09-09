@@ -753,7 +753,7 @@ router.get('/search', auth, (req, res) => {
     console.log('🔍 Search request for:', query, 'by user:', currentUserId, 'limit:', searchLimit, 'offset:', searchOffset);
     
     if (!query || query.trim().length < 1) {
-      // Return some sample users even without query for testing
+      // Return ALL users when no query (excluding current user)
       const db = getDatabase();
       db.all(`
         SELECT u.id, u.username, u.first_name, u.last_name, up.profile_picture,
@@ -798,23 +798,26 @@ router.get('/search', auth, (req, res) => {
     }
     
     const db = getDatabase();
-    const searchTerm = `%${query.trim()}%`;
+    const searchTerm = `%${query.trim().toLowerCase()}%`;
+    const exactSearchTerm = `${query.trim().toLowerCase()}%`;
     
-    // Search users with pagination
+    console.log('🔍 Using search terms:', { searchTerm, exactSearchTerm });
+    
+    // Search ALL users with pagination (case-insensitive)
     db.all(`
       SELECT u.id, u.username, u.first_name, u.last_name, up.profile_picture,
              (SELECT COUNT(*) FROM posts WHERE user_id = u.id) as posts_count,
              EXISTS(SELECT 1 FROM user_follows WHERE follower_id = ? AND following_id = u.id) as is_following
       FROM users u
       LEFT JOIN user_profiles up ON u.id = up.user_id
-      WHERE (u.username LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ? OR 
-             (u.first_name || ' ' || u.last_name) LIKE ?)
+      WHERE (LOWER(u.username) LIKE ? OR LOWER(u.first_name) LIKE ? OR LOWER(u.last_name) LIKE ? OR 
+             LOWER(u.first_name || ' ' || u.last_name) LIKE ?)
         AND u.id != ?
       ORDER BY 
         CASE 
-          WHEN u.username LIKE ? THEN 1
-          WHEN u.first_name LIKE ? THEN 2
-          WHEN u.last_name LIKE ? THEN 3
+          WHEN LOWER(u.username) LIKE ? THEN 1
+          WHEN LOWER(u.first_name) LIKE ? THEN 2
+          WHEN LOWER(u.last_name) LIKE ? THEN 3
           ELSE 4
         END,
         u.username ASC
@@ -824,7 +827,7 @@ router.get('/search', auth, (req, res) => {
       currentUserId, 
       searchTerm, searchTerm, searchTerm, searchTerm, 
       currentUserId,
-      `${query.trim()}%`, `${query.trim()}%`, `${query.trim()}%`,
+      exactSearchTerm, exactSearchTerm, exactSearchTerm,
       searchLimit, searchOffset
     ], (err, users) => {
       if (err) {
@@ -833,6 +836,7 @@ router.get('/search', auth, (req, res) => {
       }
       
       console.log('🔍 Found', users.length, 'users matching:', query);
+      console.log('🔍 Search results:', users.map(u => `${u.first_name} ${u.last_name} (@${u.username})`).join(', '));
       
       // Filter groups by search term
       const mockGroups = [
@@ -863,6 +867,37 @@ router.get('/search', auth, (req, res) => {
     });
   } catch (error) {
     console.error('Search error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Debug endpoint to see all users in database
+router.get('/debug/all-users', auth, (req, res) => {
+  try {
+    const db = getDatabase();
+    
+    db.all('SELECT id, email, first_name, last_name, username, created_at FROM users ORDER BY created_at DESC', [], (err, users) => {
+      if (err) {
+        console.error('Debug all users error:', err);
+        return res.status(500).json({ error: 'Database error', details: err.message });
+      }
+      
+      console.log('📋 All users in database:', users);
+      
+      res.json({
+        message: 'All users in database',
+        totalUsers: users.length,
+        users: users.map(user => ({
+          id: user.id,
+          email: user.email,
+          name: `${user.first_name} ${user.last_name}`,
+          username: user.username,
+          created_at: user.created_at
+        }))
+      });
+    });
+  } catch (error) {
+    console.error('Debug all users endpoint error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
