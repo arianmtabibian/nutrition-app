@@ -41,9 +41,9 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return <LoadingSpinner />;
   }
   
-  // If user is authenticated, redirect to onboarding (OnboardingGuard will handle the rest)
+  // If user is authenticated, redirect to dashboard (OnboardingGuard will handle onboarding redirect)
   if (user) {
-    return <Navigate to="/onboarding" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
   
   return <>{children}</>;

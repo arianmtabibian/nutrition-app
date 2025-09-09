@@ -100,8 +100,8 @@ const EnhancedRegister: React.FC = () => {
         formData.username
       );
       
-      // Redirect to onboarding after successful registration
-      navigate('/onboarding');
+      // Redirect to dashboard after successful registration (OnboardingGuard will redirect to onboarding if needed)
+      navigate('/dashboard');
     } catch (error: any) {
       setError(error.message || 'Registration failed');
     } finally {
