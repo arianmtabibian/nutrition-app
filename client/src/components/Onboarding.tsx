@@ -36,6 +36,7 @@ const Onboarding: React.FC = () => {
   const [timeRemaining, setTimeRemaining] = useState(120);
   const [loading, setLoading] = useState(true);
   const [timeframeError, setTimeframeError] = useState('');
+  const [error, setError] = useState('');
 
   // Validate timeframe input
   const validateTimeframe = useCallback((timeline: string): boolean => {
@@ -549,6 +550,7 @@ const Onboarding: React.FC = () => {
       
       setCurrentStep(currentStep + 1);
       setTimeframeError(''); // Clear any validation errors when moving to next step
+      setError(''); // Clear any general errors when moving to next step
     } else {
       try {
         // Update profile with collected data
@@ -569,6 +571,8 @@ const Onboarding: React.FC = () => {
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
+      setError(''); // Clear any errors when going back
+      setTimeframeError(''); // Clear timeframe errors when going back
     }
   };
 
@@ -677,6 +681,13 @@ const Onboarding: React.FC = () => {
             {currentStepData.content}
           </div>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="text-red-700 text-sm font-medium">{error}</div>
+          </div>
+        )}
 
         {/* Navigation */}
         <div className="flex items-center justify-between">

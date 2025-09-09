@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "build": "chmod +x render-deploy.sh && ./render-deploy.sh"
+    "build": "echo 'Build completed - using Supabase PostgreSQL'"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
