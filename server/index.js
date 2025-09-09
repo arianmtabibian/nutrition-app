@@ -117,10 +117,33 @@ app.use('*', (req, res) => {
 // Initialize database and start server
 async function startServer() {
   try {
-    await initializeSupabaseDatabase();
-    console.log('✅ Supabase PostgreSQL database initialized successfully');
+    console.log('🚀 Starting server...');
     
-    console.log('✅ Supabase setup complete - ready to accept requests');
+    // Try to initialize database with retries
+    let dbInitialized = false;
+    let retries = 3;
+    
+    while (retries > 0 && !dbInitialized) {
+      try {
+        console.log(`🔄 Attempting database connection (${4 - retries}/3)...`);
+        await initializeSupabaseDatabase();
+        console.log('✅ Supabase PostgreSQL database initialized successfully');
+        dbInitialized = true;
+      } catch (error) {
+        retries--;
+        console.error(`❌ Database connection attempt failed:`, error.message);
+        
+        if (retries > 0) {
+          console.log(`⏳ Retrying in 5 seconds... (${retries} attempts remaining)`);
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        } else {
+          console.error('❌ All database connection attempts failed');
+          console.log('⚠️  Starting server without database - some features may not work');
+        }
+      }
+    }
+    
+    console.log('✅ Server setup complete - ready to accept requests');
     
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);

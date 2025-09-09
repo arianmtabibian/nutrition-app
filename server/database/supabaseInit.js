@@ -6,9 +6,15 @@ let pool = null;
 // Initialize PostgreSQL database with all tables
 const initializeSupabaseDatabase = async () => {
   try {
+    console.log('🔄 Initializing Supabase PostgreSQL database...');
+    
+    // Test connection first
     pool = createSupabaseConnection();
     
-    console.log('🔄 Initializing Supabase PostgreSQL database...');
+    // Test the connection with a simple query
+    console.log('🔄 Testing database connection...');
+    await pool.query('SELECT 1 as test');
+    console.log('✅ Database connection successful');
     
     // Users table
     await pool.query(`

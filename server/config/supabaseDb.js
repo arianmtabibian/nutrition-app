@@ -10,20 +10,23 @@ const createSupabaseConnection = () => {
   }
   
   console.log('🔄 Connecting to Supabase PostgreSQL...');
+  console.log('🔄 Connection string format:', connectionString.replace(/:[^:@]*@/, ':****@')); // Hide password in logs
   
   const pool = new Pool({
     connectionString: connectionString,
     ssl: {
       rejectUnauthorized: false // Required for Supabase
     },
-    // Connection pool settings
-    max: 10, // Maximum number of clients in the pool
-    idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-    connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
+    // Connection pool settings optimized for Render
+    max: 5, // Reduced max connections for serverless
+    idleTimeoutMillis: 10000, // Shorter idle timeout
+    connectionTimeoutMillis: 10000, // Longer connection timeout
+    // Force IPv4 to avoid IPv6 issues
+    host: connectionString.includes('@') ? connectionString.split('@')[1].split(':')[0] : undefined,
   });
 
   // Test the connection
-  pool.on('connect', () => {
+  pool.on('connect', (client) => {
     console.log('✅ Connected to Supabase PostgreSQL database');
   });
 
