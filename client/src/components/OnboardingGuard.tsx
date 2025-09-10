@@ -42,7 +42,7 @@ const OnboardingGuard: React.FC<OnboardingGuardProps> = ({ children, requireOnbo
         }
         
         // Try to get profile with retry mechanism
-        let response;
+        let response: any = null;
         let retryCount = 0;
         const maxRetries = 2;
         
@@ -61,6 +61,11 @@ const OnboardingGuard: React.FC<OnboardingGuardProps> = ({ children, requireOnbo
             // Wait before retrying (exponential backoff)
             await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
           }
+        }
+        
+        // Check if we got a valid response
+        if (!response || !response.data) {
+          throw new Error('No valid response received from profile API');
         }
         
         console.log('🔍 OnboardingGuard: Full API response:', response.data);
