@@ -14,3 +14,4 @@ services:
         sync: false
     autoDeploy: true
     branch: main
+    # Updated: Fixed registration and onboarding flow - 2025-01-05

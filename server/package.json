@@ -1,7 +1,7 @@
 {
   "name": "nutrition-backend",
-  "version": "1.0.0",
-  "description": "Nutrition tracking app backend",
+  "version": "1.0.1",
+  "description": "Nutrition tracking app backend - Fixed registration and onboarding flow",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

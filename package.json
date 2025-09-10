@@ -1,7 +1,7 @@
 {
   "name": "nutrition-app",
-  "version": "1.0.0",
-  "description": "Nutrition tracking app",
+  "version": "1.0.1",
+  "description": "Nutrition tracking app - Fixed registration and onboarding flow",
   "scripts": {
     "start": "cd server && npm start",
     "build": "cd server && npm install",
