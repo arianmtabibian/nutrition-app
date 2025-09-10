@@ -629,6 +629,10 @@ const Onboarding: React.FC = () => {
         // Mark onboarding as completed in localStorage to prevent future access
         markOnboardingCompleted();
         
+        // Set flag that onboarding was just completed (for immediate redirect even if server is down)
+        localStorage.setItem('onboarding_just_completed', 'true');
+        console.log('✅ Onboarding: Set just_completed flag for immediate redirect');
+        
         // Redirect to dashboard with replace to prevent back navigation to onboarding
         navigate('/dashboard', { replace: true });
       } catch (error: any) {
@@ -637,18 +641,44 @@ const Onboarding: React.FC = () => {
         console.error('❌ Onboarding: Error status:', error.response?.status);
         console.error('❌ Onboarding: Error message:', error.message);
         
-        // Show more specific error message
-        let errorMessage = 'Failed to save profile. Please try again.';
-        if (error.response?.status === 400) {
-          errorMessage = 'Invalid profile data. Please check your information and try again.';
-        } else if (error.response?.status === 500) {
-          errorMessage = 'Server error occurred. Please try again in a moment.';
-        } else if (error.message) {
-          errorMessage = error.message;
-        }
+        // Check if this is a network/server error (server might be down)
+        const isNetworkError = error.code === 'ERR_NETWORK' || 
+                              error.code === 'ERR_FAILED' || 
+                              error.message?.includes('Network Error') ||
+                              error.message?.includes('timeout');
         
-        setError(errorMessage);
-        return; // Don't redirect if profile save failed
+        if (isNetworkError) {
+          // Server is down - still allow user to proceed with cached data
+          console.log('🔧 Onboarding: Server appears to be down, allowing user to proceed with cached data');
+          
+          // Mark onboarding as completed in localStorage anyway
+          markOnboardingCompleted();
+          
+          // Set flag that onboarding was just completed
+          localStorage.setItem('onboarding_just_completed', 'true');
+          console.log('✅ Onboarding: Set just_completed flag despite server error');
+          
+          // Show a warning but still redirect
+          setError('Server temporarily unavailable. Your data has been saved locally and will sync when the server is back online.');
+          
+          // Redirect after a short delay to show the message
+          setTimeout(() => {
+            navigate('/dashboard', { replace: true });
+          }, 2000);
+        } else {
+          // Show more specific error message for other errors
+          let errorMessage = 'Failed to save profile. Please try again.';
+          if (error.response?.status === 400) {
+            errorMessage = 'Invalid profile data. Please check your information and try again.';
+          } else if (error.response?.status === 500) {
+            errorMessage = 'Server error occurred. Please try again in a moment.';
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
+          setError(errorMessage);
+          return; // Don't redirect if profile save failed
+        }
       }
     }
   };

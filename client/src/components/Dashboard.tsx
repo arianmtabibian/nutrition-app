@@ -37,6 +37,22 @@ const Dashboard: React.FC = () => {
   const [groupsResults, setGroupsResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [serverStatus, setServerStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+
+  // Check server status on dashboard load
+  useEffect(() => {
+    const checkServerStatus = async () => {
+      try {
+        await profileAPI.health();
+        setServerStatus('online');
+      } catch (error) {
+        console.log('🔍 Dashboard: Server appears to be offline');
+        setServerStatus('offline');
+      }
+    };
+    
+    checkServerStatus();
+  }, []);
 
   const handleCreatePost = async () => {
     console.log('Dashboard handleCreatePost called with:', newPost);
@@ -296,6 +312,14 @@ const Dashboard: React.FC = () => {
                   NutriTrack
                 </h1>
               </button>
+              
+              {/* Server Status Indicator */}
+              {serverStatus === 'offline' && (
+                <div className="flex items-center space-x-2 px-3 py-1 bg-yellow-100 border border-yellow-300 rounded-lg">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs text-yellow-700 font-medium">Server Offline</span>
+                </div>
+              )}
               
               {/* Inline Search Bar */}
               <div className="flex items-center">

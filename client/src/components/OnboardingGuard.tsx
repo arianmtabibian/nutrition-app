@@ -20,6 +20,17 @@ const OnboardingGuard: React.FC<OnboardingGuardProps> = ({ children, requireOnbo
         console.log('🔍 OnboardingGuard: Checking onboarding status...');
         console.log('🔍 OnboardingGuard: requireOnboarding =', requireOnboarding);
         
+        // First check if onboarding was just completed (immediate fallback)
+        const justCompleted = localStorage.getItem('onboarding_just_completed');
+        if (justCompleted === 'true') {
+          console.log('🔍 OnboardingGuard: Onboarding was just completed, allowing access');
+          setHasCompletedOnboarding(true);
+          setLoading(false);
+          // Clear the just completed flag
+          localStorage.removeItem('onboarding_just_completed');
+          return;
+        }
+        
         // First, try a simple health check to test connectivity
         try {
           console.log('🔍 OnboardingGuard: Testing profile API connectivity...');
@@ -80,18 +91,23 @@ const OnboardingGuard: React.FC<OnboardingGuardProps> = ({ children, requireOnbo
           // No profile exists = hasn't completed onboarding
           console.log('🔍 OnboardingGuard: No profile found (404) = not completed');
           setHasCompletedOnboarding(false);
-        } else if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
-          // Network error - check localStorage as fallback
-          console.log('🔍 OnboardingGuard: Network error, checking localStorage fallback');
+        } else if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error') || error.code === 'ERR_FAILED') {
+          // Network error or server down - check localStorage as fallback
+          console.log('🔍 OnboardingGuard: Network/server error, checking localStorage fallback');
+          console.log('🔍 OnboardingGuard: Error details:', { code: error.code, message: error.message });
+          
           const onboardingCompleted = localStorage.getItem('onboarding_completed');
+          const onboardingDate = localStorage.getItem('onboarding_completed_date');
+          
           if (onboardingCompleted === 'true') {
-            console.log('🔍 OnboardingGuard: localStorage indicates onboarding completed');
+            console.log('🔍 OnboardingGuard: localStorage indicates onboarding completed on:', onboardingDate);
             setHasCompletedOnboarding(true);
+            setError('Server temporarily unavailable - using cached data');
           } else {
             console.log('🔍 OnboardingGuard: localStorage indicates onboarding not completed');
             setHasCompletedOnboarding(false);
+            setError('Server temporarily unavailable - please try again');
           }
-          setError('Network error - using cached data');
         } else {
           // For other errors, assume they haven't completed onboarding to be safe
           console.log('🔍 OnboardingGuard: Error occurred, assuming not completed');
