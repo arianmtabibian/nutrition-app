@@ -1,7 +1,7 @@
 {
   "name": "nutrition-backend",
-  "version": "1.0.1",
-  "description": "Nutrition tracking app backend - Fixed registration and onboarding flow",
+  "version": "1.0.2",
+  "description": "Nutrition tracking app backend - Fixed onboarding blank screen and TypeScript errors",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

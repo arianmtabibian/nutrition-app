@@ -1,0 +1,8 @@
+# Deployment trigger file
+# This file is used to trigger Render auto-deployment
+# Version: 1.0.2
+# Date: 2025-01-05
+# Changes: Fixed onboarding blank screen and TypeScript errors
+
+deployment_id: 20250105-001
+timestamp: 2025-01-05T00:00:00Z

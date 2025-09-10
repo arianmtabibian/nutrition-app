@@ -14,4 +14,6 @@ services:
         sync: false
     autoDeploy: true
     branch: main
-    # Updated: Fixed registration and onboarding flow - 2025-01-05
+    rootDir: .
+    # Updated: Fixed onboarding blank screen and TypeScript errors - 2025-01-05
+    # Force deployment trigger - version 1.0.2
