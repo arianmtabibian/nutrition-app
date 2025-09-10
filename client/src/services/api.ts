@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { clearOnboardingCompletion } from '../utils/onboardingUtils';
 
 // Create axios instance with timeout for better performance
 export const api = axios.create({
@@ -53,6 +54,9 @@ api.interceptors.response.use(
         localStorage.removeItem('user');
         localStorage.removeItem('domain');
         localStorage.removeItem('nutritrack_auth_data');
+        
+        // Clear onboarding completion flag so user can go through onboarding again if they create a new account
+        clearOnboardingCompletion();
         
         // Use React Router navigation instead of hard redirect to prevent 404s
         if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {

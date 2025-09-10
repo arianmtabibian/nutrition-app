@@ -48,7 +48,12 @@ router.get('/', authenticateToken, async (req, res) => {
         activity_level: profile.activity_level,
         gender: profile.gender
       },
-      hasCompletedOnboarding: profile.daily_calories !== null && profile.daily_calories !== undefined
+      hasCompletedOnboarding: profile.daily_calories !== null && 
+        profile.daily_calories !== undefined && 
+        profile.daily_calories > 0 &&
+        profile.daily_protein !== null && 
+        profile.daily_protein !== undefined && 
+        profile.daily_protein > 0
     };
 
     console.log('🔧 ProfileSupabase: GET response for user', userId);

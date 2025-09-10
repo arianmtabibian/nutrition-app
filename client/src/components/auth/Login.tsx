@@ -36,7 +36,7 @@ const Login: React.FC = () => {
 
       await login(email, password);
       setLoginStatus('Login successful! Redirecting...');
-      // Use replace to prevent back button issues
+      // Use replace to prevent back button issues - OnboardingGuard will handle routing
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       setError(err.message);

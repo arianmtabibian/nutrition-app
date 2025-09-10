@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { api } from '../services/api';
 import { storeAuthData, getAuthData, clearAuthData } from '../utils/authPersistence';
+import { clearOnboardingCompletion } from '../utils/onboardingUtils';
 
 interface User {
   id: number;
@@ -65,6 +66,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Clear user state immediately
       setUser(null);
       setLoading(false);
+      
+      // Clear onboarding completion flag so user can go through onboarding again if they create a new account
+      clearOnboardingCompletion();
+      
       // The ProtectedRoute component will automatically redirect to /login
       // when user becomes null, using React Router properly
     };
@@ -253,6 +258,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Clear all authentication data using the new persistence system
     clearAuthData();
     delete api.defaults.headers.common['Authorization'];
+    
+    // Clear onboarding completion flag so user can go through onboarding again if they create a new account
+    clearOnboardingCompletion();
+    
     setUser(null);
   };
 

@@ -3,6 +3,7 @@ import { ArrowRight, ArrowLeft, Target, User, Activity, Scale, Ruler, Calendar, 
 import { useNavigate } from 'react-router-dom';
 import { profileAPI } from '../services/api';
 import { useUserSession } from '../hooks/useUserSession';
+import { hasCompletedOnboardingLocally, markOnboardingCompleted } from '../utils/onboardingUtils';
 
 interface ProfileData {
   daily_calories: number;
@@ -520,8 +521,16 @@ const Onboarding: React.FC = () => {
   // Initialize onboarding - OnboardingGuard handles access control
   useEffect(() => {
     console.log('📋 Onboarding: Component initialized for new user');
+    
+    // Check if user has already completed onboarding (additional safety check)
+    if (hasCompletedOnboardingLocally()) {
+      console.log('📋 Onboarding: User has already completed onboarding, redirecting to dashboard');
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+    
     setLoading(false);
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (timeRemaining > 0 && currentStep < steps.length - 1) {
@@ -566,8 +575,12 @@ const Onboarding: React.FC = () => {
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         console.log('📋 Onboarding: Navigating to dashboard...');
-        // Redirect to dashboard (OnboardingGuard will now allow access)
-        navigate('/dashboard');
+        
+        // Mark onboarding as completed in localStorage to prevent future access
+        markOnboardingCompleted();
+        
+        // Redirect to dashboard with replace to prevent back navigation to onboarding
+        navigate('/dashboard', { replace: true });
       } catch (error: any) {
         console.error('❌ Onboarding: Failed to update profile:', error);
         console.error('❌ Onboarding: Error details:', error.response?.data);

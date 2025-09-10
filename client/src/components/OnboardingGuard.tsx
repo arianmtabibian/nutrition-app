@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { profileAPI } from '../services/api';
 import LoadingSpinner from './ui/LoadingSpinner';
+import { hasCompletedOnboardingFromProfile } from '../utils/onboardingUtils';
 
 interface OnboardingGuardProps {
   children: React.ReactNode;
@@ -25,10 +26,13 @@ const OnboardingGuard: React.FC<OnboardingGuardProps> = ({ children, requireOnbo
         // Check if user has daily_calories set (key onboarding field)
         const profile = response.data.profile;
         const hasCompletedOnboardingFromAPI = response.data.hasCompletedOnboarding;
-        const completed = profile && profile.daily_calories !== null && profile.daily_calories !== undefined;
+        
+        // Use utility function for consistent onboarding completion check
+        const completed = hasCompletedOnboardingFromProfile(profile);
         
         console.log('🔍 OnboardingGuard: Profile object:', profile);
         console.log('🔍 OnboardingGuard: daily_calories value:', profile?.daily_calories);
+        console.log('🔍 OnboardingGuard: daily_protein value:', profile?.daily_protein);
         console.log('🔍 OnboardingGuard: hasCompletedOnboarding from API:', hasCompletedOnboardingFromAPI);
         console.log('🔍 OnboardingGuard: Calculated completed:', completed);
         console.log('🔍 OnboardingGuard: Final decision - Has completed onboarding:', completed);
