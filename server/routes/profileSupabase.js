@@ -4,10 +4,33 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Health check endpoint for profile API
+router.get('/health', async (req, res) => {
+  try {
+    console.log('🔧 ProfileSupabase: Health check requested');
+    console.log('🔧 ProfileSupabase: Request origin:', req.headers.origin);
+    
+    res.json({
+      message: 'Profile API is healthy',
+      timestamp: new Date().toISOString(),
+      origin: req.headers.origin
+    });
+  } catch (error) {
+    console.error('❌ ProfileSupabase: Health check error:', error);
+    res.status(500).json({ 
+      error: 'Profile API health check failed',
+      details: error.message 
+    });
+  }
+});
+
 // Get current user's profile (no userId needed)
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId; // Get from JWT token
+    console.log('🔧 ProfileSupabase: GET / endpoint hit by user:', userId);
+    console.log('🔧 ProfileSupabase: Request origin:', req.headers.origin);
+    
     const pool = getSupabasePool();
 
     // Get user basic info

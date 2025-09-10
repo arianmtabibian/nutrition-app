@@ -20,7 +20,38 @@ const OnboardingGuard: React.FC<OnboardingGuardProps> = ({ children, requireOnbo
         console.log('🔍 OnboardingGuard: Checking onboarding status...');
         console.log('🔍 OnboardingGuard: requireOnboarding =', requireOnboarding);
         
-        const response = await profileAPI.get();
+        // First, try a simple health check to test connectivity
+        try {
+          console.log('🔍 OnboardingGuard: Testing profile API connectivity...');
+          await profileAPI.health();
+          console.log('🔍 OnboardingGuard: Profile API is responsive');
+        } catch (healthError: any) {
+          console.warn('🔍 OnboardingGuard: Profile API health check failed:', healthError.message);
+          // Continue anyway, the main request might still work
+        }
+        
+        // Try to get profile with retry mechanism
+        let response;
+        let retryCount = 0;
+        const maxRetries = 2;
+        
+        while (retryCount <= maxRetries) {
+          try {
+            response = await profileAPI.get();
+            break; // Success, exit retry loop
+          } catch (retryError: any) {
+            retryCount++;
+            console.log(`🔍 OnboardingGuard: Profile check attempt ${retryCount} failed:`, retryError.message);
+            
+            if (retryCount > maxRetries) {
+              throw retryError; // Re-throw the error if we've exhausted retries
+            }
+            
+            // Wait before retrying (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          }
+        }
+        
         console.log('🔍 OnboardingGuard: Full API response:', response.data);
         
         // Check if user has daily_calories set (key onboarding field)
@@ -42,11 +73,25 @@ const OnboardingGuard: React.FC<OnboardingGuardProps> = ({ children, requireOnbo
       } catch (error: any) {
         console.error('🔍 OnboardingGuard: Error checking onboarding status:', error);
         console.error('🔍 OnboardingGuard: Error response:', error.response);
+        console.error('🔍 OnboardingGuard: Error code:', error.code);
+        console.error('🔍 OnboardingGuard: Error message:', error.message);
         
         if (error?.response?.status === 404) {
           // No profile exists = hasn't completed onboarding
           console.log('🔍 OnboardingGuard: No profile found (404) = not completed');
           setHasCompletedOnboarding(false);
+        } else if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+          // Network error - check localStorage as fallback
+          console.log('🔍 OnboardingGuard: Network error, checking localStorage fallback');
+          const onboardingCompleted = localStorage.getItem('onboarding_completed');
+          if (onboardingCompleted === 'true') {
+            console.log('🔍 OnboardingGuard: localStorage indicates onboarding completed');
+            setHasCompletedOnboarding(true);
+          } else {
+            console.log('🔍 OnboardingGuard: localStorage indicates onboarding not completed');
+            setHasCompletedOnboarding(false);
+          }
+          setError('Network error - using cached data');
         } else {
           // For other errors, assume they haven't completed onboarding to be safe
           console.log('🔍 OnboardingGuard: Error occurred, assuming not completed');

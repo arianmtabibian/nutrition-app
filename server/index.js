@@ -40,9 +40,12 @@ const allowedOrigins = [
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   
+  console.log(`🌐 CORS Request: ${req.method} ${req.path} from origin: ${origin}`);
+  
   // Allow requests with no origin (like mobile apps or Postman)
   if (!origin) {
     res.header('Access-Control-Allow-Origin', '*');
+    console.log('🌐 CORS: Allowing request with no origin');
   } else {
     // Check if origin is allowed
     const isAllowed = allowedOrigins.some(allowed => {
@@ -56,6 +59,10 @@ app.use((req, res, next) => {
     
     if (isAllowed) {
       res.header('Access-Control-Allow-Origin', origin);
+      console.log(`🌐 CORS: Allowing origin: ${origin}`);
+    } else {
+      console.log(`🌐 CORS: Blocking origin: ${origin}`);
+      console.log(`🌐 CORS: Allowed origins:`, allowedOrigins);
     }
   }
   
@@ -66,6 +73,7 @@ app.use((req, res, next) => {
   
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('🌐 CORS: Handling preflight request');
     res.status(200).send();
     return;
   }
