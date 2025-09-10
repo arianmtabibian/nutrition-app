@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, ArrowRight, Target, Zap, Wifi, WifiOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,7 +6,7 @@ import { checkServerHealth, testRegistrationEndpoint } from '../utils/serverHeal
 
 const EnhancedRegister: React.FC = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, user, logout } = useAuth();
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -22,6 +22,7 @@ const EnhancedRegister: React.FC = () => {
   const [registrationStatus, setRegistrationStatus] = useState('');
   const [serverStatus, setServerStatus] = useState<{ isHealthy: boolean; message: string } | null>(null);
   const [checkingServer, setCheckingServer] = useState(false);
+  const [showLoggedInMessage, setShowLoggedInMessage] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({
     first_name: '',
     last_name: '',
@@ -89,6 +90,12 @@ const EnhancedRegister: React.FC = () => {
     e.preventDefault();
     setError('');
     setRegistrationStatus('');
+
+    // Check if user is already logged in
+    if (user) {
+      setShowLoggedInMessage(true);
+      return;
+    }
 
     // Validate form - only on submit
     if (!validateForm()) {
@@ -161,6 +168,13 @@ const EnhancedRegister: React.FC = () => {
     }
   };
 
+  // Check if user is already logged in when component mounts
+  useEffect(() => {
+    if (user) {
+      setShowLoggedInMessage(true);
+    }
+  }, [user]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 relative overflow-hidden">
       {/* Background Pattern */}
@@ -201,6 +215,30 @@ const EnhancedRegister: React.FC = () => {
             
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Create Your Account</h2>
             <p className="text-gray-600">Start your nutrition journey today</p>
+            
+            {/* Show message if user is already logged in */}
+            {user && (
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                <p className="text-blue-800 text-sm mb-3">
+                  You are currently logged in as <strong>{user.email}</strong>. 
+                  To create a new account, please log out first.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => logout()}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Log Out & Create New Account
+                  </button>
+                  <button
+                    onClick={() => navigate('/dashboard')}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    Go to Dashboard
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Social Login Buttons */}
@@ -235,7 +273,7 @@ const EnhancedRegister: React.FC = () => {
           </div>
 
           {/* Registration Form */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-white/20">
+          <div className={`bg-white rounded-2xl shadow-xl p-8 border border-white/20 ${user ? 'opacity-50 pointer-events-none' : ''}`}>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>

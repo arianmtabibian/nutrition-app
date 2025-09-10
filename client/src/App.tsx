@@ -49,6 +49,19 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <>{children}</>;
 };
 
+// Registration route component - always accessible for new user registration
+const RegistrationRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+  
+  // Allow registration even if user is authenticated (for creating new accounts)
+  // The registration form will handle the case where user is already logged in
+  return <>{children}</>;
+};
+
 function AppRoutes() {
   // Global protection against onboarding access for existing users
   useOnboardingProtection();
@@ -62,9 +75,9 @@ function AppRoutes() {
         </PublicRoute>
       } />
       <Route path="/register" element={
-        <PublicRoute>
+        <RegistrationRoute>
           <EnhancedRegister />
-        </PublicRoute>
+        </RegistrationRoute>
       } />
       <Route path="/onboarding" element={
         <ProtectedRoute>
