@@ -119,6 +119,79 @@ router.get('/:userId', authenticateToken, async (req, res) => {
   }
 });
 
+// Create or update current user's profile (simplified endpoint for onboarding)
+router.post('/create', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    console.log('🔧 ProfileSupabase: POST /create endpoint hit by user:', userId);
+    
+    const {
+      daily_calories,
+      daily_protein,
+      weight,
+      target_weight,
+      height,
+      age,
+      activity_level,
+      gender
+    } = req.body;
+
+    console.log('🔧 ProfileSupabase: Create profile request:', req.body);
+    
+    // Validate required fields
+    if (!daily_calories || !daily_protein) {
+      return res.status(400).json({ 
+        error: 'Daily calories and daily protein are required'
+      });
+    }
+
+    const pool = getSupabasePool();
+
+    // Check if profile exists
+    const existingProfile = await pool.query(
+      'SELECT id FROM user_profiles WHERE user_id = $1',
+      [userId]
+    );
+
+    if (existingProfile.rows.length === 0) {
+      // Create new profile
+      console.log('🔧 ProfileSupabase: Creating new profile...');
+      const insertResult = await pool.query(
+        `INSERT INTO user_profiles (user_id, daily_calories, daily_protein, weight, target_weight, height, age, activity_level, gender)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+        [userId, daily_calories, daily_protein, weight, target_weight, height, age, activity_level, gender]
+      );
+      console.log('✅ ProfileSupabase: New profile created:', insertResult.rows[0]);
+    } else {
+      // Update existing profile
+      console.log('🔧 ProfileSupabase: Updating existing profile...');
+      const updateResult = await pool.query(
+        `UPDATE user_profiles SET 
+         daily_calories = $1,
+         daily_protein = $2,
+         weight = $3,
+         target_weight = $4,
+         height = $5,
+         age = $6,
+         activity_level = $7,
+         gender = $8,
+         updated_at = CURRENT_TIMESTAMP
+         WHERE user_id = $9 RETURNING *`,
+        [daily_calories, daily_protein, weight, target_weight, height, age, activity_level, gender, userId]
+      );
+      console.log('✅ ProfileSupabase: Profile updated:', updateResult.rows[0]);
+    }
+
+    res.json({ message: 'Profile created/updated successfully' });
+  } catch (error) {
+    console.error('❌ ProfileSupabase: Create profile error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message
+    });
+  }
+});
+
 // Update current user's profile
 router.put('/', authenticateToken, async (req, res) => {
   try {
@@ -241,10 +314,14 @@ router.put('/', authenticateToken, async (req, res) => {
       console.error('❌ ProfileSupabase: Database operation failed:', dbError);
       console.error('❌ ProfileSupabase: Error details:', dbError.message);
       console.error('❌ ProfileSupabase: Error code:', dbError.code);
+      console.error('❌ ProfileSupabase: Full error stack:', dbError.stack);
+      console.error('❌ ProfileSupabase: Request body that caused error:', req.body);
+      console.error('❌ ProfileSupabase: User ID:', userId);
       return res.status(500).json({ 
         error: 'Database operation failed', 
         details: dbError.message,
-        code: dbError.code
+        code: dbError.code,
+        stack: process.env.NODE_ENV === 'development' ? dbError.stack : undefined
       });
     }
 
@@ -253,9 +330,12 @@ router.put('/', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('❌ ProfileSupabase: Update profile error:', error);
     console.error('❌ ProfileSupabase: Full error:', error.stack);
+    console.error('❌ ProfileSupabase: Request body:', req.body);
+    console.error('❌ ProfileSupabase: User from token:', req.user);
     res.status(500).json({ 
       error: 'Internal server error',
-      details: error.message 
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });

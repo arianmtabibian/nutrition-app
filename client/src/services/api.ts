@@ -85,7 +85,8 @@ export const authAPI = {
 
 export const profileAPI = {
   get: () => api.get('/api/profile'),
-  update: (data: any) => api.put('/api/profile', data),
+  update: (data: any) => api.put('/api/profile', data, { timeout: 15000 }), // 15 second timeout
+  create: (data: any) => api.post('/api/profile/create', data, { timeout: 15000 }), // 15 second timeout
   calculateCalories: (data: any) => api.post('/api/profile/calculate-calories', data),
 };
 

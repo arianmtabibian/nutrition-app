@@ -209,14 +209,68 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('🔐 Starting registration process for:', email);
       console.log('🔐 Registration data:', { email, first_name, last_name, username });
       console.log('🔐 API Base URL:', api.defaults.baseURL);
+      console.log('🔐 Network status:', navigator.onLine ? 'Online' : 'Offline');
       
-      const response = await api.post('/api/auth/register', { 
-        email, 
-        password, 
-        first_name, 
-        last_name, 
-        username 
-      });
+      // Add timeout and better error handling for registration
+      const startTime = Date.now();
+      let response;
+      
+      try {
+        // Primary attempt with axios - use shorter timeout for registration
+        console.log('🔐 Attempting registration with 15s timeout...');
+        
+        response = await api.post('/api/auth/register', { 
+          email, 
+          password, 
+          first_name, 
+          last_name, 
+          username 
+        }, {
+          timeout: 15000 // 15 second timeout for registration
+        });
+      } catch (axiosError: any) {
+        console.warn('🔐 Axios registration failed:', axiosError);
+        
+        // Check if it's a CORS error
+        if (axiosError.message?.includes('CORS') || axiosError.code === 'ERR_NETWORK') {
+          throw new Error('CORS_ERROR: Unable to connect to server. Please check your internet connection and try again.');
+        }
+        
+        // Fallback with direct fetch for other errors
+        try {
+          console.log('🔐 Trying direct fetch as fallback...');
+          const fetchResponse = await fetch(`${api.defaults.baseURL}/api/auth/register`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password, first_name, last_name, username }),
+            signal: AbortSignal.timeout(20000) // 20 second timeout for fetch
+          });
+          
+          if (!fetchResponse.ok) {
+            const errorText = await fetchResponse.text();
+            let errorData;
+            try {
+              errorData = JSON.parse(errorText);
+            } catch {
+              errorData = { error: errorText };
+            }
+            throw new Error(`HTTP ${fetchResponse.status}: ${errorData.error || fetchResponse.statusText}`);
+          }
+          
+          const data = await fetchResponse.json();
+          response = { data };
+        } catch (fetchError: any) {
+          if (fetchError.message?.includes('CORS')) {
+            throw new Error('CORS_ERROR: Server is not accepting requests from this domain. Please contact support.');
+          }
+          throw fetchError;
+        }
+      }
+      
+      const endTime = Date.now();
+      console.log(`🔐 Registration request completed in ${endTime - startTime}ms`);
       
       console.log('🔐 Registration response:', response.data);
       
@@ -247,10 +301,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('🔐 Registration error:', error);
       console.error('🔐 Error details:', {
         message: error.message,
+        code: error.code,
         status: error.response?.status,
-        data: error.response?.data
+        data: error.response?.data,
+        timeout: error.timeout,
+        config: error.config?.timeout
       });
-      throw new Error(error.response?.data?.error || error.message || 'Registration failed');
+      
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        throw new Error('Registration timed out. The server might be slow to respond. Please try again in a moment.');
+      } else if (error.response?.status === 400) {
+        throw new Error(error.response?.data?.error || 'Invalid registration data. Please check your information.');
+      } else if (error.response?.status === 409) {
+        throw new Error('An account with this email already exists. Please try logging in instead.');
+      } else if (error.response?.status >= 500) {
+        throw new Error('Server error. Please try again later.');
+      } else if (!navigator.onLine) {
+        throw new Error('No internet connection. Please check your network.');
+      } else if (error.code === 'NETWORK_ERROR' || error.message?.includes('Network Error')) {
+        throw new Error('Network connection failed. Please check your internet connection and try again.');
+      } else {
+        throw new Error(error.response?.data?.error || error.message || 'Registration failed. Please try again.');
+      }
     }
   };
 

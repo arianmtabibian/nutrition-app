@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, ArrowRight, Target, Zap } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, ArrowRight, Target, Zap, Wifi, WifiOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { checkServerHealth, testRegistrationEndpoint } from '../utils/serverHealthCheck';
 
 const EnhancedRegister: React.FC = () => {
   const navigate = useNavigate();
@@ -18,6 +19,9 @@ const EnhancedRegister: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [registrationStatus, setRegistrationStatus] = useState('');
+  const [serverStatus, setServerStatus] = useState<{ isHealthy: boolean; message: string } | null>(null);
+  const [checkingServer, setCheckingServer] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({
     first_name: '',
     last_name: '',
@@ -84,6 +88,7 @@ const EnhancedRegister: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setRegistrationStatus('');
 
     // Validate form - only on submit
     if (!validateForm()) {
@@ -91,7 +96,22 @@ const EnhancedRegister: React.FC = () => {
     }
 
     setLoading(true);
+    setRegistrationStatus('Connecting to server...');
+    
     try {
+      // Add progress updates
+      setTimeout(() => {
+        if (loading) setRegistrationStatus('Creating your account...');
+      }, 2000);
+      
+      setTimeout(() => {
+        if (loading) setRegistrationStatus('Setting up your profile...');
+      }, 5000);
+      
+      setTimeout(() => {
+        if (loading) setRegistrationStatus('Almost done, finalizing registration...');
+      }, 10000);
+
       await register(
         formData.email,
         formData.password,
@@ -100,18 +120,45 @@ const EnhancedRegister: React.FC = () => {
         formData.username
       );
       
+      setRegistrationStatus('Account created successfully! Redirecting...');
+      
       // Redirect to onboarding after successful registration
       navigate('/onboarding');
     } catch (error: any) {
+      console.error('Registration error in form:', error);
       setError(error.message || 'Registration failed');
+      setRegistrationStatus('');
     } finally {
       setLoading(false);
+      setRegistrationStatus('');
     }
   };
 
   const handleSocialLogin = (provider: string) => {
     // TODO: Implement social login
     alert(`${provider} login coming soon!`);
+  };
+
+  const handleServerHealthCheck = async () => {
+    setCheckingServer(true);
+    setServerStatus(null);
+    
+    try {
+      const healthResult = await checkServerHealth();
+      const registrationResult = await testRegistrationEndpoint();
+      
+      setServerStatus({
+        isHealthy: healthResult.isHealthy && registrationResult.isAccessible,
+        message: `Health: ${healthResult.message}. Registration: ${registrationResult.message}`
+      });
+    } catch (error) {
+      setServerStatus({
+        isHealthy: false,
+        message: 'Failed to check server status'
+      });
+    } finally {
+      setCheckingServer(false);
+    }
   };
 
   return (
@@ -382,7 +429,7 @@ const EnhancedRegister: React.FC = () => {
                 {loading ? (
                   <div className="flex items-center justify-center space-x-2">
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Creating Account...</span>
+                    <span>{registrationStatus || 'Creating Account...'}</span>
                   </div>
                 ) : (
                   <span className="flex items-center justify-center space-x-2">
@@ -393,6 +440,50 @@ const EnhancedRegister: React.FC = () => {
               </button>
             </form>
           </div>
+
+          {/* Server Status Check */}
+          <div className="text-center mt-4">
+            <button
+              onClick={handleServerHealthCheck}
+              disabled={checkingServer}
+              className="flex items-center justify-center space-x-2 px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 mx-auto"
+            >
+              {checkingServer ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Checking Server...</span>
+                </>
+              ) : (
+                <>
+                  {serverStatus?.isHealthy ? (
+                    <Wifi className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <WifiOff className="w-4 h-4 text-red-600" />
+                  )}
+                  <span>Check Server Status</span>
+                </>
+              )}
+            </button>
+            
+            {serverStatus && (
+              <div className={`mt-2 p-2 rounded-lg text-xs ${
+                serverStatus.isHealthy 
+                  ? 'bg-green-50 text-green-700 border border-green-200' 
+                  : 'bg-red-50 text-red-700 border border-red-200'
+              }`}>
+                {serverStatus.message}
+              </div>
+            )}
+          </div>
+
+          {/* Help Message */}
+          {loading && (
+            <div className="text-center mt-4">
+              <p className="text-sm text-gray-500">
+                Registration taking longer than expected? The server might be starting up. Please wait...
+              </p>
+            </div>
+          )}
 
           {/* Terms */}
           <p className="text-xs text-gray-500 text-center mt-6">

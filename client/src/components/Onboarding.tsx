@@ -565,8 +565,58 @@ const Onboarding: React.FC = () => {
         console.log('📋 Onboarding: Starting profile save...');
         console.log('📋 Onboarding: Profile data being sent:', profileData);
         
-        // Update profile with collected data
-        const response = await profileAPI.update(profileData);
+        // Filter profile data to only include fields that exist in the database
+        const filteredProfileData = {
+          daily_calories: profileData.daily_calories,
+          daily_protein: profileData.daily_protein,
+          weight: profileData.weight,
+          target_weight: profileData.target_weight,
+          height: profileData.height,
+          age: profileData.age,
+          activity_level: profileData.activity_level,
+          gender: profileData.gender
+        };
+        
+        // Validate required fields
+        if (!filteredProfileData.daily_calories || !filteredProfileData.daily_protein) {
+          console.error('❌ Onboarding: Missing required fields:', filteredProfileData);
+          setError('Missing required profile data. Please complete all steps.');
+          return;
+        }
+        
+        console.log('📋 Onboarding: Filtered profile data for API:', filteredProfileData);
+        
+        // Update profile with collected data (with retry mechanism)
+        let response;
+        let retryCount = 0;
+        const maxRetries = 2;
+        
+        while (retryCount <= maxRetries) {
+          try {
+            // Try the main update endpoint first
+            response = await profileAPI.update(filteredProfileData);
+            break; // Success, exit retry loop
+          } catch (retryError: any) {
+            retryCount++;
+            console.log(`📋 Onboarding: Profile save attempt ${retryCount} failed:`, retryError.message);
+            
+            if (retryCount > maxRetries) {
+              // Try the simplified create endpoint as a fallback
+              console.log('📋 Onboarding: Trying fallback create endpoint...');
+              try {
+                response = await profileAPI.create(filteredProfileData);
+                console.log('✅ Onboarding: Fallback create endpoint succeeded');
+                break;
+              } catch (fallbackError: any) {
+                console.error('❌ Onboarding: Fallback create endpoint also failed:', fallbackError);
+                throw retryError; // Re-throw the original error
+              }
+            }
+            
+            // Wait before retrying (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          }
+        }
         
         console.log('✅ Onboarding: Profile update response:', response);
         console.log('✅ Onboarding: Profile saved successfully to database');
@@ -584,7 +634,20 @@ const Onboarding: React.FC = () => {
       } catch (error: any) {
         console.error('❌ Onboarding: Failed to update profile:', error);
         console.error('❌ Onboarding: Error details:', error.response?.data);
-        setError('Failed to save profile. Please try again.');
+        console.error('❌ Onboarding: Error status:', error.response?.status);
+        console.error('❌ Onboarding: Error message:', error.message);
+        
+        // Show more specific error message
+        let errorMessage = 'Failed to save profile. Please try again.';
+        if (error.response?.status === 400) {
+          errorMessage = 'Invalid profile data. Please check your information and try again.';
+        } else if (error.response?.status === 500) {
+          errorMessage = 'Server error occurred. Please try again in a moment.';
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        setError(errorMessage);
         return; // Don't redirect if profile save failed
       }
     }
