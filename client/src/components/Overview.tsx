@@ -129,13 +129,13 @@ const WeightAnalysis: React.FC<{
          </div>
          <div className="text-center">
            <div className={`text-lg font-bold ${isWeightLoss ? 'text-green-600' : 'text-orange-600'}`}>
-             {absWeightDifference.toFixed(1)} lbs
+             {Math.round(absWeightDifference)} lbs
            </div>
            <div className="text-xs text-gray-600">to {isWeightLoss ? 'Lose' : 'Gain'}</div>
          </div>
         <div className="text-center">
           <div className={`text-lg font-bold ${averageDailyDeficit > 0 ? 'text-green-600' : 'text-orange-600'}`}>
-            {Math.abs(averageDailyDeficit).toFixed(0)}
+            {Math.round(Math.abs(averageDailyDeficit))}
           </div>
           <div className="text-xs text-gray-600">
             {averageDailyDeficit > 0 ? 'Cal Deficit' : 'Cal Surplus'}/day
@@ -152,7 +152,7 @@ const WeightAnalysis: React.FC<{
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Average daily calorie {averageDailyDeficit > 0 ? 'deficit' : 'surplus'}:</span>
               <span className={`font-medium ${averageDailyDeficit > 0 ? 'text-green-600' : 'text-orange-600'}`}>
-                {Math.abs(averageDailyDeficit).toFixed(0)} calories
+                {Math.round(Math.abs(averageDailyDeficit))} calories
               </span>
             </div>
             
@@ -160,7 +160,7 @@ const WeightAnalysis: React.FC<{
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">At this pace, you'll reach your target in:</span>
                 <span className="font-medium text-blue-600">
-                  {daysToTarget < 30 ? `${Math.round(daysToTarget)} days` : `${weeksToTarget.toFixed(1)} weeks`}
+                  {daysToTarget < 30 ? `${Math.round(daysToTarget)} days` : `${Math.round(weeksToTarget)} weeks`}
                 </span>
               </div>
             )}

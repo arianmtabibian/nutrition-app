@@ -100,9 +100,9 @@ router.get('/summary/:startDate/:endDate', authenticateToken, async (req, res) =
       date: day.meal_date,
       totals: {
         calories: parseInt(day.total_calories),
-        protein: parseFloat(day.total_protein),
-        carbs: parseFloat(day.total_carbs),
-        fat: parseFloat(day.total_fat)
+        protein: parseInt(day.total_protein),
+        carbs: parseInt(day.total_carbs),
+        fat: parseInt(day.total_fat)
       },
       mealCount: parseInt(day.meal_count)
     }));
@@ -144,9 +144,9 @@ router.get('/:year/:month', authenticateToken, async (req, res) => {
       date: day.meal_date,
       totals: {
         calories: parseInt(day.total_calories),
-        protein: parseFloat(day.total_protein),
-        carbs: parseFloat(day.total_carbs),
-        fat: parseFloat(day.total_fat)
+        protein: parseInt(day.total_protein),
+        carbs: parseInt(day.total_carbs),
+        fat: parseInt(day.total_fat)
       },
       mealCount: parseInt(day.meal_count)
     }));
@@ -189,9 +189,9 @@ router.get('/week/:startDate', authenticateToken, async (req, res) => {
       date: day.meal_date,
       totals: {
         calories: parseInt(day.total_calories),
-        protein: parseFloat(day.total_protein),
-        carbs: parseFloat(day.total_carbs),
-        fat: parseFloat(day.total_fat)
+        protein: parseInt(day.total_protein),
+        carbs: parseInt(day.total_carbs),
+        fat: parseInt(day.total_fat)
       },
       mealCount: parseInt(day.meal_count)
     }));

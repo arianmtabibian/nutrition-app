@@ -164,8 +164,8 @@ const SocialProfile: React.FC = () => {
       const mealsResponse = await mealsAPI.getByDate(today);
       console.log('📊 Profile: Raw meals response:', mealsResponse);
       
-      if (mealsResponse.data && mealsResponse.data.meals) {
-        const meals = mealsResponse.data.meals || [];
+      if (mealsResponse.data) {
+        const meals = Array.isArray(mealsResponse.data) ? mealsResponse.data : [];
         console.log('📊 Profile: Processing meals:', meals.length, 'meals found');
         
         const totalCalories = meals.reduce((sum: number, meal: any) => sum + (meal.calories || 0), 0);
@@ -1433,7 +1433,7 @@ const SocialProfile: React.FC = () => {
                 <input
                   type="number"
                   value={editProfileData.daily_calories || ''}
-                  onChange={(e) => setEditProfileData(prev => ({ ...prev, daily_calories: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => setEditProfileData(prev => ({ ...prev, daily_calories: parseInt(e.target.value) || 0 }))}
                   className="w-full border border-gray-300 rounded-lg p-2"
                   placeholder="2000"
                 />
@@ -1444,7 +1444,7 @@ const SocialProfile: React.FC = () => {
                 <input
                   type="number"
                   value={editProfileData.daily_protein || ''}
-                  onChange={(e) => setEditProfileData(prev => ({ ...prev, daily_protein: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => setEditProfileData(prev => ({ ...prev, daily_protein: parseInt(e.target.value) || 0 }))}
                   className="w-full border border-gray-300 rounded-lg p-2"
                   placeholder="150"
                 />
@@ -1455,7 +1455,7 @@ const SocialProfile: React.FC = () => {
                 <input
                   type="number"
                   value={editProfileData.weight || ''}
-                  onChange={(e) => setEditProfileData(prev => ({ ...prev, weight: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => setEditProfileData(prev => ({ ...prev, weight: parseInt(e.target.value) || 0 }))}
                   className="w-full border border-gray-300 rounded-lg p-2"
                   placeholder="150"
                 />
@@ -1466,7 +1466,7 @@ const SocialProfile: React.FC = () => {
                 <input
                   type="number"
                   value={editProfileData.target_weight || ''}
-                  onChange={(e) => setEditProfileData(prev => ({ ...prev, target_weight: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => setEditProfileData(prev => ({ ...prev, target_weight: parseInt(e.target.value) || 0 }))}
                   className="w-full border border-gray-300 rounded-lg p-2"
                   placeholder="140"
                 />
@@ -1477,7 +1477,7 @@ const SocialProfile: React.FC = () => {
                 <input
                   type="number"
                   value={editProfileData.height || ''}
-                  onChange={(e) => setEditProfileData(prev => ({ ...prev, height: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => setEditProfileData(prev => ({ ...prev, height: parseInt(e.target.value) || 0 }))}
                   className="w-full border border-gray-300 rounded-lg p-2"
                   placeholder="70"
                 />
@@ -1488,7 +1488,7 @@ const SocialProfile: React.FC = () => {
                 <input
                   type="number"
                   value={editProfileData.age || ''}
-                  onChange={(e) => setEditProfileData(prev => ({ ...prev, age: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => setEditProfileData(prev => ({ ...prev, age: parseInt(e.target.value) || 0 }))}
                   className="w-full border border-gray-300 rounded-lg p-2"
                   placeholder="25"
                 />

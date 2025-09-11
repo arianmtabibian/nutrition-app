@@ -565,7 +565,7 @@ const Inputs: React.FC = () => {
                 <input
                   type="number"
                   value={manualMacros.calories || ''}
-                  onChange={(e) => setManualMacros(prev => ({ ...prev, calories: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => setManualMacros(prev => ({ ...prev, calories: parseInt(e.target.value) || 0 }))}
                   className="w-full px-3 py-2 border border-green-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="0"
                   min="0"
@@ -577,7 +577,7 @@ const Inputs: React.FC = () => {
                 <input
                   type="number"
                   value={manualMacros.protein || ''}
-                  onChange={(e) => setManualMacros(prev => ({ ...prev, protein: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => setManualMacros(prev => ({ ...prev, protein: parseInt(e.target.value) || 0 }))}
                   className="w-full px-3 py-2 border border-green-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="0"
                   min="0"
@@ -590,7 +590,7 @@ const Inputs: React.FC = () => {
                 <input
                   type="number"
                   value={manualMacros.carbs || ''}
-                  onChange={(e) => setManualMacros(prev => ({ ...prev, carbs: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => setManualMacros(prev => ({ ...prev, carbs: parseInt(e.target.value) || 0 }))}
                   className="w-full px-3 py-2 border border-green-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="0"
                   min="0"
@@ -603,7 +603,7 @@ const Inputs: React.FC = () => {
                 <input
                   type="number"
                   value={manualMacros.fat || ''}
-                  onChange={(e) => setManualMacros(prev => ({ ...prev, fat: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => setManualMacros(prev => ({ ...prev, fat: parseInt(e.target.value) || 0 }))}
                   className="w-full px-3 py-2 border border-green-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="0"
                   min="0"
@@ -618,7 +618,7 @@ const Inputs: React.FC = () => {
                 <input
                   type="number"
                   value={manualMacros.fiber || ''}
-                  onChange={(e) => setManualMacros(prev => ({ ...prev, fiber: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => setManualMacros(prev => ({ ...prev, fiber: parseInt(e.target.value) || 0 }))}
                   className="w-full px-3 py-2 border border-green-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="0"
                   min="0"

@@ -377,4 +377,189 @@ router.post('/users/:targetUserId/follow', authenticateToken, async (req, res) =
   }
 });
 
+// Get user profile for social features
+router.get('/profile/:userId', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const pool = getSupabasePool();
+
+    // Get user basic info
+    const userResult = await pool.query(
+      'SELECT id, first_name, last_name, username, email FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = userResult.rows[0];
+
+    // Get user profile data
+    const profileResult = await pool.query(
+      'SELECT * FROM user_profiles WHERE user_id = $1',
+      [userId]
+    );
+
+    const profile = profileResult.rows[0] || {};
+
+    // Get post count
+    const postCountResult = await pool.query(
+      'SELECT COUNT(*) as count FROM posts WHERE user_id = $1',
+      [userId]
+    );
+    const postCount = parseInt(postCountResult.rows[0].count) || 0;
+
+    // Get followers count
+    const followersResult = await pool.query(
+      'SELECT COUNT(*) as count FROM follows WHERE following_id = $1',
+      [userId]
+    );
+    const followersCount = parseInt(followersResult.rows[0].count) || 0;
+
+    // Get following count
+    const followingResult = await pool.query(
+      'SELECT COUNT(*) as count FROM follows WHERE follower_id = $1',
+      [userId]
+    );
+    const followingCount = parseInt(followingResult.rows[0].count) || 0;
+
+    // Check if current user is following this user
+    const currentUserId = req.user.userId;
+    const isFollowingResult = await pool.query(
+      'SELECT id FROM follows WHERE follower_id = $1 AND following_id = $2',
+      [currentUserId, userId]
+    );
+    const isFollowing = isFollowingResult.rows.length > 0;
+
+    const responseData = {
+      id: user.id,
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      username: user.username,
+      profile: {
+        profilePicture: profile.profile_picture,
+        bio: profile.bio,
+        daily_calories: profile.daily_calories,
+        daily_protein: profile.daily_protein,
+        weight: profile.weight,
+        target_weight: profile.target_weight,
+        height: profile.height,
+        age: profile.age,
+        activity_level: profile.activity_level,
+        gender: profile.gender,
+        posts_count: postCount,
+        followers_count: followersCount,
+        following_count: followingCount
+      },
+      isFollowing: isFollowing
+    };
+
+    console.log('🔧 SocialSupabase: GET profile response for user', userId);
+    console.log('🔧 SocialSupabase: Profile data:', responseData);
+
+    res.json(responseData);
+  } catch (error) {
+    console.error('Get user profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get user's liked posts
+router.get('/profile/:userId/liked-posts', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const pool = getSupabasePool();
+
+    const result = await pool.query(`
+      SELECT 
+        p.*,
+        u.first_name,
+        u.last_name,
+        u.username,
+        up.profile_picture
+      FROM posts p
+      JOIN likes l ON p.id = l.post_id
+      JOIN users u ON p.user_id = u.id
+      LEFT JOIN user_profiles up ON p.user_id = up.user_id
+      WHERE l.user_id = $1
+      ORDER BY p.created_at DESC
+    `, [userId]);
+
+    const posts = result.rows.map(post => ({
+      id: post.id,
+      userId: post.user_id,
+      content: post.content,
+      imageUrl: post.image_url,
+      mealId: post.meal_id,
+      likesCount: post.likes_count,
+      commentsCount: post.comments_count,
+      createdAt: post.created_at,
+      updatedAt: post.updated_at,
+      is_liked: true, // User liked this post
+      is_bookmarked: false, // Will be updated by frontend
+      user: {
+        firstName: post.first_name,
+        lastName: post.last_name,
+        username: post.username,
+        profilePicture: post.profile_picture
+      }
+    }));
+
+    res.json(posts);
+  } catch (error) {
+    console.error('Get liked posts error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get user's bookmarked posts
+router.get('/profile/:userId/favorited-posts', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const pool = getSupabasePool();
+
+    const result = await pool.query(`
+      SELECT 
+        p.*,
+        u.first_name,
+        u.last_name,
+        u.username,
+        up.profile_picture
+      FROM posts p
+      JOIN bookmarks b ON p.id = b.post_id
+      JOIN users u ON p.user_id = u.id
+      LEFT JOIN user_profiles up ON p.user_id = up.user_id
+      WHERE b.user_id = $1
+      ORDER BY p.created_at DESC
+    `, [userId]);
+
+    const posts = result.rows.map(post => ({
+      id: post.id,
+      userId: post.user_id,
+      content: post.content,
+      imageUrl: post.image_url,
+      mealId: post.meal_id,
+      likesCount: post.likes_count,
+      commentsCount: post.comments_count,
+      createdAt: post.created_at,
+      updatedAt: post.updated_at,
+      is_liked: false, // Will be updated by frontend
+      is_bookmarked: true, // User bookmarked this post
+      user: {
+        firstName: post.first_name,
+        lastName: post.last_name,
+        username: post.username,
+        profilePicture: post.profile_picture
+      }
+    }));
+
+    res.json(posts);
+  } catch (error) {
+    console.error('Get bookmarked posts error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;
