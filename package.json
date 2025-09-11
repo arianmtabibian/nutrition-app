@@ -1,7 +1,7 @@
 {
   "name": "nutrition-app",
-  "version": "1.0.2",
-  "description": "Nutrition tracking app - Fixed onboarding blank screen and TypeScript errors",
+  "version": "1.0.3",
+  "description": "Nutrition tracking app - Fixed registration timeout and TypeScript compilation errors",
   "scripts": {
     "start": "cd server && npm start",
     "build": "cd server && npm install",

@@ -15,5 +15,6 @@ services:
     autoDeploy: true
     branch: main
     rootDir: .
-    # Updated: Fixed onboarding blank screen and TypeScript errors - 2025-01-05
-    # Force deployment trigger - version 1.0.2
+    # Updated: Fixed registration timeout and TypeScript compilation errors - 2025-01-05
+    # Force deployment trigger - version 1.0.3
+    # Deployment ID: 20250105-002
