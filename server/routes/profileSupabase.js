@@ -53,6 +53,13 @@ router.get('/', authenticateToken, async (req, res) => {
 
     const profile = profileResult.rows[0] || {};
 
+    // Get post count
+    const postCountResult = await pool.query(
+      'SELECT COUNT(*) as count FROM posts WHERE user_id = $1',
+      [userId]
+    );
+    const postCount = parseInt(postCountResult.rows[0].count) || 0;
+
     const responseData = {
       id: user.id,
       email: user.email,
@@ -69,7 +76,8 @@ router.get('/', authenticateToken, async (req, res) => {
         height: profile.height,
         age: profile.age,
         activity_level: profile.activity_level,
-        gender: profile.gender
+        gender: profile.gender,
+        posts_count: postCount
       },
       hasCompletedOnboarding: profile.daily_calories !== null && 
         profile.daily_calories !== undefined && 

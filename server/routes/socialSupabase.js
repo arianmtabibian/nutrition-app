@@ -164,6 +164,12 @@ router.post('/posts', authenticateToken, async (req, res) => {
     const post = result.rows[0];
     console.log('✅ SocialSupabase: Post created successfully:', post.id);
 
+    // Update user's post count in user_profiles table
+    await pool.query(
+      'UPDATE user_profiles SET posts_count = COALESCE(posts_count, 0) + 1 WHERE user_id = $1',
+      [userId]
+    );
+
     res.status(201).json({
       id: post.id,
       userId: post.user_id,

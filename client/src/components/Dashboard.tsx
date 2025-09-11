@@ -149,7 +149,7 @@ const Dashboard: React.FC = () => {
     try {
       if (type === 'Friends') {
         // Search for users/friends
-        const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/search/users?q=${encodeURIComponent(query)}`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-backend-9k3a.onrender.com'}/api/social/search/users?q=${encodeURIComponent(query)}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token') || JSON.parse(localStorage.getItem('nutritrack_auth_data') || '{}').token}`
           }
@@ -158,7 +158,7 @@ const Dashboard: React.FC = () => {
         setFriendsResults(response.data?.users || response.users || []);
       } else {
         // Search for groups
-        const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/search/groups?q=${encodeURIComponent(query)}`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-backend-9k3a.onrender.com'}/api/social/search/groups?q=${encodeURIComponent(query)}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token') || JSON.parse(localStorage.getItem('nutritrack_auth_data') || '{}').token}`
           }

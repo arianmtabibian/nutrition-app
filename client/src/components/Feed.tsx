@@ -483,7 +483,7 @@ const Feed: React.FC = () => {
         const token = authData.token || localStorage.getItem('token');
         
           if (token) {
-        const directResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/social/posts`, {
+        const directResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-backend-9k3a.onrender.com'}/api/social/posts`, {
           method: 'POST',
               headers: { 'Authorization': `Bearer ${token}` },
           body: formData

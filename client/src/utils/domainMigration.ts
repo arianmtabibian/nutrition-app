@@ -46,7 +46,7 @@ export const migrateUserData = async (): Promise<boolean> => {
     
     // Try to validate token on the backend API
     try {
-      const backendUrl = process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com';
+      const backendUrl = process.env.REACT_APP_API_URL || 'https://nutrition-backend-9k3a.onrender.com';
       console.log('🔍 Validating token on backend:', backendUrl);
       
       const response = await fetch(`${backendUrl}/api/auth/verify`, {

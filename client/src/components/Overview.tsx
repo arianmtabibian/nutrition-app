@@ -291,7 +291,7 @@ const Overview: React.FC = () => {
       console.log('Meals response:', mealsResponse.data);
       
              // Calculate totals from meals
-       const meals: MealData[] = mealsResponse.data.meals || [];
+       const meals: MealData[] = mealsResponse.data || [];
        setTodayMeals(meals); // Store meals for display
        const totalCalories = meals.reduce((sum: number, meal: MealData) => sum + (meal.calories || 0), 0);
        const totalProtein = meals.reduce((sum: number, meal: MealData) => sum + (meal.protein || 0), 0);

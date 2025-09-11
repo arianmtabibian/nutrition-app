@@ -386,7 +386,7 @@ const SocialProfile: React.FC = () => {
       const token = authData.token || localStorage.getItem('token');
       if (!token || !user?.id) return;
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com'}/api/profile`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-backend-9k3a.onrender.com'}/api/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
