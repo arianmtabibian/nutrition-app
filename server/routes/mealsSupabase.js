@@ -203,12 +203,12 @@ router.post('/', authenticateToken, async (req, res) => {
       // Manual entry - use provided values
       console.log('🔧 MealsSupabase: Using manual nutrition values');
       finalCalories = parseInt(calories) || 0;
-      finalProtein = parseFloat(protein) || 0;
-      finalCarbs = parseFloat(carbs) || 0;
-      finalFat = parseFloat(fat) || 0;
-      finalFiber = parseFloat(fiber) || 0;
-      finalSugar = parseFloat(sugar) || 0;
-      finalSodium = parseFloat(sodium) || 0;
+      finalProtein = parseInt(protein) || 0;
+      finalCarbs = parseInt(carbs) || 0;
+      finalFat = parseInt(fat) || 0;
+      finalFiber = parseInt(fiber) || 0;
+      finalSugar = parseInt(sugar) || 0;
+      finalSodium = parseInt(sodium) || 0;
     } else {
       // AI analysis needed - analyze the meal description
       console.log('🔧 MealsSupabase: Analyzing meal with AI:', description);

@@ -78,6 +78,8 @@ const initializeSupabaseDatabase = async () => {
         content TEXT NOT NULL,
         image_url TEXT,
         meal_id INTEGER REFERENCES meals(id) ON DELETE SET NULL,
+        allow_comments BOOLEAN DEFAULT true,
+        hide_like_count BOOLEAN DEFAULT false,
         likes_count INTEGER DEFAULT 0,
         comments_count INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -139,6 +141,13 @@ const initializeSupabaseDatabase = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(user_id, post_id)
       )
+    `);
+
+    // Add missing columns to existing posts table if they don't exist
+    await pool.query(`
+      ALTER TABLE posts 
+      ADD COLUMN IF NOT EXISTS allow_comments BOOLEAN DEFAULT true,
+      ADD COLUMN IF NOT EXISTS hide_like_count BOOLEAN DEFAULT false;
     `);
 
     // Create indexes for better performance

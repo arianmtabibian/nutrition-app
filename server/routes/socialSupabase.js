@@ -187,6 +187,13 @@ router.post('/posts', authenticateToken, async (req, res) => {
       [userId]
     );
 
+    // Get user information for the response
+    const userResult = await pool.query(
+      'SELECT u.first_name, u.last_name, u.username, up.profile_picture FROM users u LEFT JOIN user_profiles up ON u.id = up.user_id WHERE u.id = $1',
+      [userId]
+    );
+    const user = userResult.rows[0];
+
     res.status(201).json({
       id: post.id,
       userId: post.user_id,
@@ -198,7 +205,14 @@ router.post('/posts', authenticateToken, async (req, res) => {
       likesCount: post.likes_count || 0,
       commentsCount: post.comments_count || 0,
       createdAt: post.created_at,
-      updatedAt: post.updated_at
+      updatedAt: post.updated_at,
+      user: {
+        id: userId,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        username: user.username,
+        profile_picture: user.profile_picture
+      }
     });
   } catch (error) {
     console.error('❌ SocialSupabase: Create post error:', error);
@@ -607,7 +621,7 @@ router.get('/profile/:userId/favorited-posts', authenticateToken, async (req, re
         u.username,
         up.profile_picture
       FROM posts p
-      JOIN bookmarks b ON p.id = b.post_id
+      JOIN post_bookmarks b ON p.id = b.post_id
       JOIN users u ON p.user_id = u.id
       LEFT JOIN user_profiles up ON p.user_id = up.user_id
       WHERE b.user_id = $1
