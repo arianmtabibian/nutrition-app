@@ -1,7 +1,7 @@
 {
   "name": "nutrition-app",
-  "version": "1.0.3",
-  "description": "Nutrition tracking app - Fixed registration timeout and TypeScript compilation errors",
+  "version": "1.0.4",
+  "description": "Nutrition tracking app - Fixed meals and favorites API endpoints with enhanced logging",
   "scripts": {
     "start": "cd server && npm start",
     "build": "cd server && npm install",

@@ -4,11 +4,41 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Health check endpoint for meals API
+router.get('/health', async (req, res) => {
+  try {
+    console.log('🔧 MealsSupabase: Health check requested');
+    console.log('🔧 MealsSupabase: Request origin:', req.headers.origin);
+    
+    const pool = getSupabasePool();
+    
+    // Simple connection test
+    const result = await pool.query('SELECT 1 as test');
+    
+    res.json({
+      message: 'Meals API is healthy',
+      timestamp: new Date().toISOString(),
+      origin: req.headers.origin,
+      database: 'connected'
+    });
+  } catch (error) {
+    console.error('❌ MealsSupabase: Health check error:', error);
+    res.status(500).json({ 
+      error: 'Meals API health check failed',
+      details: error.message 
+    });
+  }
+});
+
 // Get all meals for a user (with optional date filter)
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const { date, limit = 50 } = req.query;
     const userId = req.user.userId;
+    console.log('🔧 MealsSupabase: GET / endpoint hit by user:', userId);
+    console.log('🔧 MealsSupabase: Request origin:', req.headers.origin);
+    console.log('🔧 MealsSupabase: Query params:', { date, limit });
+    
     const pool = getSupabasePool();
 
     let query = 'SELECT * FROM meals WHERE user_id = $1';
@@ -53,6 +83,10 @@ router.get('/:date', authenticateToken, async (req, res) => {
   try {
     const { date } = req.params;
     const userId = req.user.userId;
+    console.log('🔧 MealsSupabase: GET /:date endpoint hit by user:', userId);
+    console.log('🔧 MealsSupabase: Date:', date);
+    console.log('🔧 MealsSupabase: Request origin:', req.headers.origin);
+    
     const pool = getSupabasePool();
 
     const result = await pool.query(
@@ -123,6 +157,11 @@ router.get('/range/:startDate/:endDate', authenticateToken, async (req, res) => 
 // Add new meal
 router.post('/', authenticateToken, async (req, res) => {
   try {
+    const userId = req.user.userId;
+    console.log('🔧 MealsSupabase: POST / endpoint hit by user:', userId);
+    console.log('🔧 MealsSupabase: Request origin:', req.headers.origin);
+    console.log('🔧 MealsSupabase: Request body:', req.body);
+    
     const {
       mealDate,
       mealType,

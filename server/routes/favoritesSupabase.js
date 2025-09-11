@@ -4,10 +4,38 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Health check endpoint for favorites API
+router.get('/health', async (req, res) => {
+  try {
+    console.log('🔧 FavoritesSupabase: Health check requested');
+    console.log('🔧 FavoritesSupabase: Request origin:', req.headers.origin);
+    
+    const pool = getSupabasePool();
+    
+    // Simple connection test
+    const result = await pool.query('SELECT 1 as test');
+    
+    res.json({
+      message: 'Favorites API is healthy',
+      timestamp: new Date().toISOString(),
+      origin: req.headers.origin,
+      database: 'connected'
+    });
+  } catch (error) {
+    console.error('❌ FavoritesSupabase: Health check error:', error);
+    res.status(500).json({ 
+      error: 'Favorites API health check failed',
+      details: error.message 
+    });
+  }
+});
+
 // Get user's favorite meals
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
+    console.log('🔧 FavoritesSupabase: GET / endpoint hit by user:', userId);
+    console.log('🔧 FavoritesSupabase: Request origin:', req.headers.origin);
     const pool = getSupabasePool();
 
     const result = await pool.query(`
@@ -110,6 +138,10 @@ router.post('/', authenticateToken, async (req, res) => {
   try {
     const { mealId, customName } = req.body;
     const userId = req.user.userId;
+    console.log('🔧 FavoritesSupabase: POST / endpoint hit by user:', userId);
+    console.log('🔧 FavoritesSupabase: Request origin:', req.headers.origin);
+    console.log('🔧 FavoritesSupabase: Request body:', req.body);
+    
     const pool = getSupabasePool();
 
     // Check if meal exists

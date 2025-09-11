@@ -1,7 +1,7 @@
 {
   "name": "nutrition-backend",
-  "version": "1.0.3",
-  "description": "Nutrition tracking app backend - Fixed registration timeout and TypeScript compilation errors",
+  "version": "1.0.4",
+  "description": "Nutrition tracking app backend - Fixed meals and favorites API endpoints with enhanced logging",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

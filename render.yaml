@@ -15,6 +15,6 @@ services:
     autoDeploy: true
     branch: main
     rootDir: .
-    # Updated: Fixed registration timeout and TypeScript compilation errors - 2025-01-05
-    # Force deployment trigger - version 1.0.3
-    # Deployment ID: 20250105-002
+    # Updated: Fixed meals and favorites API endpoints with enhanced logging - 2025-01-05
+    # Force deployment trigger - version 1.0.4
+    # Deployment ID: 20250105-003
