@@ -15,6 +15,6 @@ services:
     autoDeploy: true
     branch: main
     rootDir: .
-    # Updated: Fixed duplicate userId declaration syntax error - 2025-01-05
-    # Force deployment trigger - version 1.0.5
-    # Deployment ID: 20250105-004
+    # Updated: Fixed AI meal analysis integration - 2025-01-05
+    # Force deployment trigger - version 1.0.7
+    # Deployment ID: 20250105-006

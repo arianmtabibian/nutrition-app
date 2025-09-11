@@ -1,6 +1,7 @@
 const express = require('express');
 const { getSupabasePool } = require('../database/supabaseInit');
 const { authenticateToken } = require('../middleware/auth');
+const { analyzeMeal } = require('../services/nutritionService');
 
 const router = express.Router();
 
@@ -15,11 +16,16 @@ router.get('/health', async (req, res) => {
     // Simple connection test
     const result = await pool.query('SELECT 1 as test');
     
+    // Test meals table access
+    const tableTest = await pool.query('SELECT COUNT(*) as count FROM meals LIMIT 1');
+    
     res.json({
       message: 'Meals API is healthy',
       timestamp: new Date().toISOString(),
       origin: req.headers.origin,
-      database: 'connected'
+      database: 'connected',
+      mealsTable: 'accessible',
+      mealCount: tableTest.rows[0].count
     });
   } catch (error) {
     console.error('❌ MealsSupabase: Health check error:', error);
@@ -178,11 +184,67 @@ router.post('/', authenticateToken, async (req, res) => {
 
     const pool = getSupabasePool();
 
+    // Validate basic required fields
+    if (!mealDate || !mealType || !description) {
+      console.error('❌ MealsSupabase: Missing basic required fields:', {
+        mealDate, mealType, description
+      });
+      return res.status(400).json({ 
+        error: 'Missing required fields',
+        details: 'Meal date, type, and description are required'
+      });
+    }
+
+    let finalCalories, finalProtein, finalCarbs, finalFat, finalFiber, finalSugar, finalSodium;
+
+    // Check if nutrition fields are provided (manual entry) or need AI analysis
+    if (calories !== undefined && protein !== undefined && carbs !== undefined && 
+        fat !== undefined && fiber !== undefined && sugar !== undefined && sodium !== undefined) {
+      // Manual entry - use provided values
+      console.log('🔧 MealsSupabase: Using manual nutrition values');
+      finalCalories = parseInt(calories) || 0;
+      finalProtein = parseFloat(protein) || 0;
+      finalCarbs = parseFloat(carbs) || 0;
+      finalFat = parseFloat(fat) || 0;
+      finalFiber = parseFloat(fiber) || 0;
+      finalSugar = parseFloat(sugar) || 0;
+      finalSodium = parseFloat(sodium) || 0;
+    } else {
+      // AI analysis needed - analyze the meal description
+      console.log('🔧 MealsSupabase: Analyzing meal with AI:', description);
+      try {
+        const aiAnalysis = await analyzeMeal(description);
+        console.log('🔧 MealsSupabase: AI analysis result:', aiAnalysis);
+        
+        finalCalories = aiAnalysis.calories;
+        finalProtein = aiAnalysis.protein;
+        finalCarbs = aiAnalysis.carbs;
+        finalFat = aiAnalysis.fat;
+        finalFiber = aiAnalysis.fiber;
+        finalSugar = aiAnalysis.sugar;
+        finalSodium = aiAnalysis.sodium;
+        
+        console.log('🔧 MealsSupabase: Using AI-analyzed nutrition values');
+      } catch (aiError) {
+        console.error('❌ MealsSupabase: AI analysis failed:', aiError);
+        return res.status(500).json({ 
+          error: 'Failed to analyze meal',
+          details: 'AI analysis failed. Please try manual entry or check your OpenAI API key.'
+        });
+      }
+    }
+
+    console.log('🔧 MealsSupabase: Inserting meal with data:', {
+      userId, mealDate, mealType, title, description,
+      calories: finalCalories, protein: finalProtein, carbs: finalCarbs,
+      fat: finalFat, fiber: finalFiber, sugar: finalSugar, sodium: finalSodium
+    });
+
     const result = await pool.query(
       `INSERT INTO meals (user_id, meal_date, meal_type, title, description, calories, protein, carbs, fat, fiber, sugar, sodium)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
-      [userId, mealDate, mealType, title, description, calories, protein, carbs, fat, fiber, sugar, sodium]
+      [userId, mealDate, mealType, title, description, finalCalories, finalProtein, finalCarbs, finalFat, finalFiber, finalSugar, finalSodium]
     );
 
     const meal = result.rows[0];
@@ -204,8 +266,28 @@ router.post('/', authenticateToken, async (req, res) => {
       createdAt: meal.created_at
     });
   } catch (error) {
-    console.error('Add meal error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('❌ MealsSupabase: Add meal error:', error);
+    console.error('❌ MealsSupabase: Error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      constraint: error.constraint,
+      stack: error.stack
+    });
+    
+    // Provide more specific error messages
+    if (error.code === '23505') { // Unique constraint violation
+      res.status(409).json({ error: 'Meal already exists' });
+    } else if (error.code === '23503') { // Foreign key violation
+      res.status(400).json({ error: 'Invalid user or meal data' });
+    } else if (error.code === '23502') { // Not null violation
+      res.status(400).json({ error: 'Missing required fields' });
+    } else {
+      res.status(500).json({ 
+        error: 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? error.message : 'Failed to add meal'
+      });
+    }
   }
 });
 
