@@ -176,7 +176,6 @@ router.post('/', authenticateToken, async (req, res) => {
       sodium
     } = req.body;
 
-    const userId = req.user.userId;
     const pool = getSupabasePool();
 
     const result = await pool.query(

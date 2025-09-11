@@ -15,6 +15,6 @@ services:
     autoDeploy: true
     branch: main
     rootDir: .
-    # Updated: Fixed meals and favorites API endpoints with enhanced logging - 2025-01-05
-    # Force deployment trigger - version 1.0.4
-    # Deployment ID: 20250105-003
+    # Updated: Fixed duplicate userId declaration syntax error - 2025-01-05
+    # Force deployment trigger - version 1.0.5
+    # Deployment ID: 20250105-004

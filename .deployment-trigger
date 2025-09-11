@@ -1,8 +1,8 @@
 # Deployment trigger file
 # This file is used to trigger Render auto-deployment
-# Version: 1.0.4
+# Version: 1.0.5
 # Date: 2025-01-05
-# Changes: Fixed meals and favorites API endpoints with enhanced logging
+# Changes: Fixed duplicate userId declaration syntax error
 
-deployment_id: 20250105-003
-timestamp: 2025-01-05T15:00:00Z
+deployment_id: 20250105-004
+timestamp: 2025-01-05T16:00:00Z

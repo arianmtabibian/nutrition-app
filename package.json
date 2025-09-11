@@ -1,7 +1,7 @@
 {
   "name": "nutrition-app",
-  "version": "1.0.4",
-  "description": "Nutrition tracking app - Fixed meals and favorites API endpoints with enhanced logging",
+  "version": "1.0.5",
+  "description": "Nutrition tracking app - Fixed duplicate userId declaration syntax error",
   "scripts": {
     "start": "cd server && npm start",
     "build": "cd server && npm install",

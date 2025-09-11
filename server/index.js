@@ -162,7 +162,7 @@ async function startServer() {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🗄️  Database: Supabase PostgreSQL`);
-      console.log(`📅 Deployment: ${new Date().toISOString()} - Fixed meals and favorites API endpoints with enhanced logging`);
+      console.log(`📅 Deployment: ${new Date().toISOString()} - Fixed duplicate userId declaration syntax error`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

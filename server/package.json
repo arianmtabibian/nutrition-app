@@ -1,7 +1,7 @@
 {
   "name": "nutrition-backend",
-  "version": "1.0.4",
-  "description": "Nutrition tracking app backend - Fixed meals and favorites API endpoints with enhanced logging",
+  "version": "1.0.5",
+  "description": "Nutrition tracking app backend - Fixed duplicate userId declaration syntax error",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
