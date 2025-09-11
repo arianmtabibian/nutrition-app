@@ -6,8 +6,8 @@ import { generateMealSummary } from '../utils/mealSummary';
 
 interface Meal {
   id: number;
-  meal_date: string;
-  meal_type: string;
+  mealDate: string;
+  mealType: string;
   description: string;
   calories: number;
   protein: number;
@@ -16,7 +16,7 @@ interface Meal {
   fiber: number;
   sugar: number;
   sodium: number;
-  created_at: string;
+  createdAt: string;
 }
 
 const Inputs: React.FC = () => {
@@ -83,7 +83,7 @@ const Inputs: React.FC = () => {
     setLoading(true);
     try {
       const response = await mealsAPI.getByDate(selectedDate);
-      setMeals(response.data.meals || []);
+      setMeals(response.data || []);
     } catch (error) {
       console.error('Failed to load meals:', error);
     } finally {
@@ -105,7 +105,7 @@ const Inputs: React.FC = () => {
 
   const handleSelectFromFavorites = (favorite: any) => {
     setSelectedSavedMeal(favorite);
-    setQuickAddMealType(favorite.meal_type); // Default to the saved meal type
+    setQuickAddMealType(favorite.mealType); // Default to the saved meal type
     setShowMealTypeSelector(true);
   };
 
@@ -115,8 +115,8 @@ const Inputs: React.FC = () => {
     setAddingMeal(true);
     try {
       const mealData = {
-        meal_date: selectedDate,
-        meal_type: quickAddMealType,
+        mealDate: selectedDate,
+        mealType: quickAddMealType,
         description: selectedSavedMeal.description,
         calories: selectedSavedMeal.calories || 0,
         protein: selectedSavedMeal.protein || 0,
@@ -168,8 +168,8 @@ const Inputs: React.FC = () => {
     
     try {
       let mealData: any = {
-        meal_date: selectedDate,
-        meal_type: newMeal.meal_type,
+        mealDate: selectedDate,
+        mealType: newMeal.meal_type,
         description: newMeal.description
       };
 
@@ -729,10 +729,10 @@ const Inputs: React.FC = () => {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <div className="text-2xl">{getMealTypeIcon(meal.meal_type)}</div>
+                        <div className="text-2xl">{getMealTypeIcon(meal.mealType)}</div>
                         <div>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getMealTypeColor(meal.meal_type)}`}>
-                            {meal.meal_type.charAt(0).toUpperCase() + meal.meal_type.slice(1)}
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getMealTypeColor(meal.mealType)}`}>
+                            {meal.mealType.charAt(0).toUpperCase() + meal.mealType.slice(1)}
                           </span>
                         </div>
                       </div>
@@ -848,15 +848,15 @@ const Inputs: React.FC = () => {
                   // View Mode
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="text-2xl">{getMealTypeIcon(meal.meal_type)}</div>
+                      <div className="text-2xl">{getMealTypeIcon(meal.mealType)}</div>
                       
                       <div>
                         <div className="flex items-center space-x-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getMealTypeColor(meal.meal_type)}`}>
-                            {meal.meal_type.charAt(0).toUpperCase() + meal.meal_type.slice(1)}
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getMealTypeColor(meal.mealType)}`}>
+                            {meal.mealType.charAt(0).toUpperCase() + meal.mealType.slice(1)}
                           </span>
                           <span className="text-sm text-gray-500">
-                            {safeFormatDate(meal.created_at, 'h:mm a')}
+                            {safeFormatDate(meal.createdAt, 'h:mm a')}
                           </span>
                         </div>
                         <p className="text-gray-900 font-medium">

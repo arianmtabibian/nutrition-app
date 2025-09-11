@@ -29,8 +29,8 @@ interface DailyNutrition {
 
 interface MealData {
   id: number;
-  meal_date: string;
-  meal_type: string;
+  mealDate: string;
+  mealType: string;
   description: string;
   calories: number;
   protein: number;
@@ -39,7 +39,7 @@ interface MealData {
   fiber: number;
   sugar: number;
   sodium: number;
-  created_at: string;
+  createdAt: string;
 }
 
 // Weight Analysis Component
@@ -63,11 +63,11 @@ const WeightAnalysis: React.FC<{
       
       // Get meals for the past week
       const response = await mealsAPI.getByRange(startDate, endDate);
-      const meals = response.data.meals || [];
+      const meals = response.data || [];
       
       // Group meals by date and calculate daily totals
       const dailyTotals = meals.reduce((acc: any, meal: any) => {
-        const date = meal.meal_date;
+        const date = meal.mealDate;
         if (!acc[date]) {
           acc[date] = { calories: 0, protein: 0 };
         }
@@ -573,7 +573,7 @@ const Overview: React.FC = () => {
         const dateStr = format(day, 'yyyy-MM-dd');
         try {
           const response = await mealsAPI.getByDate(dateStr);
-          const meals = response.data.meals || [];
+          const meals = response.data || [];
           
           const dayTotals = meals.reduce((acc: any, meal: any) => {
             acc.calories += meal.calories || 0;
@@ -1484,16 +1484,16 @@ const Overview: React.FC = () => {
                   // View Mode
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="text-2xl">{getMealTypeIcon(meal.meal_type)}</div>
+                      <div className="text-2xl">{getMealTypeIcon(meal.mealType)}</div>
                       
                       <div>
                         <div className="flex items-center space-x-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getMealTypeColor(meal.meal_type)}`}>
-                            {meal.meal_type.charAt(0).toUpperCase() + meal.meal_type.slice(1)}
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getMealTypeColor(meal.mealType)}`}>
+                            {meal.mealType.charAt(0).toUpperCase() + meal.mealType.slice(1)}
                           </span>
                           <span className="text-sm text-gray-500">
                             <Clock className="w-3 h-3 inline mr-1" />
-                            {safeFormatDate(meal.created_at, 'h:mm a')}
+                            {safeFormatDate(meal.createdAt, 'h:mm a')}
                           </span>
                         </div>
                         <p className="text-gray-900 font-medium">{generateMealSummary(meal.description)}</p>
