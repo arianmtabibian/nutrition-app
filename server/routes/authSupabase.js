@@ -100,6 +100,8 @@ router.post('/debug/fix-null-names', async (req, res) => {
 
 // Register endpoint
 router.post('/register', async (req, res) => {
+  const startTime = Date.now();
+  
   try {
     const { 
       email, 
@@ -119,6 +121,7 @@ router.post('/register', async (req, res) => {
     console.log('🔧 Registration request:', { email, firstName, lastName, first_name, last_name, username });
     console.log('🔧 Final names:', { finalFirstName, finalLastName });
 
+    // Quick validation
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
@@ -129,21 +132,30 @@ router.post('/register', async (req, res) => {
 
     const pool = getSupabasePool();
 
-    // Check if user already exists
-    const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    // Check if user already exists (with timeout)
+    const existingUser = await Promise.race([
+      pool.query('SELECT id FROM users WHERE email = $1', [email]),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Database query timeout')), 5000))
+    ]);
     
     if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: 'User already exists' });
+      return res.status(409).json({ error: 'User already exists' });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash password (with timeout)
+    const hashedPassword = await Promise.race([
+      bcrypt.hash(password, 10),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Password hashing timeout')), 3000))
+    ]);
 
-    // Create user
-    const result = await pool.query(
-      'INSERT INTO users (email, password_hash, first_name, last_name, username) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, first_name, last_name, username',
-      [email, hashedPassword, finalFirstName, finalLastName, username]
-    );
+    // Create user (with timeout)
+    const result = await Promise.race([
+      pool.query(
+        'INSERT INTO users (email, password_hash, first_name, last_name, username) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, first_name, last_name, username',
+        [email, hashedPassword, finalFirstName, finalLastName, username]
+      ),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('User creation timeout')), 10000))
+    ]);
 
     const user = result.rows[0];
 
@@ -154,7 +166,8 @@ router.post('/register', async (req, res) => {
       { expiresIn: '24h' }
     );
 
-    console.log(`✅ New user registered: ${email} with name: ${finalFirstName} ${finalLastName}`);
+    const endTime = Date.now();
+    console.log(`✅ New user registered: ${email} with name: ${finalFirstName} ${finalLastName} in ${endTime - startTime}ms`);
 
     res.status(201).json({
       message: 'User created successfully',
@@ -168,8 +181,16 @@ router.post('/register', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    const endTime = Date.now();
+    console.error(`❌ Registration error after ${endTime - startTime}ms:`, error);
+    
+    if (error.message?.includes('timeout')) {
+      res.status(408).json({ error: 'Registration timed out. Please try again.' });
+    } else if (error.code === '23505') { // PostgreSQL unique constraint violation
+      res.status(409).json({ error: 'User already exists' });
+    } else {
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
   }
 });
 

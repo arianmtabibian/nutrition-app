@@ -586,10 +586,10 @@ const Onboarding: React.FC = () => {
         
         console.log('📋 Onboarding: Filtered profile data for API:', filteredProfileData);
         
-        // Update profile with collected data (with retry mechanism)
+        // Update profile with collected data (with enhanced retry mechanism)
         let response;
         let retryCount = 0;
-        const maxRetries = 2;
+        const maxRetries = 3; // Increased retries
         
         while (retryCount <= maxRetries) {
           try {
@@ -613,8 +613,12 @@ const Onboarding: React.FC = () => {
               }
             }
             
-            // Wait before retrying (exponential backoff)
-            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+            // Wait before retrying (exponential backoff with jitter)
+            const baseDelay = 1000 * Math.pow(2, retryCount - 1); // 1s, 2s, 4s
+            const jitter = Math.random() * 1000; // Add up to 1s of jitter
+            const delay = Math.min(baseDelay + jitter, 5000); // Max 5s delay
+            console.log(`📋 Onboarding: Waiting ${Math.round(delay)}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
           }
         }
         
@@ -645,7 +649,8 @@ const Onboarding: React.FC = () => {
         const isNetworkError = error.code === 'ERR_NETWORK' || 
                               error.code === 'ERR_FAILED' || 
                               error.message?.includes('Network Error') ||
-                              error.message?.includes('timeout');
+                              error.message?.includes('timeout') ||
+                              error.message?.includes('timed out');
         
         if (isNetworkError) {
           // Server is down - still allow user to proceed with cached data

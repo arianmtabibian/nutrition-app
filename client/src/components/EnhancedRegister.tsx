@@ -106,18 +106,20 @@ const EnhancedRegister: React.FC = () => {
     setRegistrationStatus('Connecting to server...');
     
     try {
-      // Add progress updates
-      setTimeout(() => {
-        if (loading) setRegistrationStatus('Creating your account...');
-      }, 2000);
-      
-      setTimeout(() => {
-        if (loading) setRegistrationStatus('Setting up your profile...');
-      }, 5000);
-      
-      setTimeout(() => {
-        if (loading) setRegistrationStatus('Almost done, finalizing registration...');
-      }, 10000);
+      // Add progress updates with retry awareness
+      const progressUpdates = [
+        { delay: 2000, message: 'Creating your account...' },
+        { delay: 5000, message: 'Setting up your profile...' },
+        { delay: 10000, message: 'Almost done, finalizing registration...' },
+        { delay: 15000, message: 'Server is responding slowly, please wait...' },
+        { delay: 20000, message: 'Still working on it, almost there...' }
+      ];
+
+      progressUpdates.forEach(({ delay, message }) => {
+        setTimeout(() => {
+          if (loading) setRegistrationStatus(message);
+        }, delay);
+      });
 
       await register(
         formData.email,
@@ -129,11 +131,26 @@ const EnhancedRegister: React.FC = () => {
       
       setRegistrationStatus('Account created successfully! Redirecting...');
       
-      // Redirect to onboarding after successful registration
-      navigate('/onboarding');
+      // Small delay to show success message
+      setTimeout(() => {
+        navigate('/onboarding');
+      }, 1000);
+      
     } catch (error: any) {
       console.error('Registration error in form:', error);
-      setError(error.message || 'Registration failed');
+      
+      // Provide more specific error messages
+      let errorMessage = error.message || 'Registration failed';
+      
+      if (errorMessage.includes('timed out')) {
+        errorMessage = 'Registration timed out. The server is responding slowly. Please try again in a moment.';
+      } else if (errorMessage.includes('CORS_ERROR')) {
+        errorMessage = 'Connection issue. Please check your internet connection and try again.';
+      } else if (errorMessage.includes('already exists')) {
+        errorMessage = 'An account with this email already exists. Please try logging in instead.';
+      }
+      
+      setError(errorMessage);
       setRegistrationStatus('');
     } finally {
       setLoading(false);
@@ -455,7 +472,23 @@ const EnhancedRegister: React.FC = () => {
 
               {error && (
                 <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
-                  {error}
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-1">
+                      {error}
+                    </div>
+                    {error.includes('timed out') || error.includes('slow') && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setError('');
+                          handleSubmit(e as any);
+                        }}
+                        className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors"
+                      >
+                        Retry
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 

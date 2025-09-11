@@ -211,94 +211,124 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('🔐 API Base URL:', api.defaults.baseURL);
       console.log('🔐 Network status:', navigator.onLine ? 'Online' : 'Offline');
       
-      // Add timeout and better error handling for registration
-      const startTime = Date.now();
-      let response;
+      // Implement retry mechanism with exponential backoff
+      const maxRetries = 3;
+      let lastError: any = null;
       
-      try {
-        // Primary attempt with axios - use shorter timeout for registration
-        console.log('🔐 Attempting registration with 15s timeout...');
-        
-        response = await api.post('/api/auth/register', { 
-          email, 
-          password, 
-          first_name, 
-          last_name, 
-          username 
-        }, {
-          timeout: 15000 // 15 second timeout for registration
-        });
-      } catch (axiosError: any) {
-        console.warn('🔐 Axios registration failed:', axiosError);
-        
-        // Check if it's a CORS error
-        if (axiosError.message?.includes('CORS') || axiosError.code === 'ERR_NETWORK') {
-          throw new Error('CORS_ERROR: Unable to connect to server. Please check your internet connection and try again.');
-        }
-        
-        // Fallback with direct fetch for other errors
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-          console.log('🔐 Trying direct fetch as fallback...');
-          const fetchResponse = await fetch(`${api.defaults.baseURL}/api/auth/register`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password, first_name, last_name, username }),
-            signal: AbortSignal.timeout(20000) // 20 second timeout for fetch
+          console.log(`🔐 Registration attempt ${attempt}/${maxRetries}...`);
+          
+          const startTime = Date.now();
+          let response;
+          
+          // Try axios first with progressive timeout
+          const timeout = Math.min(10000 + (attempt * 5000), 25000); // 10s, 15s, 20s, max 25s
+          console.log(`🔐 Using ${timeout}ms timeout for attempt ${attempt}`);
+          
+          try {
+            response = await api.post('/api/auth/register', { 
+              email, 
+              password, 
+              first_name, 
+              last_name, 
+              username 
+            }, {
+              timeout: timeout
+            });
+          } catch (axiosError: any) {
+            console.warn(`🔐 Axios registration attempt ${attempt} failed:`, axiosError.message);
+            
+            // Check if it's a CORS error
+            if (axiosError.message?.includes('CORS') || axiosError.code === 'ERR_NETWORK') {
+              throw new Error('CORS_ERROR: Unable to connect to server. Please check your internet connection and try again.');
+            }
+            
+            // Fallback with direct fetch for other errors
+            console.log(`🔐 Trying direct fetch fallback for attempt ${attempt}...`);
+            const fetchResponse = await fetch(`${api.defaults.baseURL}/api/auth/register`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ email, password, first_name, last_name, username }),
+              signal: AbortSignal.timeout(timeout + 5000) // Add 5s buffer for fetch
+            });
+            
+            if (!fetchResponse.ok) {
+              const errorText = await fetchResponse.text();
+              let errorData;
+              try {
+                errorData = JSON.parse(errorText);
+              } catch {
+                errorData = { error: errorText };
+              }
+              throw new Error(`HTTP ${fetchResponse.status}: ${errorData.error || fetchResponse.statusText}`);
+            }
+            
+            const data = await fetchResponse.json();
+            response = { data };
+          }
+          
+          const endTime = Date.now();
+          console.log(`🔐 Registration attempt ${attempt} completed in ${endTime - startTime}ms`);
+          
+          // If we get here, registration was successful
+          console.log('🔐 Registration response:', response.data);
+          
+          const { token, user: userData } = response.data;
+          
+          if (!token || !userData) {
+            console.error('🔐 Invalid registration response - missing token or user data');
+            throw new Error('Invalid response from server');
+          }
+          
+          console.log('🔐 Storing auth data for new user:', userData);
+          
+          // Store authentication data using the new persistence system
+          storeAuthData(token, userData);
+          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          
+          setUser({
+            id: userData.id,
+            email: userData.email,
+            first_name: userData.first_name,
+            last_name: userData.last_name,
+            username: userData.username,
+            profile_picture: userData.profile_picture
           });
           
-          if (!fetchResponse.ok) {
-            const errorText = await fetchResponse.text();
-            let errorData;
-            try {
-              errorData = JSON.parse(errorText);
-            } catch {
-              errorData = { error: errorText };
-            }
-            throw new Error(`HTTP ${fetchResponse.status}: ${errorData.error || fetchResponse.statusText}`);
+          console.log('🔐 Registration successful! User logged in:', userData.email);
+          return; // Success - exit the retry loop
+          
+        } catch (attemptError: any) {
+          lastError = attemptError;
+          console.error(`🔐 Registration attempt ${attempt} failed:`, attemptError.message);
+          
+          // Don't retry for certain errors
+          if (attemptError.message?.includes('CORS_ERROR') || 
+              attemptError.response?.status === 400 || 
+              attemptError.response?.status === 409) {
+            throw attemptError; // Don't retry for client errors
           }
           
-          const data = await fetchResponse.json();
-          response = { data };
-        } catch (fetchError: any) {
-          if (fetchError.message?.includes('CORS')) {
-            throw new Error('CORS_ERROR: Server is not accepting requests from this domain. Please contact support.');
+          // If this is the last attempt, throw the error
+          if (attempt === maxRetries) {
+            break;
           }
-          throw fetchError;
+          
+          // Wait before retrying (exponential backoff)
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // 1s, 2s, 4s, max 5s
+          console.log(`🔐 Waiting ${delay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
       
-      const endTime = Date.now();
-      console.log(`🔐 Registration request completed in ${endTime - startTime}ms`);
+      // If we get here, all retries failed
+      throw lastError;
       
-      console.log('🔐 Registration response:', response.data);
-      
-      const { token, user: userData } = response.data;
-      
-      if (!token || !userData) {
-        console.error('🔐 Invalid registration response - missing token or user data');
-        throw new Error('Invalid response from server');
-      }
-      
-      console.log('🔐 Storing auth data for new user:', userData);
-      
-      // Store authentication data using the new persistence system
-      storeAuthData(token, userData);
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      
-      setUser({
-        id: userData.id,
-        email: userData.email,
-        first_name: userData.first_name,
-        last_name: userData.last_name,
-        username: userData.username,
-        profile_picture: userData.profile_picture
-      });
-      
-      console.log('🔐 Registration successful! User logged in:', userData.email);
     } catch (error: any) {
-      console.error('🔐 Registration error:', error);
+      console.error('🔐 Registration error after all retries:', error);
       console.error('🔐 Error details:', {
         message: error.message,
         code: error.code,
@@ -308,8 +338,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         config: error.config?.timeout
       });
       
-      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-        throw new Error('Registration timed out. The server might be slow to respond. Please try again in a moment.');
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout') || error.message?.includes('timed out')) {
+        throw new Error('Registration timed out after multiple attempts. The server might be slow to respond. Please try again in a moment.');
       } else if (error.response?.status === 400) {
         throw new Error(error.response?.data?.error || 'Invalid registration data. Please check your information.');
       } else if (error.response?.status === 409) {
@@ -320,6 +350,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('No internet connection. Please check your network.');
       } else if (error.code === 'NETWORK_ERROR' || error.message?.includes('Network Error')) {
         throw new Error('Network connection failed. Please check your internet connection and try again.');
+      } else if (error.message?.includes('CORS_ERROR')) {
+        throw new Error('Server connection issue. Please check your internet connection and try again.');
       } else {
         throw new Error(error.response?.data?.error || error.message || 'Registration failed. Please try again.');
       }
