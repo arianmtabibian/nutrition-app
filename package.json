@@ -1,7 +1,7 @@
 {
   "name": "nutrition-app",
-  "version": "1.0.9",
-  "description": "Nutrition tracking app - Fixed posts persistence in Supabase",
+  "version": "1.0.10",
+  "description": "Nutrition tracking app - Fixed meal creation API endpoint",
   "scripts": {
     "start": "cd server && npm start",
     "build": "cd server && npm install",

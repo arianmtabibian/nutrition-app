@@ -1,8 +1,8 @@
 # Deployment trigger file
 # This file is used to trigger Render auto-deployment
-# Version: 1.0.9
+# Version: 1.0.10
 # Date: 2025-01-05
-# Changes: Fixed posts persistence in Supabase
+# Changes: Fixed meal creation API endpoint
 
-deployment_id: 20250105-008
-timestamp: 2025-01-05T20:00:00Z
+deployment_id: 20250105-009
+timestamp: 2025-01-05T21:00:00Z

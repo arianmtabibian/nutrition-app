@@ -15,6 +15,6 @@ services:
     autoDeploy: true
     branch: main
     rootDir: .
-    # Updated: Fixed posts persistence in Supabase - 2025-01-05
-    # Force deployment trigger - version 1.0.9
-    # Deployment ID: 20250105-008
+    # Updated: Fixed meal creation API endpoint - 2025-01-05
+    # Force deployment trigger - version 1.0.10
+    # Deployment ID: 20250105-009

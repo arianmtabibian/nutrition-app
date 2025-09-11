@@ -232,7 +232,8 @@ router.post('/', authenticateToken, async (req, res) => {
         if (aiError.message.includes('API key not configured')) {
           return res.status(400).json({ 
             error: 'AI analysis unavailable',
-            details: 'OpenAI API key not configured. Please use manual entry to add your meal with nutrition values.'
+            details: 'OpenAI API key not configured. Please use manual entry to add your meal with nutrition values.',
+            suggestion: 'Fill in the nutrition values manually using the "Add Meal Manually" button.'
           });
         }
         

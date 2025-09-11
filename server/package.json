@@ -1,7 +1,7 @@
 {
   "name": "nutrition-backend",
-  "version": "1.0.9",
-  "description": "Nutrition tracking app backend - Fixed posts persistence in Supabase",
+  "version": "1.0.10",
+  "description": "Nutrition tracking app backend - Fixed meal creation API endpoint",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

@@ -3,7 +3,7 @@ import { clearOnboardingCompletion } from '../utils/onboardingUtils';
 
 // Create axios instance with timeout for better performance
 export const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'https://nutrition-back-jtf3.onrender.com',
+  baseURL: process.env.REACT_APP_API_URL || 'https://nutrition-backend-9k3a.onrender.com',
   timeout: 30000, // 30 second timeout for post creation with images
   headers: {
     'Content-Type': 'application/json',
