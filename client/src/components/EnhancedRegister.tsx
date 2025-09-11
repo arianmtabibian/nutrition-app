@@ -86,8 +86,7 @@ const EnhancedRegister: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const performRegistration = async () => {
     setError('');
     setRegistrationStatus('');
 
@@ -156,6 +155,11 @@ const EnhancedRegister: React.FC = () => {
       setLoading(false);
       setRegistrationStatus('');
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await performRegistration();
   };
 
   const handleSocialLogin = (provider: string) => {
@@ -476,12 +480,12 @@ const EnhancedRegister: React.FC = () => {
                     <div className="flex-1">
                       {error}
                     </div>
-                    {error.includes('timed out') || error.includes('slow') && (
+                    {(error.includes('timed out') || error.includes('slow')) && (
                       <button
                         type="button"
                         onClick={() => {
                           setError('');
-                          handleSubmit(e as any);
+                          performRegistration();
                         }}
                         className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors"
                       >
