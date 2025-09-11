@@ -227,6 +227,15 @@ router.post('/', authenticateToken, async (req, res) => {
         console.log('🔧 MealsSupabase: Using AI-analyzed nutrition values');
       } catch (aiError) {
         console.error('❌ MealsSupabase: AI analysis failed:', aiError);
+        
+        // Check if it's an API key issue
+        if (aiError.message.includes('API key not configured')) {
+          return res.status(400).json({ 
+            error: 'AI analysis unavailable',
+            details: 'OpenAI API key not configured. Please use manual entry to add your meal with nutrition values.'
+          });
+        }
+        
         return res.status(500).json({ 
           error: 'Failed to analyze meal',
           details: 'AI analysis failed. Please try manual entry or check your OpenAI API key.'

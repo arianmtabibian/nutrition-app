@@ -15,6 +15,6 @@ services:
     autoDeploy: true
     branch: main
     rootDir: .
-    # Updated: Fixed AI meal analysis integration - 2025-01-05
-    # Force deployment trigger - version 1.0.7
-    # Deployment ID: 20250105-006
+    # Updated: Fixed OpenAI API key error handling - 2025-01-05
+    # Force deployment trigger - version 1.0.8
+    # Deployment ID: 20250105-007

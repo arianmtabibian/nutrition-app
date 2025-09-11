@@ -1,7 +1,7 @@
 {
   "name": "nutrition-backend",
-  "version": "1.0.7",
-  "description": "Nutrition tracking app backend - Fixed AI meal analysis integration",
+  "version": "1.0.8",
+  "description": "Nutrition tracking app backend - Fixed OpenAI API key error handling",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

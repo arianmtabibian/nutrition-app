@@ -162,7 +162,7 @@ async function startServer() {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🗄️  Database: Supabase PostgreSQL`);
-      console.log(`📅 Deployment: ${new Date().toISOString()} - Fixed AI meal analysis integration`);
+      console.log(`📅 Deployment: ${new Date().toISOString()} - Fixed OpenAI API key error handling`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

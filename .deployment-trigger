@@ -1,8 +1,8 @@
 # Deployment trigger file
 # This file is used to trigger Render auto-deployment
-# Version: 1.0.7
+# Version: 1.0.8
 # Date: 2025-01-05
-# Changes: Fixed AI meal analysis integration
+# Changes: Fixed OpenAI API key error handling
 
-deployment_id: 20250105-006
-timestamp: 2025-01-05T18:00:00Z
+deployment_id: 20250105-007
+timestamp: 2025-01-05T19:00:00Z

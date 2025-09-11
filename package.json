@@ -1,7 +1,7 @@
 {
   "name": "nutrition-app",
-  "version": "1.0.7",
-  "description": "Nutrition tracking app - Fixed AI meal analysis integration",
+  "version": "1.0.8",
+  "description": "Nutrition tracking app - Fixed OpenAI API key error handling",
   "scripts": {
     "start": "cd server && npm start",
     "build": "cd server && npm install",

@@ -1,12 +1,26 @@
 const OpenAI = require('openai');
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize OpenAI client only when needed
+let openai = null;
+
+const initializeOpenAI = () => {
+  if (!openai && process.env.OPENAI_API_KEY) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openai;
+};
 
 // Calculate maintenance calories using AI
 async function calculateMaintenanceCalories(userData) {
   try {
+    // Check if OpenAI API key is available
+    const openaiClient = initializeOpenAI();
+    if (!openaiClient) {
+      throw new Error('OpenAI API key not configured');
+    }
+
     const prompt = `
     Calculate the daily maintenance calories for a person with the following characteristics:
     - Weight: ${userData.weight} kg
@@ -28,7 +42,7 @@ async function calculateMaintenanceCalories(userData) {
     }
     `;
 
-    const completion = await openai.chat.completions.create({
+    const completion = await openaiClient.chat.completions.create({
       model: "gpt-4",
       messages: [
         {
@@ -61,6 +75,12 @@ async function calculateMaintenanceCalories(userData) {
 // Analyze meal and calculate nutrition using AI
 async function analyzeMeal(mealDescription) {
   try {
+    // Check if OpenAI API key is available
+    const openaiClient = initializeOpenAI();
+    if (!openaiClient) {
+      throw new Error('OpenAI API key not configured');
+    }
+
     const prompt = `
     Analyze the following meal and provide comprehensive nutritional information:
     
@@ -83,7 +103,7 @@ async function analyzeMeal(mealDescription) {
     Be realistic with your estimates. If the description is vague, provide reasonable values and explain your reasoning.
     All values should be positive numbers.`;
 
-    const completion = await openai.chat.completions.create({
+    const completion = await openaiClient.chat.completions.create({
       model: "gpt-4",
       messages: [
         {
