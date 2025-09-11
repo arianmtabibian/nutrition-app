@@ -1,7 +1,7 @@
 {
   "name": "nutrition-backend",
-  "version": "1.0.8",
-  "description": "Nutrition tracking app backend - Fixed OpenAI API key error handling",
+  "version": "1.0.9",
+  "description": "Nutrition tracking app backend - Fixed posts persistence in Supabase",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

@@ -1,7 +1,7 @@
 {
   "name": "nutrition-app",
-  "version": "1.0.8",
-  "description": "Nutrition tracking app - Fixed OpenAI API key error handling",
+  "version": "1.0.9",
+  "description": "Nutrition tracking app - Fixed posts persistence in Supabase",
   "scripts": {
     "start": "cd server && npm start",
     "build": "cd server && npm install",

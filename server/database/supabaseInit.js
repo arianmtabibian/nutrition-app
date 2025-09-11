@@ -119,7 +119,7 @@ const initializeSupabaseDatabase = async () => {
       )
     `);
 
-    // Favorites table
+    // Favorites table (for meals)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS favorites (
         id SERIAL PRIMARY KEY,
@@ -127,6 +127,17 @@ const initializeSupabaseDatabase = async () => {
         meal_id INTEGER NOT NULL REFERENCES meals(id) ON DELETE CASCADE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(user_id, meal_id)
+      )
+    `);
+
+    // Post bookmarks table (for social posts)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS post_bookmarks (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, post_id)
       )
     `);
 

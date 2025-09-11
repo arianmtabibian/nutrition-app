@@ -4,6 +4,37 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Health check endpoint for social API
+router.get('/health', async (req, res) => {
+  try {
+    console.log('🔧 SocialSupabase: Health check requested');
+    console.log('🔧 SocialSupabase: Request origin:', req.headers.origin);
+    
+    const pool = getSupabasePool();
+    
+    // Simple connection test
+    const result = await pool.query('SELECT 1 as test');
+    
+    // Test posts table access
+    const tableTest = await pool.query('SELECT COUNT(*) as count FROM posts LIMIT 1');
+    
+    res.json({
+      message: 'Social API is healthy',
+      timestamp: new Date().toISOString(),
+      origin: req.headers.origin,
+      database: 'connected',
+      postsTable: 'accessible',
+      postCount: tableTest.rows[0].count
+    });
+  } catch (error) {
+    console.error('❌ SocialSupabase: Health check error:', error);
+    res.status(500).json({ 
+      error: 'Social API health check failed',
+      details: error.message 
+    });
+  }
+});
+
 // Get all posts (feed) - both /posts and /feed should work
 router.get('/posts', authenticateToken, async (req, res) => {
   try {
@@ -21,7 +52,7 @@ router.get('/posts', authenticateToken, async (req, res) => {
         (SELECT COUNT(*) FROM likes WHERE post_id = p.id) as likes_count,
         (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments_count,
         EXISTS(SELECT 1 FROM likes WHERE post_id = p.id AND user_id = $3) as is_liked,
-        EXISTS(SELECT 1 FROM favorites WHERE post_id = p.id AND user_id = $3) as is_bookmarked
+        EXISTS(SELECT 1 FROM post_bookmarks WHERE post_id = p.id AND user_id = $3) as is_bookmarked
       FROM posts p
       JOIN users u ON p.user_id = u.id
       LEFT JOIN user_profiles up ON p.user_id = up.user_id
@@ -107,16 +138,31 @@ router.post('/posts', authenticateToken, async (req, res) => {
   try {
     const { content, imageUrl, mealId } = req.body;
     const userId = req.user.userId;
+    
+    console.log('🔧 SocialSupabase: Creating post for user:', userId);
+    console.log('🔧 SocialSupabase: Post data:', { content, imageUrl, mealId });
+    console.log('🔧 SocialSupabase: Request origin:', req.headers.origin);
+    
+    // Validate required fields
+    if (!content || !content.trim()) {
+      console.error('❌ SocialSupabase: Missing content');
+      return res.status(400).json({ 
+        error: 'Content is required',
+        details: 'Post content cannot be empty'
+      });
+    }
+    
     const pool = getSupabasePool();
 
     const result = await pool.query(
       `INSERT INTO posts (user_id, content, image_url, meal_id)
        VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [userId, content, imageUrl, mealId]
+      [userId, content.trim(), imageUrl, mealId]
     );
 
     const post = result.rows[0];
+    console.log('✅ SocialSupabase: Post created successfully:', post.id);
 
     res.status(201).json({
       id: post.id,
@@ -124,14 +170,34 @@ router.post('/posts', authenticateToken, async (req, res) => {
       content: post.content,
       imageUrl: post.image_url,
       mealId: post.meal_id,
-      likesCount: post.likes_count,
-      commentsCount: post.comments_count,
+      likesCount: post.likes_count || 0,
+      commentsCount: post.comments_count || 0,
       createdAt: post.created_at,
       updatedAt: post.updated_at
     });
   } catch (error) {
-    console.error('Create post error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('❌ SocialSupabase: Create post error:', error);
+    console.error('❌ SocialSupabase: Error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      constraint: error.constraint,
+      stack: error.stack
+    });
+    
+    // Provide more specific error messages
+    if (error.code === '23505') { // Unique constraint violation
+      res.status(409).json({ error: 'Post already exists' });
+    } else if (error.code === '23503') { // Foreign key violation
+      res.status(400).json({ error: 'Invalid user or meal data' });
+    } else if (error.code === '23502') { // Not null violation
+      res.status(400).json({ error: 'Missing required fields' });
+    } else {
+      res.status(500).json({ 
+        error: 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? error.message : 'Failed to create post'
+      });
+    }
   }
 });
 
@@ -175,19 +241,19 @@ router.post('/posts/:postId/favorite', authenticateToken, async (req, res) => {
     console.log('🔖 Bookmark request:', { postId, userId });
 
     // Check if already bookmarked
-    const existingFavorite = await pool.query(
-      'SELECT id FROM favorites WHERE user_id = $1 AND post_id = $2',
+    const existingBookmark = await pool.query(
+      'SELECT id FROM post_bookmarks WHERE user_id = $1 AND post_id = $2',
       [userId, postId]
     );
 
-    if (existingFavorite.rows.length > 0) {
+    if (existingBookmark.rows.length > 0) {
       // Remove bookmark
-      await pool.query('DELETE FROM favorites WHERE user_id = $1 AND post_id = $2', [userId, postId]);
+      await pool.query('DELETE FROM post_bookmarks WHERE user_id = $1 AND post_id = $2', [userId, postId]);
       console.log('✅ Post unbookmarked:', postId);
       res.json({ bookmarked: false, message: 'Post unbookmarked' });
     } else {
       // Add bookmark
-      await pool.query('INSERT INTO favorites (user_id, post_id) VALUES ($1, $2)', [userId, postId]);
+      await pool.query('INSERT INTO post_bookmarks (user_id, post_id) VALUES ($1, $2)', [userId, postId]);
       console.log('✅ Post bookmarked:', postId);
       res.json({ bookmarked: true, message: 'Post bookmarked' });
     }
