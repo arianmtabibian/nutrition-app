@@ -156,8 +156,8 @@ router.post('/posts', authenticateToken, async (req, res) => {
       content = req.body.content;
       imageUrl = req.body.imageUrl;
       mealId = req.body.mealId;
-      allowComments = req.body.allowComments === 'true';
-      hideLikeCount = req.body.hideLikeCount === 'true';
+      allowComments = req.body.allow_comments === 'true' || req.body.allowComments === 'true';
+      hideLikeCount = req.body.hide_like_count === 'true' || req.body.hideLikeCount === 'true';
     }
     
     // Validate required fields
@@ -195,6 +195,7 @@ router.post('/posts', authenticateToken, async (req, res) => {
     const user = userResult.rows[0];
 
     res.status(201).json({
+      postId: post.id,
       id: post.id,
       userId: post.user_id,
       content: post.content,

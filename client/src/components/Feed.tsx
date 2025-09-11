@@ -447,8 +447,8 @@ const Feed: React.FC = () => {
     try {
       const formData = new FormData();
       formData.append('content', instantPost.content);
-      formData.append('allow_comments', instantPost.allow_comments.toString());
-      formData.append('hide_like_count', instantPost.hide_like_count.toString());
+      formData.append('allowComments', instantPost.allow_comments.toString());
+      formData.append('hideLikeCount', instantPost.hide_like_count.toString());
     
     if (newPost.imageFile) {
       formData.append('image', newPost.imageFile);
