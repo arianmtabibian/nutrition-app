@@ -35,6 +35,27 @@ router.get('/health', async (req, res) => {
   }
 });
 
+// Test post creation endpoint
+router.post('/test-post', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const pool = getSupabasePool();
+    
+    console.log('🧪 Testing post creation for user:', userId);
+    
+    const result = await pool.query(
+      'INSERT INTO posts (user_id, content) VALUES ($1, $2) RETURNING *',
+      [userId, 'Test post from API']
+    );
+    
+    console.log('✅ Test post created:', result.rows[0]);
+    res.json({ success: true, post: result.rows[0] });
+  } catch (error) {
+    console.error('❌ Test post failed:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Get all posts (feed) - both /posts and /feed should work
 router.get('/posts', authenticateToken, async (req, res) => {
   try {
@@ -144,6 +165,7 @@ router.post('/posts', authenticateToken, async (req, res) => {
     console.log('🔧 SocialSupabase: Creating post for user:', userId);
     console.log('🔧 SocialSupabase: Request body:', req.body);
     console.log('🔧 SocialSupabase: Request origin:', req.headers.origin);
+    console.log('🔧 SocialSupabase: User from token:', req.user);
     
     // Handle both JSON and FormData
     let content, imageUrl, mealId, allowComments, hideLikeCount;
@@ -171,12 +193,28 @@ router.post('/posts', authenticateToken, async (req, res) => {
     
     const pool = getSupabasePool();
 
-    const result = await pool.query(
-      `INSERT INTO posts (user_id, content, image_url, meal_id, allow_comments, hide_like_count)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [userId, content.trim(), imageUrl, mealId, allowComments, hideLikeCount]
-    );
+    console.log('🔧 SocialSupabase: Attempting to insert post with values:', {
+      userId, content: content.trim(), imageUrl, mealId, allowComments, hideLikeCount
+    });
+
+    // Try with new columns first, fallback to old schema if they don't exist
+    let result;
+    try {
+      result = await pool.query(
+        `INSERT INTO posts (user_id, content, image_url, meal_id, allow_comments, hide_like_count)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING *`,
+        [userId, content.trim(), imageUrl, mealId, allowComments, hideLikeCount]
+      );
+    } catch (columnError) {
+      console.log('⚠️ New columns not found, using old schema:', columnError.message);
+      result = await pool.query(
+        `INSERT INTO posts (user_id, content, image_url, meal_id)
+         VALUES ($1, $2, $3, $4)
+         RETURNING *`,
+        [userId, content.trim(), imageUrl, mealId]
+      );
+    }
 
     const post = result.rows[0];
     console.log('✅ SocialSupabase: Post created successfully:', post.id);
@@ -201,8 +239,8 @@ router.post('/posts', authenticateToken, async (req, res) => {
       content: post.content,
       imageUrl: post.image_url,
       mealId: post.meal_id,
-      allowComments: post.allow_comments,
-      hideLikeCount: post.hide_like_count,
+      allowComments: post.allow_comments || true,
+      hideLikeCount: post.hide_like_count || false,
       likesCount: post.likes_count || 0,
       commentsCount: post.comments_count || 0,
       createdAt: post.created_at,
