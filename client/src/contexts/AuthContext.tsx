@@ -48,7 +48,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (authData && authData.user) {
         console.log('✅ Using cached user data - NO SERVER VERIFICATION');
-        setUser(authData.user);
+        // Ensure consistent field names for cached user data
+        const normalizedUser = {
+          ...authData.user,
+          first_name: authData.user.first_name || authData.user.firstName,
+          last_name: authData.user.last_name || authData.user.lastName
+        };
+        setUser(normalizedUser);
         api.defaults.headers.common['Authorization'] = `Bearer ${authData.token}`;
       } else {
         console.log('❌ No cached data');
@@ -167,8 +173,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser({
         id: userData.id,
         email: userData.email,
-        first_name: userData.first_name,
-        last_name: userData.last_name,
+        first_name: userData.first_name || userData.firstName,
+        last_name: userData.last_name || userData.lastName,
         username: userData.username,
         profile_picture: userData.profile_picture
       });
@@ -292,8 +298,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser({
             id: userData.id,
             email: userData.email,
-            first_name: userData.first_name,
-            last_name: userData.last_name,
+            first_name: userData.first_name || userData.firstName,
+            last_name: userData.last_name || userData.lastName,
             username: userData.username,
             profile_picture: userData.profile_picture
           });

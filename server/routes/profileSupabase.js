@@ -63,8 +63,8 @@ router.get('/', authenticateToken, async (req, res) => {
     const responseData = {
       id: user.id,
       email: user.email,
-      firstName: user.first_name,
-      lastName: user.last_name,
+      first_name: user.first_name,
+      last_name: user.last_name,
       username: user.username,
       profile: {
         profilePicture: profile.profile_picture,
@@ -128,8 +128,8 @@ router.get('/:userId', authenticateToken, async (req, res) => {
     res.json({
       id: user.id,
       email: user.email,
-      firstName: user.first_name,
-      lastName: user.last_name,
+      first_name: user.first_name,
+      last_name: user.last_name,
       username: user.username,
       profile: {
         profilePicture: profile.profile_picture,

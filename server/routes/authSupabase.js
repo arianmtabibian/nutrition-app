@@ -235,8 +235,8 @@ router.post('/login', async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
+        first_name: user.first_name,
+        last_name: user.last_name,
         username: user.username
       }
     });
@@ -262,8 +262,8 @@ router.get('/me', authenticateToken, async (req, res) => {
     res.json({
       id: user.id,
       email: user.email,
-      firstName: user.first_name,
-      lastName: user.last_name,
+      first_name: user.first_name,
+      last_name: user.last_name,
       username: user.username
     });
   } catch (error) {
