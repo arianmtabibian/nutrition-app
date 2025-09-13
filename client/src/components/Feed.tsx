@@ -503,8 +503,8 @@ const Feed: React.FC = () => {
         } catch (directError) {
           console.warn('⚠️ Direct fetch failed:', directError);
           console.error('Direct fetch error details:', {
-            message: directError.message,
-            stack: directError.stack
+            message: directError instanceof Error ? directError.message : 'Unknown error',
+            stack: directError instanceof Error ? directError.stack : undefined
           });
         }
       }
