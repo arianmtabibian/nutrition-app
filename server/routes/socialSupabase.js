@@ -164,17 +164,34 @@ router.post('/posts', authenticateToken, async (req, res) => {
     
     console.log('🔧 SocialSupabase: Creating post for user:', userId);
     console.log('🔧 SocialSupabase: Request body:', req.body);
+    console.log('🔧 SocialSupabase: Request headers:', req.headers);
     console.log('🔧 SocialSupabase: Request origin:', req.headers.origin);
     console.log('🔧 SocialSupabase: User from token:', req.user);
+    console.log('🔧 SocialSupabase: Has file upload:', !!req.file);
     
     // Handle both JSON and FormData
     let content, imageUrl, mealId, allowComments, hideLikeCount;
     
-    if (req.body.content) {
-      // JSON request
-      ({ content, imageUrl, mealId } = req.body);
+    // Check if we have a file upload (FormData)
+    if (req.file) {
+      console.log('🔧 SocialSupabase: Processing FormData with file upload');
+      console.log('🔧 SocialSupabase: File details:', {
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size
+      });
+      
+      // For now, we'll store the file info but not actually upload to cloud storage
+      // In a production app, you'd upload to AWS S3, Cloudinary, etc.
+      imageUrl = `uploaded_${Date.now()}_${req.file.originalname}`;
+      
+      // Extract FormData fields
+      content = req.body.content;
+      mealId = req.body.mealId;
+      allowComments = req.body.allow_comments === 'true' || req.body.allowComments === 'true';
+      hideLikeCount = req.body.hide_like_count === 'true' || req.body.hideLikeCount === 'true';
     } else {
-      // FormData request
+      // JSON request
       content = req.body.content;
       imageUrl = req.body.imageUrl;
       mealId = req.body.mealId;
@@ -185,9 +202,12 @@ router.post('/posts', authenticateToken, async (req, res) => {
     // Validate required fields
     if (!content || !content.trim()) {
       console.error('❌ SocialSupabase: Missing content');
+      console.error('❌ SocialSupabase: Content received:', content);
+      console.error('❌ SocialSupabase: Request body keys:', Object.keys(req.body));
       return res.status(400).json({ 
         error: 'Content is required',
-        details: 'Post content cannot be empty'
+        details: 'Post content cannot be empty',
+        received: { content, bodyKeys: Object.keys(req.body) }
       });
     }
     

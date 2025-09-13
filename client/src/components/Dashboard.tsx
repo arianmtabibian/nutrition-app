@@ -67,8 +67,8 @@ const Dashboard: React.FC = () => {
       // Create FormData for file upload
       const formData = new FormData();
       formData.append('content', newPost.content);
-      formData.append('allowComments', newPost.allowComments.toString());
-      formData.append('hideLikeCount', newPost.hideLikeCount.toString());
+      formData.append('allow_comments', newPost.allowComments.toString());
+      formData.append('hide_like_count', newPost.hideLikeCount.toString());
       
       if (newPost.imageFile) {
         formData.append('image', newPost.imageFile);

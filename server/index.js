@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const multer = require('multer');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authSupabase');
@@ -86,6 +87,25 @@ console.log('🌐 BULLETPROOF CORS: Configured for nutryra.com and development')
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Multer middleware for handling multipart/form-data (file uploads)
+const upload = multer({
+  storage: multer.memoryStorage(), // Store files in memory
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow images only
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
+
+// Apply multer to social routes for post creation
+app.use('/api/social/posts', upload.single('image'));
 
 // Routes - All using Supabase PostgreSQL
 app.use('/api/auth', authRoutes);
