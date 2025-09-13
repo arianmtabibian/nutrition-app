@@ -424,12 +424,9 @@ const Feed: React.FC = () => {
       _status: 'creating'
     };
 
-    // Show post immediately
-    console.log('⚡ Adding post to feed immediately for instant feedback');
-    setPosts(prevPosts => {
-      const postsArray = Array.isArray(prevPosts) ? prevPosts : [];
-      return [instantPost, ...postsArray];
-    });
+    // Save post locally for immediate display
+    console.log('⚡ Saving post locally for instant feedback');
+    savePostLocally(instantPost);
 
     // Reset form immediately for better UX
     setNewPost({
@@ -478,29 +475,23 @@ const Feed: React.FC = () => {
         });
       }
 
-      // Update the post in the feed with server data or keep as local
-      const finalPost = {
-        ...instantPost,
-        id: serverResponse?.postId || serverResponse?.post?.id || instantPost.id,
-        image_url: serverResponse?.imageUrl || serverResponse?.post?.image_url || null,
-        _status: serverSuccess ? 'saved' : 'local-only',
-        _serverSaved: serverSuccess
-      };
+      // Update the local post with server data
+      if (serverSuccess && serverResponse) {
+        const finalPost = {
+          ...instantPost,
+          id: serverResponse.postId || serverResponse.id || instantPost.id,
+          image_url: serverResponse.imageUrl || null,
+          _status: 'saved',
+          _serverSaved: true
+        };
 
-      // Update the existing post in the feed
-        setPosts(prevPosts => {
-          const postsArray = Array.isArray(prevPosts) ? prevPosts : [];
-        return postsArray.map(p => 
-          p.id === instantPost.id ? finalPost : p
-        );
-      });
-
-      // Save for persistence
-      savePostLocally(finalPost);
+        // Update the local post with server data
+        savePostLocally(finalPost);
+        console.log('🎉 Post updated with server data');
+      }
 
       if (serverSuccess) {
         console.log('🎉 POST SAVED TO SERVER SUCCESSFULLY');
-        window.dispatchEvent(new CustomEvent('postCreated', { detail: finalPost }));
       } else {
         console.log('📱 POST SAVED LOCALLY - Will sync when server available');
       }
@@ -510,7 +501,7 @@ const Feed: React.FC = () => {
       console.log('📱 Post remains local-only due to server issues');
     } finally {
       setCreatingPost(false);
-      console.log('✅ BULLETPROOF POST CREATION COMPLETED');
+      console.log('✅ Post creation completed');
     }
   };
 

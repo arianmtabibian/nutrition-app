@@ -106,8 +106,7 @@ const Dashboard: React.FC = () => {
         setNewPost({ content: '', imageFile: null, allowComments: true, hideLikeCount: false });
         setShowNewPostModal(false);
         
-        // Trigger a custom event to update the feed
-        window.dispatchEvent(new CustomEvent('postCreated', { detail: result }));
+        // Post created successfully
         
         // Don't navigate - let the user stay on current page
         console.log('🎉 Post created successfully from Dashboard!');
