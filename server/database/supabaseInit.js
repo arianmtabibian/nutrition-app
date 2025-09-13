@@ -13,8 +13,13 @@ const initializeSupabaseDatabase = async () => {
     
     // Test the connection with a simple query
     console.log('🔄 Testing database connection...');
-    await pool.query('SELECT 1 as test');
-    console.log('✅ Database connection successful');
+    if (pool) {
+      await pool.query('SELECT 1 as test');
+      console.log('✅ Database connection successful');
+    } else {
+      console.log('⚠️ No database connection available, skipping initialization');
+      return;
+    }
     
     // Users table
     await pool.query(`

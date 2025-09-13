@@ -238,8 +238,6 @@ router.post('/posts', authenticateToken, async (req, res) => {
       });
     }
     
-    const pool = getSupabasePool();
-
     console.log('🔧 SocialSupabase: Attempting to insert post with values:', {
       userId, content: content.trim(), imageUrl, mealId, allowComments, hideLikeCount
     });
