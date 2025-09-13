@@ -631,6 +631,7 @@ const SocialProfile: React.FC = () => {
         const axiosError = error as any;
         console.error('Response error:', axiosError.response?.status, axiosError.response?.data);
       }
+      alert('Failed to save post to database. Please check your connection and try again.');
     }
   };
 

@@ -474,6 +474,11 @@ const Feed: React.FC = () => {
         }
       } catch (apiError) {
         console.warn('⚠️ socialAPI failed:', apiError);
+        console.error('API Error details:', {
+          message: apiError.message,
+          status: apiError.response?.status,
+          data: apiError.response?.data
+        });
       }
 
       // Method 2: Direct fetch
@@ -497,6 +502,10 @@ const Feed: React.FC = () => {
           }
         } catch (directError) {
           console.warn('⚠️ Direct fetch failed:', directError);
+          console.error('Direct fetch error details:', {
+            message: directError.message,
+            stack: directError.stack
+          });
         }
       }
 
@@ -525,11 +534,13 @@ const Feed: React.FC = () => {
         window.dispatchEvent(new CustomEvent('postCreated', { detail: finalPost }));
       } else {
         console.log('📱 POST SAVED LOCALLY - Will sync when server available');
+        alert('Warning: Post was not saved to the database. It will only be visible locally and will disappear when you refresh the page.');
       }
 
     } catch (error) {
       console.error('💥 Background server save failed:', error);
-      // Don't show error to user - post is already visible
+      // Show error to user since post didn't save to database
+      alert('Failed to save post to database. The post is only visible locally and will not be permanent.');
       console.log('📱 Post remains local-only due to server issues');
     } finally {
       setCreatingPost(false);
