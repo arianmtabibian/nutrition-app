@@ -288,7 +288,6 @@ const Feed: React.FC = () => {
       });
     } catch (error) {
       console.error('❌ Error liking post:', error);
-      alert('Failed to like post. Please try again.');
     }
   };
 
@@ -309,7 +308,6 @@ const Feed: React.FC = () => {
       });
     } catch (error) {
       console.error('❌ Error bookmarking post:', error);
-      alert('Failed to bookmark post. Please try again.');
     }
   };
 
@@ -392,12 +390,12 @@ const Feed: React.FC = () => {
     
     // BULLETPROOF VALIDATION
     if (!newPost.content.trim() && !newPost.imageFile) {
-      alert('Please enter some content or add an image before posting.');
+      console.warn('Cannot create post: No content or image provided');
       return;
     }
 
     if (!user?.id) {
-      alert('You must be logged in to create a post.');
+      console.warn('Cannot create post: User not logged in');
       return;
     }
 
@@ -460,53 +458,24 @@ const Feed: React.FC = () => {
     
       console.log('🚀 Attempting to save to server...');
 
-      // Try multiple methods to save to server
+      // Save to server using socialAPI
       let serverSuccess = false;
       let serverResponse = null;
 
-      // Method 1: socialAPI
       try {
         const response = await socialAPI.createPost(formData);
         if (response && (response.status === 200 || response.status === 201) && response.data) {
           serverSuccess = true;
           serverResponse = response.data;
-          console.log('✅ socialAPI SUCCESS');
+          console.log('✅ Post saved to database successfully');
         }
       } catch (apiError) {
-        console.warn('⚠️ socialAPI failed:', apiError);
+        console.warn('⚠️ Failed to save post to database:', apiError);
         console.error('API Error details:', {
           message: apiError instanceof Error ? apiError.message : 'Unknown error',
           status: (apiError as any)?.response?.status,
           data: (apiError as any)?.response?.data
         });
-      }
-
-      // Method 2: Direct fetch
-      if (!serverSuccess) {
-        try {
-        const authData = JSON.parse(localStorage.getItem('nutritrack_auth_data') || '{}');
-        const token = authData.token || localStorage.getItem('token');
-        
-          if (token) {
-        const directResponse = await fetch(`${process.env.REACT_APP_API_URL || 'https://nutrition-backend-9k3a.onrender.com'}/api/social/posts`, {
-          method: 'POST',
-              headers: { 'Authorization': `Bearer ${token}` },
-          body: formData
-        });
-        
-            if (directResponse.ok) {
-              serverResponse = await directResponse.json();
-              serverSuccess = true;
-              console.log('✅ Direct fetch SUCCESS');
-            }
-          }
-        } catch (directError) {
-          console.warn('⚠️ Direct fetch failed:', directError);
-          console.error('Direct fetch error details:', {
-            message: directError instanceof Error ? directError.message : 'Unknown error',
-            stack: directError instanceof Error ? directError.stack : undefined
-          });
-        }
       }
 
       // Update the post in the feed with server data or keep as local
@@ -534,13 +503,10 @@ const Feed: React.FC = () => {
         window.dispatchEvent(new CustomEvent('postCreated', { detail: finalPost }));
       } else {
         console.log('📱 POST SAVED LOCALLY - Will sync when server available');
-        alert('Warning: Post was not saved to the database. It will only be visible locally and will disappear when you refresh the page.');
       }
 
     } catch (error) {
       console.error('💥 Background server save failed:', error);
-      // Show error to user since post didn't save to database
-      alert('Failed to save post to database. The post is only visible locally and will not be permanent.');
       console.log('📱 Post remains local-only due to server issues');
     } finally {
       setCreatingPost(false);

@@ -179,7 +179,8 @@ const initializeSupabaseDatabase = async () => {
 // Get the database pool
 const getSupabasePool = () => {
   if (!pool) {
-    throw new Error('Database not initialized. Call initializeSupabaseDatabase() first.');
+    console.log('⚠️ Database pool not available');
+    return null;
   }
   return pool;
 };

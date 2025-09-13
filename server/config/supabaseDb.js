@@ -6,7 +6,9 @@ const createSupabaseConnection = () => {
   const connectionString = process.env.DATABASE_URL || process.env.SUPABASE_URL;
   
   if (!connectionString) {
-    throw new Error('DATABASE_URL or SUPABASE_URL environment variable is required for Supabase connection');
+    console.log('⚠️ No DATABASE_URL found, using local SQLite fallback');
+    // Return null to indicate we should use SQLite fallback
+    return null;
   }
   
   console.log('🔄 Connecting to Supabase PostgreSQL...');

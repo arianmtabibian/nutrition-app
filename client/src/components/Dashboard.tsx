@@ -113,11 +113,9 @@ const Dashboard: React.FC = () => {
         console.log('🎉 Post created successfully from Dashboard!');
       } else {
         console.error('Dashboard failed to create post. Status:', response?.status, 'Response:', response);
-        alert(`Failed to create post: ${response?.status || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Dashboard error creating post:', error);
-      alert('Error creating post: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 
