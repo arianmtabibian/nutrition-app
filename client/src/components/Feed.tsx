@@ -475,9 +475,9 @@ const Feed: React.FC = () => {
       } catch (apiError) {
         console.warn('⚠️ socialAPI failed:', apiError);
         console.error('API Error details:', {
-          message: apiError.message,
-          status: apiError.response?.status,
-          data: apiError.response?.data
+          message: apiError instanceof Error ? apiError.message : 'Unknown error',
+          status: (apiError as any)?.response?.status,
+          data: (apiError as any)?.response?.data
         });
       }
 
