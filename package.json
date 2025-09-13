@@ -1,7 +1,7 @@
 {
   "name": "nutrition-app",
-  "version": "1.0.10",
-  "description": "Nutrition tracking app - Fixed meal creation API endpoint",
+  "version": "1.0.11",
+  "description": "Nutrition tracking app - Fixed post persistence and database schema",
   "scripts": {
     "start": "cd server && npm start",
     "build": "cd server && npm install",

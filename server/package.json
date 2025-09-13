@@ -1,7 +1,7 @@
 {
   "name": "nutrition-backend",
-  "version": "1.0.10",
-  "description": "Nutrition tracking app backend - Fixed meal creation API endpoint",
+  "version": "1.0.11",
+  "description": "Nutrition tracking app backend - Fixed post persistence and database schema",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

@@ -162,7 +162,7 @@ async function startServer() {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🗄️  Database: Supabase PostgreSQL`);
-      console.log(`📅 Deployment: ${new Date().toISOString()} - Fixed meal creation API endpoint`);
+      console.log(`📅 Deployment: ${new Date().toISOString()} - Fixed post persistence and database schema v1.0.11`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

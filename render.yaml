@@ -15,6 +15,6 @@ services:
     autoDeploy: true
     branch: main
     rootDir: .
-    # Updated: Fixed meal creation API endpoint - 2025-01-05
-    # Force deployment trigger - version 1.0.10
-    # Deployment ID: 20250105-009
+    # Updated: Fixed post persistence and database schema - 2025-01-05
+    # Force deployment trigger - version 1.0.11
+    # Deployment ID: 20250105-010

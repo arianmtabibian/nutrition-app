@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-09-13T19:07:12.455Z",
+  "version": "1.0.11",
+  "changes": [
+    "Fixed post persistence to Supabase",
+    "Added database schema fallback",
+    "Enhanced error logging for post creation",
+    "Fixed FormData field name mismatches",
+    "Added missing database columns"
+  ],
+  "deploymentId": "20250105-010"
+}
